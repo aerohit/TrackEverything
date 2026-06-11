@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-11 (Phase 0 in progress)
+> **Status:** Living document. **Last updated:** 2026-06-12 (Phase 0 approved; added Phase 4b)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -18,7 +18,7 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 
 ## Stage A — Foundation
 
-### Phase 0 — Project & test harness ◐
+### Phase 0 — Project & test harness ☑
 - **Goal:** A skeleton that proves the toolchain, with CI running tests, before any features.
 - **Build:** Supabase project (dev), repo + test runner, CI pipeline, secrets for Claude API, one trivial endpoint.
 - **Tests:** 1 unit smoke test; 1 integration test that reaches the test DB and makes a "hello" Claude call (mocked in CI, live in the on-demand suite).
@@ -34,9 +34,10 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
     against a Postgres service container.
   - CI: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) — fmt + lint + type-check
     + deterministic tests. Live suite excluded from CI.
-  - **Local status:** `deno task test` green (7 passed, DB test skipped).
-  - **Still manual (your accounts):** create the Supabase dev project; push to GitHub so
-    CI runs; add `ANTHROPIC_API_KEY` to run `test:live`. See [`backend/README.md`](../backend/README.md).
+  - **Status: APPROVED (2026-06-12)** — CI green on `main` (commit `5327eeb`); `deno task test`
+    green locally (7 passed, DB test skipped).
+  - **Still manual (your accounts):** create the Supabase dev project (Phase 1); add
+    `ANTHROPIC_API_KEY` to run `test:live`. See [`backend/README.md`](../backend/README.md).
 
 ### Phase 1 — Event-log schema ☐
 - **Goal:** The system of record exists.
@@ -69,6 +70,13 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 - **Tests:** Unit (expansion, default fields, time-aware defaults); integration (one call → correct stored event).
 - **You verify:** One tap logs your coffee with the right defaults.
 - **Builds:** R-CAP-5, R-CAP-6
+
+### Phase 4b — Composite supplements & label-photo ingredients ☐
+- **Goal:** Log multi-ingredient supplements by product name; define their ingredients once, including from a label photo.
+- **Build:** `products` + `ingredients` schema (per-ingredient name/amount/unit + canonical ingredient); product-aware quick-log (logs reference a product + optional `servings`); label-photo → Claude vision → structured ingredient list → confirm → save on the product.
+- **Tests:** Unit (ingredient parsing, servings multiplier, product→ingredient expansion math); fixture (label image → expected ingredient list); integration (define a product, log it, expand it to ingredient amounts).
+- **You verify:** Photograph a supplement label → confirm the extracted ingredients → log the product by name → see it both as the product and expanded into its ingredients.
+- **Builds:** R-CAP-13, R-CAP-14, R-CAP-15, R-PAT-5, [ADR-010](ARCHITECTURE.md#adr-010)
 
 ### Phase 5 — Subjective check-ins ☐
 - **Goal:** Capture mood/energy/focus, nudged and on-demand.
@@ -112,10 +120,10 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 
 ### Phase 9 — Daily overview ☐
 - **Goal:** See today at a glance.
-- **Build:** Daily aggregation (caffeine total, last-caffeine time, sleep hours, workout load, subjective averages) + a simple daily dashboard view.
-- **Tests:** Unit (aggregation math on synthetic days); integration (events → aggregates).
-- **You verify:** Today's overview matches what you logged.
-- **Builds:** R-PAT-2, R-VIEW-1
+- **Build:** Daily aggregation (caffeine total, last-caffeine time, sleep hours, workout load, subjective averages) + a simple daily dashboard view. Aggregation **expands composite supplements into ingredient amounts** so per-ingredient totals are available (R-PAT-5).
+- **Tests:** Unit (aggregation math on synthetic days, incl. product→ingredient expansion); integration (events → aggregates).
+- **You verify:** Today's overview matches what you logged, including ingredient totals from any supplements.
+- **Builds:** R-PAT-2, R-PAT-5, R-VIEW-1
 
 ### Phase 10 — Weekly/monthly + correlation engine ☐
 - **Goal:** Find patterns and explain them.
@@ -143,3 +151,4 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 |---|---|
 | 2026-06-11 | Initial phased, gated roadmap created. |
 | 2026-06-11 | Phase 0 implemented (Deno backend, ClaudeClient seam, tests, CI) → ◐ in progress, awaiting owner verification. |
+| 2026-06-12 | Phase 0 approved (CI green on main) → ☑. Added Phase 4b (composite supplements & label-photo ingredients); ingredient expansion noted in Phase 9. |
