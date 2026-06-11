@@ -1,12 +1,14 @@
 {
   "tasks": {
-    "test": "deno test --allow-env --allow-net tests/unit/ tests/integration/",
+    "test": "deno test --allow-env --allow-net --allow-read tests/unit/ tests/integration/",
     "test:unit": "deno test --allow-env tests/unit/",
     "test:live": "deno test --allow-env --allow-net tests/live/",
     "fmt": "deno fmt",
     "fmt:check": "deno fmt --check",
     "lint": "deno lint",
     "check": "deno check **/*.ts",
+    "migrate": "deno run --allow-env --allow-net --allow-read scripts/migrate.ts",
+    "seed": "deno run --allow-env --allow-net --allow-read scripts/insert_sample_event.ts",
     "serve:hello": "deno run --allow-env --allow-net functions/hello/index.ts"
   },
   "imports": {
