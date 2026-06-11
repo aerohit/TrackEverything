@@ -270,6 +270,19 @@ the owner verifies. No phase starts before the prior one is approved.
 risk of building the wrong thing. Requires keeping ROADMAP.md in sync with the
 two core docs.
 
+### ADR-009
+**Title:** Deno + TypeScript as the backend runtime and test runner.
+**Status:** Accepted (2026-06-11)
+**Context:** Need a concrete runtime for the backend functions and a low-friction
+test setup (R-NFR-1, R-TEST-5). Supabase Edge Functions run on Deno (ADR-003).
+Node is installed locally but diverges from the Edge runtime.
+**Decision:** Use Deno + TypeScript for `backend/`. The LLM and DB sit behind thin
+seams (`ClaudeClient`, `pingDatabase`) imported lazily so unit tests stay offline.
+Deno's built-in test runner gives the "one command" gate (`deno task test`); CI is
+GitHub Actions with a Postgres service container for the integration test.
+**Consequences:** Zero rework moving functions to Edge Functions; single-binary
+toolchain, no `node_modules`. Ties the project to Deno's tooling conventions.
+
 ---
 
 ## Maintenance

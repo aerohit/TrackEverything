@@ -1,0 +1,23 @@
+{
+  "tasks": {
+    "test": "deno test --allow-env --allow-net tests/unit/ tests/integration/",
+    "test:unit": "deno test --allow-env tests/unit/",
+    "test:live": "deno test --allow-env --allow-net tests/live/",
+    "fmt": "deno fmt",
+    "fmt:check": "deno fmt --check",
+    "lint": "deno lint",
+    "check": "deno check **/*.ts",
+    "serve:hello": "deno run --allow-env --allow-net functions/hello/index.ts"
+  },
+  "imports": {
+    "@std/assert": "jsr:@std/assert@^1.0.8"
+  },
+  "fmt": {
+    "lineWidth": 100
+  },
+  "lint": {
+    "rules": {
+      "tags": ["recommended"]
+    }
+  }
+}

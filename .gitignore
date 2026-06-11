@@ -1,0 +1,11 @@
+# Secrets / local env
+.env
+.env.local
+backend/.env
+backend/.env.local
+
+# Logs
+*.log
+
+# OS junk
+.DS_Store

@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-11
+> **Status:** Living document. **Last updated:** 2026-06-11 (Phase 0 in progress)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -18,12 +18,25 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 
 ## Stage A — Foundation
 
-### Phase 0 — Project & test harness ☐
+### Phase 0 — Project & test harness ◐
 - **Goal:** A skeleton that proves the toolchain, with CI running tests, before any features.
 - **Build:** Supabase project (dev), repo + test runner, CI pipeline, secrets for Claude API, one trivial endpoint.
 - **Tests:** 1 unit smoke test; 1 integration test that reaches the test DB and makes a "hello" Claude call (mocked in CI, live in the on-demand suite).
 - **You verify:** CI badge is green; you can run the test suite locally with one command.
 - **Builds:** R-NFR-1, R-TEST-4, R-TEST-5
+- **Implementation notes (in progress):**
+  - Stack chosen: **Deno + TypeScript** (Supabase Edge Functions runtime; built-in
+    test runner → "one command" is `deno task test`). Code in [`backend/`](../backend/).
+  - `ClaudeClient` seam ([`backend/src/claude.ts`](../backend/src/claude.ts)) makes the
+    LLM mockable; deterministic tests use `MockClaudeClient`, the live suite uses the
+    real Anthropic SDK (`claude-opus-4-8`).
+  - DB connectivity test auto-skips with no `DATABASE_URL` (passes locally); runs in CI
+    against a Postgres service container.
+  - CI: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) — fmt + lint + type-check
+    + deterministic tests. Live suite excluded from CI.
+  - **Local status:** `deno task test` green (7 passed, DB test skipped).
+  - **Still manual (your accounts):** create the Supabase dev project; push to GitHub so
+    CI runs; add `ANTHROPIC_API_KEY` to run `test:live`. See [`backend/README.md`](../backend/README.md).
 
 ### Phase 1 — Event-log schema ☐
 - **Goal:** The system of record exists.
@@ -129,3 +142,4 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 | Date | Change |
 |---|---|
 | 2026-06-11 | Initial phased, gated roadmap created. |
+| 2026-06-11 | Phase 0 implemented (Deno backend, ClaudeClient seam, tests, CI) → ◐ in progress, awaiting owner verification. |
