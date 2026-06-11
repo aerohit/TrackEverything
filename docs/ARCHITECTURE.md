@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-11 (added testing strategy, ADR-007/008, ROADMAP link)
+> **Last updated:** 2026-06-12 (composite supplements: data model, vision extraction, ADR-010)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -83,6 +83,17 @@ migration once built):
   own small tables and are referenced from events.
 - Subjective check-ins (mood/energy/focus) are just events with those categories
   and a `rating` field — same pipeline, no special-casing. (R-SUBJ-1)
+- **Composite supplements** are a kind of personal item: a `product` with an
+  `ingredients` list (per ingredient: name, amount, unit, optional canonical
+  ingredient). A logged supplement event references the product (+ optional
+  `servings` multiplier in `fields`); it is **not** duplicated into per-ingredient
+  rows at capture time. (R-CAP-13, R-CAP-14, [ADR-010](#adr-010))
+- **Ingredient-level analysis** comes from the aggregation layer **expanding** a
+  logged product into ingredient amounts (`servings × per-ingredient amount`),
+  keyed by a **canonical ingredient name** so the same ingredient sums across
+  products and foods. Whole-product analysis uses the event as-is. (R-PAT-5)
+- The **data dictionary** is extended with a canonical-ingredient vocabulary +
+  unit normalization (open question Q5).
 
 ## 5. Source adapter layer
 
@@ -106,6 +117,14 @@ is open question Q1 — leaning Whoop API for recovery/strain/detailed sleep.
 Why this shape: transcription only has to be roughly right because the LLM
 normalizes against known items and context (ADR-005).
 
+**Label-photo ingredient extraction (product definition).** To define a
+supplement product's ingredient list (R-CAP-15), a photo of the
+supplement-facts / ingredients label is sent to Claude with **image input** plus
+a JSON schema for `{ingredient, amount, unit}[]`. The result is shown on a
+confirmation card and saved onto the **product** — once, not per log. This reuses
+the same normalize-then-confirm shape as the voice pipeline, with the image as
+the source instead of a transcript.
+
 ## 7. Real-time analysis
 
 - A **context assembler** pulls the last 24–48h of events into a compact,
@@ -121,7 +140,9 @@ normalizes against known items and context (ADR-005).
 Two-stage, because LLMs are poor at finding statistical signal in raw logs:
 
 1. **Aggregate**: scheduled job rolls events into daily features + outcome metrics
-   (R-PAT-2).
+   (R-PAT-2). Composite supplements are **expanded into ingredient amounts** (per
+   the product's ingredient list) before rolling up, so per-ingredient totals and
+   correlations are available alongside whole-product ones (R-PAT-5).
 2. **Correlate**: compute correlations and **lagged** relationships (next-day
    effects) between inputs and outcomes (R-PAT-3).
 3. **Interpret**: feed the *correlations* (not the raw logs) to Claude for
@@ -269,6 +290,23 @@ the owner verifies. No phase starts before the prior one is approved.
 **Consequences:** Slower nominal throughput but continuous verification and low
 risk of building the wrong thing. Requires keeping ROADMAP.md in sync with the
 two core docs.
+
+### ADR-010
+**Title:** Model composite supplements as products with an ingredient list; analyze at both levels.
+**Status:** Accepted (2026-06-12)
+**Context:** Multi-ingredient supplements (sleep stacks, pre-workout) should be
+logged quickly by product name, but analysis needs ingredient-level resolution —
+total magnesium across all sources, or correlating a single ingredient with
+outcomes (R-CAP-13/14, R-PAT-5).
+**Decision:** Store products with a structured ingredient list (defined once,
+optionally via label-photo vision extraction — R-CAP-15). Log events reference the
+product + optional `servings`. The aggregation layer expands product → ingredient
+amounts keyed by a canonical ingredient; whole-product analysis uses the event
+directly.
+**Consequences:** Fast capture and dual-granularity analysis without duplicating
+data at capture time. Requires a canonical-ingredient vocabulary + unit
+normalization (Q5) and adds an image-input extraction path. The core event-log
+shape is unchanged — products/ingredients are reference tables (ADR-006 stands).
 
 ### ADR-009
 **Title:** Deno + TypeScript as the backend runtime and test runner.
