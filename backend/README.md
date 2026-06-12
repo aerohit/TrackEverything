@@ -49,6 +49,7 @@ Other tasks:
 | `deno task serve:quicklog`        | Run the `POST /quicklog` one-tap server (needs `DATABASE_URL`).            |
 | `deno task serve:products`        | Run the `/products` composite-supplement server (needs `DATABASE_URL`).    |
 | `deno task serve:ingredient-scan` | Run the `POST /ingredient-scan` vision server (needs `ANTHROPIC_API_KEY`). |
+| `deno task serve:checkin`         | Run the `POST /checkin` subjective-rating server (needs `DATABASE_URL`).   |
 
 ## Configuration
 
@@ -83,6 +84,7 @@ backend/
     voice-capture.md          # POST /capture extract + confirm flow (Phase 3)
     quick-log.md              # /templates + POST /quicklog one-tap flow (Phase 4)
     composite-supplements.md  # products, label scan, ingredient expansion (Phase 4b)
+    check-ins.md              # POST /checkin mood/energy/focus ratings (Phase 5)
   src/
     config.ts                 # env -> Config (pure, unit-tested)
     claude.ts                 # ClaudeClient seam: hello + extractJson + extractJsonFromImage
@@ -92,6 +94,7 @@ backend/
     extract.ts                # transcript -> candidate events; time resolution (Phase 3)
     templates.ts              # template validation + expansion + CRUD (Phase 4)
     products.ts               # composite supplements: products + ingredients + expansion (Phase 4b)
+    checkins.ts               # subjective check-in validation + event building (Phase 5)
     migrate.ts                # tiny forward-only migration runner
   functions/
     hello/index.ts            # request -> Claude -> JSON (Edge-Function-shaped)
@@ -101,6 +104,7 @@ backend/
     quicklog/index.ts         # POST /quicklog one-tap: template or product (Phase 4/4b)
     products/index.ts         # GET/POST /products composite supplements (Phase 4b)
     ingredient_scan/index.ts  # POST /ingredient-scan label photo -> ingredients (Phase 4b)
+    checkin/index.ts          # POST /checkin subjective ratings (Phase 5)
   scripts/
     migrate.ts                # deno task migrate
     insert_sample_event.ts    # deno task seed (Phase 1 acceptance helper)

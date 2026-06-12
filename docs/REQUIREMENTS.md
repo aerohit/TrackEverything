@@ -51,9 +51,9 @@ The product succeeds only if **capture is nearly frictionless** and the
 | R-CAP-10 | A single utterance may produce **multiple events** ("coffee and my magnesium" → 2 records). | Built |
 | R-CAP-11 | Capture works **offline**; records sync when connectivity returns. | Proposed |
 | R-CAP-12 | Each event records its **source/provenance** (voice, manual, Whoop, …) and a confidence/uncertainty flag for inferred fields (esp. inferred times). | Built |
-| R-CAP-13 | Log a multi-ingredient supplement (e.g. sleep stack, pre-workout) by its **product name alone**, as a single quick entry — without re-entering ingredients each time. | Proposed |
-| R-CAP-14 | Define a supplement **product's ingredient list once** (per ingredient: name, amount, unit); it is reused for every log of that product. Support a servings/dose multiplier per log. | Proposed |
-| R-CAP-15 | Populate a product's ingredient list by **uploading a photo** of the supplement-facts / ingredients label; the system extracts the structured ingredient list for confirmation/edit (image capture modality). | Proposed |
+| R-CAP-13 | Log a multi-ingredient supplement (e.g. sleep stack, pre-workout) by its **product name alone**, as a single quick entry — without re-entering ingredients each time. | Built |
+| R-CAP-14 | Define a supplement **product's ingredient list once** (per ingredient: name, amount, unit); it is reused for every log of that product. Support a servings/dose multiplier per log. | Built |
+| R-CAP-15 | Populate a product's ingredient list by **uploading a photo** of the supplement-facts / ingredients label; the system extracts the structured ingredient list for confirmation/edit (image capture modality). | Built |
 
 ## 4. Data sources & integrations
 
@@ -94,7 +94,7 @@ Operates over the recent timeline (last 24–48h) and answers questions in the m
 | R-PAT-2 | Compute **daily aggregates** (e.g. total caffeine, last-caffeine time, sleep hours, workout load) and outcome metrics. | Proposed |
 | R-PAT-3 | Run **correlation / lagged analysis** between inputs and outcomes (including next-day effects). | Proposed |
 | R-PAT-4 | Have the LLM **interpret** the statistical findings into plain-language insights and suggested experiments. | Proposed |
-| R-PAT-5 | Analyze supplement intake at **two granularities**: whole-product and decomposed into ingredients (e.g. total magnesium summed across all products/foods; correlate a single ingredient such as L-theanine with outcomes). | Proposed |
+| R-PAT-5 | Analyze supplement intake at **two granularities**: whole-product and decomposed into ingredients (e.g. total magnesium summed across all products/foods; correlate a single ingredient such as L-theanine with outcomes). | Built |
 
 ## 8. Overviews & reporting
 
@@ -138,7 +138,7 @@ Operates over the recent timeline (last 24–48h) and answers questions in the m
 Tracked here until resolved, then moved into a requirement or an ADR.
 
 - Q1: Whoop data path — HealthKit sync vs. Whoop API directly? (leaning API for richer fields)
-- Q2: Exact subjective scales (1–5 vs 1–10; separate sliders vs one combined check-in)?
+- Q2: ~~Exact subjective scales~~ — **Resolved (Phase 5):** 1–5 integer ratings, separate mood/energy/focus (`fields.rating`).
 - Q3: Scheduled check-in cadence and times?
 - Q4: Retention/units conventions (caffeine in mg, sleep in minutes, etc.) — to be fixed in the data dictionary.
 - Q5: Ingredient canonicalization & unit normalization (R-CAP-14, R-PAT-5) — mapping product-listed compounds to canonical ingredients and elemental amounts (e.g. "magnesium glycinate 1000mg" → elemental magnesium), so the same ingredient aggregates across products and foods. Depth TBD; start simple (verbatim ingredient + unit) and deepen later.
@@ -169,3 +169,5 @@ This document is kept current by an explicit process, not by hope. See
 | 2026-06-12 | Phase 2 approved → R-CAP-3 to Built (POST /events manual capture). |
 | 2026-06-12 | Phase 3 approved → R-CAP-2/8/9/10 + R-TEST-3 to Built (voice extraction). |
 | 2026-06-12 | Phase 4 approved → R-CAP-5/6 to Built (quick-log templates). |
+| 2026-06-12 | Phase 4b approved → R-CAP-13/14/15 + R-PAT-5 to Built (composite supplements). |
+| 2026-06-12 | Phase 5: resolved Q2 (1–5 separate mood/energy/focus). |
