@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-12 (Phase 3 implemented, in review)
+> **Status:** Living document. **Last updated:** 2026-06-12 (Phase 4 implemented, in review)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -87,7 +87,7 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
     a true offline queue is a native-app concern (Phase 11).
   - **Status: APPROVED (2026-06-12)** — PR #3 merged; CI green. `R-CAP-3` → Built.
 
-### Phase 3 — Voice → structured extraction ◐
+### Phase 3 — Voice → structured extraction ☑
 - **Goal:** Speak freely; get clean structured records.
 - **Build:** `POST /capture` (transcript → Claude structured output → candidate events, not yet saved) + confirm step that persists; known-items + taxonomy context.
 - **Tests:** Unit (parse/validate Claude output; relative-time resolution with fixed "now"). Fixture/golden (sample transcripts → expected event count/categories; inferred-time flagging). Integration (transcript → candidates → confirm → stored).
@@ -99,14 +99,21 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
   - Flow + curl + Shortcut (Dictate Text): [`backend/docs/voice-capture.md`](../backend/docs/voice-capture.md).
   - **Local status:** deterministic suite green against real Postgres — **37 passed** (incl. time-resolution unit tests, a golden fixture turning "coffee and my magnesium" into 2 candidates, and the batch confirm→DB roundtrip).
   - ⚠️ **Unverified by me:** the live extraction against the real model (needs your `ANTHROPIC_API_KEY`). Run `deno task test:live` to confirm the prompt yields the expected JSON before approving.
-  - **On approval:** flip `R-CAP-2`/`R-CAP-8`/`R-CAP-9`/`R-CAP-10`/`R-TEST-3` → Built and this phase → ☑.
+  - **Status: APPROVED (2026-06-12)** — PR #4 merged; CI green. `R-CAP-2`/`R-CAP-8`/`R-CAP-9`/`R-CAP-10`/`R-TEST-3` → Built.
 
-### Phase 4 — Quick-log templates ☐
+### Phase 4 — Quick-log templates ◐
 - **Goal:** One tap to log a repeated habit.
 - **Build:** Template CRUD + expansion (template + defaults → event); Shortcuts for "my coffee", "protein shake".
 - **Tests:** Unit (expansion, default fields, time-aware defaults); integration (one call → correct stored event).
 - **You verify:** One tap logs your coffee with the right defaults.
 - **Builds:** R-CAP-5, R-CAP-6
+- **Implementation notes (in progress):**
+  - Repository [`backend/src/templates.ts`](../backend/src/templates.ts): validation, CRUD, and a pure `expandTemplate` (template + defaults → event; per-tap `fields` override; `occurredAt` defaults to tap time; `source` `quicklog`; `template_id` set).
+  - `GET/POST /templates` ([`backend/functions/templates/index.ts`](../backend/functions/templates/index.ts)) to manage templates; `POST /quicklog` ([`backend/functions/quicklog/index.ts`](../backend/functions/quicklog/index.ts)) for the one-tap log. Both token-guarded. `deno task templates:seed` adds examples.
+  - Flow + curl + one-tap Shortcut: [`backend/docs/quick-log.md`](../backend/docs/quick-log.md).
+  - **Scope note:** "time-aware defaults" is realized as `occurredAt = tap time` (overridable). The smarter *time-aware suggestion* (offer the morning stack at 7am) is deferred — it's a client/UX refinement, not needed for one-tap.
+  - **Local status:** deterministic suite green against real Postgres — **51 passed**; also smoke-tested the running server: seed → tap "my coffee" → `201` (expanded event stored, `source` quicklog), unknown template → `404`.
+  - **On approval:** flip `R-CAP-5`/`R-CAP-6` → Built and this phase → ☑.
 
 ### Phase 4b — Composite supplements & label-photo ingredients ☐
 - **Goal:** Log multi-ingredient supplements by product name; define their ingredients once, including from a label photo.
@@ -194,3 +201,5 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 | 2026-06-12 | Phase 2 implemented (`POST /events` with token auth, tests) → ◐ in review. Moved R-CAP-11 (offline) from Phase 2 to Phase 11. |
 | 2026-06-12 | Phase 2 approved (PR #3 merged) → ☑; R-CAP-3 → Built. |
 | 2026-06-12 | Phase 3 implemented (`POST /capture` extraction, time resolution, `/events` batch confirm, tests) → ◐ in review. |
+| 2026-06-12 | Phase 3 approved (PR #4 merged) → ☑; R-CAP-2/8/9/10 + R-TEST-3 → Built. |
+| 2026-06-12 | Phase 4 implemented (quick-log templates: `/templates` CRUD, `POST /quicklog`, expansion, tests) → ◐ in review. |

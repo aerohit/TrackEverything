@@ -9,9 +9,12 @@
     "check": "deno check **/*.ts",
     "migrate": "deno run --allow-env --allow-net --allow-read scripts/migrate.ts",
     "seed": "deno run --allow-env --allow-net --allow-read scripts/insert_sample_event.ts",
+    "templates:seed": "deno run --allow-env --allow-net --allow-read scripts/seed_templates.ts",
     "serve:hello": "deno run --allow-env --allow-net functions/hello/index.ts",
     "serve:events": "deno run --allow-env --allow-net functions/events/index.ts",
-    "serve:capture": "deno run --allow-env --allow-net functions/capture/index.ts"
+    "serve:capture": "deno run --allow-env --allow-net functions/capture/index.ts",
+    "serve:templates": "deno run --allow-env --allow-net functions/templates/index.ts",
+    "serve:quicklog": "deno run --allow-env --allow-net functions/quicklog/index.ts"
   },
   "imports": {
     "@std/assert": "jsr:@std/assert@^1.0.8"
