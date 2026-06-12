@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-12 (Phase 0 approved; added Phase 4b)
+> **Status:** Living document. **Last updated:** 2026-06-12 (Phase 1 implemented, in review)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -39,12 +39,27 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
   - **Still manual (your accounts):** create the Supabase dev project (Phase 1); add
     `ANTHROPIC_API_KEY` to run `test:live`. See [`backend/README.md`](../backend/README.md).
 
-### Phase 1 — Event-log schema ☐
+### Phase 1 — Event-log schema ◐
 - **Goal:** The system of record exists.
 - **Build:** Migration for the `events` table (dual timestamps, `source`, JSON `fields`, confidence flag) + `templates` and `items` tables; the data dictionary (units/field names).
 - **Tests:** Unit (row validation helpers); integration (insert → read an event, assert `occurred_at`/`recorded_at`, source, JSON fields survive a roundtrip).
 - **You verify:** You insert a sample event via a provided script and see it stored correctly.
 - **Builds:** R-CAP-1, R-CAP-7, R-CAP-12, [ADR-006](ARCHITECTURE.md#adr-006)
+- **Implementation notes (in progress):**
+  - Schema: [`backend/migrations/0001_event_log.sql`](../backend/migrations/0001_event_log.sql)
+    — `events` (dual timestamps, `occurred_at_confidence` check, `source`, `jsonb fields`,
+    nullable `template_id`) + `items` + `templates`. `items` is the home the Phase 4b
+    products/ingredients extension will build on.
+  - Data dictionary: [`backend/docs/data-dictionary.md`](../backend/docs/data-dictionary.md);
+    code-side vocab in [`backend/src/vocab.ts`](../backend/src/vocab.ts) (categories/sources
+    validated in the app layer, not by DB constraints, per ADR-006).
+  - Repository + validation: [`backend/src/events.ts`](../backend/src/events.ts); tiny
+    migration runner [`backend/src/migrate.ts`](../backend/src/migrate.ts).
+  - Acceptance helper: `deno task seed` inserts a sample event and prints the stored row.
+  - **Local status:** full suite green against a real Postgres — **18 passed** (incl. the
+    insert→read roundtrip asserting dual timestamps + nested JSON survive). CI runs the same
+    against its Postgres service.
+  - **On approval:** flip `R-CAP-1`/`R-CAP-7`/`R-CAP-12` → Built and this phase → ☑.
 
 ---
 
@@ -152,3 +167,4 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 | 2026-06-11 | Initial phased, gated roadmap created. |
 | 2026-06-11 | Phase 0 implemented (Deno backend, ClaudeClient seam, tests, CI) → ◐ in progress, awaiting owner verification. |
 | 2026-06-12 | Phase 0 approved (CI green on main) → ☑. Added Phase 4b (composite supplements & label-photo ingredients); ingredient expansion noted in Phase 9. |
+| 2026-06-12 | Phase 1 implemented (event-log schema, vocab, migration runner, repository, tests) → ◐ in review. |

@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-12 (composite supplements: data model, vision extraction, ADR-010)
+> **Last updated:** 2026-06-12 (Phase 1: event-log schema implemented — §4 points to the migration)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -60,8 +60,10 @@ or reversible-with-cost decision is captured as an **ADR** in the
 
 ## 4. Data model — the event log
 
-Single append-only table of typed events. Sketch (final column types live in the
-migration once built):
+Single append-only table of typed events. **Implemented** in
+[`backend/migrations/0001_event_log.sql`](../backend/migrations/0001_event_log.sql);
+conventions in [`backend/docs/data-dictionary.md`](../backend/docs/data-dictionary.md).
+Sketch:
 
 | Column | Notes |
 |---|---|
