@@ -11,7 +11,7 @@
 import type { Sql } from "npm:postgres@^3.4.4";
 import { connect } from "../../src/db.ts";
 import { loadConfig } from "../../src/config.ts";
-import { insertEvent, type NewEvent, validateNewEvent } from "../../src/events.ts";
+import { insertEvent, insertEvents, type NewEvent, validateNewEvent } from "../../src/events.ts";
 
 export interface EventsHandlerDeps {
   sql: Sql;
@@ -42,6 +42,12 @@ export function makeEventsHandler(deps: EventsHandlerDeps) {
       return jsonResponse(400, { error: "body must be a JSON object" });
     }
 
+    // Batch form: { "events": [ ... ] } — used to persist confirmed candidates.
+    if (Array.isArray(body.events)) {
+      return await handleBatch(deps.sql, body.events);
+    }
+
+    // Single form: the event object itself.
     const input = toNewEvent(body);
     const errors = validateNewEvent(input);
     if (errors.length > 0) {
@@ -51,6 +57,29 @@ export function makeEventsHandler(deps: EventsHandlerDeps) {
     const saved = await insertEvent(deps.sql, input);
     return jsonResponse(201, saved);
   };
+}
+
+async function handleBatch(sql: Sql, rawEvents: unknown[]): Promise<Response> {
+  if (rawEvents.length === 0) {
+    return jsonResponse(400, { error: "events array is empty" });
+  }
+  const inputs: NewEvent[] = [];
+  const details: string[] = [];
+  rawEvents.forEach((el, i) => {
+    if (!isPlainObject(el)) {
+      details.push(`events[${i}]: must be an object`);
+      return;
+    }
+    const input = toNewEvent(el);
+    const errs = validateNewEvent(input);
+    if (errs.length > 0) details.push(`events[${i}]: ${errs.join("; ")}`);
+    inputs.push(input);
+  });
+  if (details.length > 0) {
+    return jsonResponse(400, { error: "invalid events", details });
+  }
+  const saved = await insertEvents(sql, inputs);
+  return jsonResponse(201, { events: saved });
 }
 
 /** Map a JSON body to a NewEvent. `source` defaults to "manual" for this endpoint. */

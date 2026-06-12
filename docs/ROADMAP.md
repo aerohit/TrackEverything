@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-12 (Phase 2 implemented, in review)
+> **Status:** Living document. **Last updated:** 2026-06-12 (Phase 3 implemented, in review)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -65,7 +65,7 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 
 ## Stage B — Capture
 
-### Phase 2 — Manual capture (no LLM) ◐
+### Phase 2 — Manual capture (no LLM) ☑
 - **Goal:** Log a structured event end to end without any AI in the path.
 - **Build:** `POST /events` Edge Function (validate + store); a Shortcut with a fill-in form that calls it.
 - **Tests:** Unit (validation, rejects bad payloads); integration (HTTP → DB roundtrip).
@@ -85,14 +85,21 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
     smoke-tested the running server with curl (401 without token, 201 + stored row with it).
   - **Note:** R-CAP-11 (offline capture) moved off this phase — Shortcuts need network;
     a true offline queue is a native-app concern (Phase 11).
-  - **On approval:** flip `R-CAP-3` → Built and this phase → ☑.
+  - **Status: APPROVED (2026-06-12)** — PR #3 merged; CI green. `R-CAP-3` → Built.
 
-### Phase 3 — Voice → structured extraction ☐
+### Phase 3 — Voice → structured extraction ◐
 - **Goal:** Speak freely; get clean structured records.
 - **Build:** `POST /capture` (transcript → Claude structured output → candidate events, not yet saved) + confirm step that persists; known-items + taxonomy context.
 - **Tests:** Unit (parse/validate Claude output; relative-time resolution with fixed "now"). Fixture/golden (sample transcripts → expected event count/categories; inferred-time flagging). Integration (transcript → candidates → confirm → stored).
 - **You verify:** Speak "coffee and my magnesium at 10am," see 2 candidates with the right times, confirm, rows stored.
 - **Builds:** R-CAP-2, R-CAP-8, R-CAP-9, R-CAP-10, R-TEST-3, [ADR-005](ARCHITECTURE.md#adr-005)
+- **Implementation notes (in progress):**
+  - Claude seam gained `extractJson` ([`backend/src/claude.ts`](../backend/src/claude.ts)); extraction logic in [`backend/src/extract.ts`](../backend/src/extract.ts) — prompt (taxonomy + known items), JSON→candidate mapping, and **deterministic time resolution** against a fixed "now" (now/absolute/relative_minutes/unknown → `occurredAt` + confidence).
+  - `POST /capture` ([`backend/functions/capture/index.ts`](../backend/functions/capture/index.ts)) returns candidates, **does not save** (R-CAP-9). Persistence reuses `POST /events`, now extended with a **batch** form (`{events:[...]}`, atomic) for the confirm step.
+  - Flow + curl + Shortcut (Dictate Text): [`backend/docs/voice-capture.md`](../backend/docs/voice-capture.md).
+  - **Local status:** deterministic suite green against real Postgres — **37 passed** (incl. time-resolution unit tests, a golden fixture turning "coffee and my magnesium" into 2 candidates, and the batch confirm→DB roundtrip).
+  - ⚠️ **Unverified by me:** the live extraction against the real model (needs your `ANTHROPIC_API_KEY`). Run `deno task test:live` to confirm the prompt yields the expected JSON before approving.
+  - **On approval:** flip `R-CAP-2`/`R-CAP-8`/`R-CAP-9`/`R-CAP-10`/`R-TEST-3` → Built and this phase → ☑.
 
 ### Phase 4 — Quick-log templates ☐
 - **Goal:** One tap to log a repeated habit.
@@ -185,3 +192,5 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 | 2026-06-12 | Phase 1 implemented (event-log schema, vocab, migration runner, repository, tests) → ◐ in review. |
 | 2026-06-12 | Phase 1 approved (PR #2 merged) → ☑; R-CAP-1/7/12 → Built. |
 | 2026-06-12 | Phase 2 implemented (`POST /events` with token auth, tests) → ◐ in review. Moved R-CAP-11 (offline) from Phase 2 to Phase 11. |
+| 2026-06-12 | Phase 2 approved (PR #3 merged) → ☑; R-CAP-3 → Built. |
+| 2026-06-12 | Phase 3 implemented (`POST /capture` extraction, time resolution, `/events` batch confirm, tests) → ◐ in review. |

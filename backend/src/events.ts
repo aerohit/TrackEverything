@@ -73,8 +73,34 @@ export async function insertEvent(sql: Sql, input: NewEvent): Promise<EventRow> 
   if (errors.length > 0) {
     throw new Error(`invalid event: ${errors.join("; ")}`);
   }
+  return await insertOne(sql, input);
+}
 
-  const rows = await sql<EventRow[]>`
+/**
+ * Insert several events atomically after validating all of them (used to persist
+ * confirmed extraction candidates — R-CAP-10). Throws if any are invalid, before
+ * writing anything.
+ */
+export async function insertEvents(sql: Sql, inputs: NewEvent[]): Promise<EventRow[]> {
+  const errors: string[] = [];
+  inputs.forEach((input, i) => {
+    const e = validateNewEvent(input);
+    if (e.length > 0) errors.push(`events[${i}]: ${e.join("; ")}`);
+  });
+  if (errors.length > 0) {
+    throw new Error(`invalid events: ${errors.join(" | ")}`);
+  }
+  return await sql.begin(async (tx) => {
+    const rows: EventRow[] = [];
+    for (const input of inputs) {
+      rows.push(await insertOne(tx as unknown as Sql, input));
+    }
+    return rows;
+  });
+}
+
+function insertOne(sql: Sql, input: NewEvent): Promise<EventRow> {
+  return sql<EventRow[]>`
     insert into events (
       category, occurred_at, recorded_at, occurred_at_confidence,
       source, fields, raw_text, template_id
@@ -89,8 +115,7 @@ export async function insertEvent(sql: Sql, input: NewEvent): Promise<EventRow> 
       ${input.templateId ?? null}
     )
     returning *
-  `;
-  return rows[0];
+  `.then((rows) => rows[0]);
 }
 
 /** Read a single event by id, or null if not found. */
