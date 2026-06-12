@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-12 (Phase 1: event-log schema implemented — §4 points to the migration)
+> **Last updated:** 2026-06-12 (Phase 3: extraction pipeline implemented — §6 points to the code)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -106,6 +106,12 @@ others follow the same contract. Whoop access path (HealthKit sync vs Whoop API)
 is open question Q1 — leaning Whoop API for recovery/strain/detailed sleep.
 
 ## 6. Extraction pipeline (voice/manual → structured events)
+
+> **Implemented (Phase 3):** [`backend/functions/capture/index.ts`](../backend/functions/capture/index.ts)
+> (`POST /capture`) + [`backend/src/extract.ts`](../backend/src/extract.ts). Candidates
+> are returned unsaved; the confirm step persists them via the `POST /events` batch
+> form. Time resolution is deterministic (model emits a time hint; our code resolves
+> it against "now"). Details in [`backend/docs/voice-capture.md`](../backend/docs/voice-capture.md).
 
 1. Capture surface sends `{transcript, recorded_at, source}` to an Edge Function.
 2. Function calls Claude with **structured outputs / tool-calling** constrained to

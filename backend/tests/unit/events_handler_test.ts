@@ -51,3 +51,17 @@ Deno.test("events handler: 400 with details on an invalid event", async () => {
   const body = await res.json();
   assertEquals(Array.isArray(body.details), true);
 });
+
+Deno.test("events handler: 400 (DB untouched) on a batch with an invalid event", async () => {
+  const res = await makeEventsHandler({ sql: noSql, token: null })(
+    post(JSON.stringify({
+      events: [
+        { category: "drink", occurredAt: "2026-06-12T10:00:00Z", source: "voice" },
+        { category: "telepathy", occurredAt: "2026-06-12T10:00:00Z", source: "voice" },
+      ],
+    })),
+  );
+  assertEquals(res.status, 400);
+  const body = await res.json();
+  assertEquals(body.details.some((d: string) => d.includes("events[1]")), true);
+});

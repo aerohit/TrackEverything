@@ -41,7 +41,7 @@ The product succeeds only if **capture is nearly frictionless** and the
 |---|---|---|
 | R-CAP-1 | One unified place captures all categories of input (no per-tracker silos). | Built |
 | R-CAP-2 | Support **voice** capture: speak freely, system extracts structured records. | Proposed |
-| R-CAP-3 | Support **manual** entry as an alternative to voice. | Proposed |
+| R-CAP-3 | Support **manual** entry as an alternative to voice. | Built |
 | R-CAP-4 | Support **device/integration** capture (see §4). | Proposed |
 | R-CAP-5 | **Quick-log templates** for repeated habits (coffee, protein shake) — one tap/utterance logs a pre-defined event with sensible defaults. | Proposed |
 | R-CAP-6 | Quick-log is reachable with minimal friction (Lock/Home screen, Siri, later a watch complication). | Proposed |
@@ -166,3 +166,4 @@ This document is kept current by an explicit process, not by hope. See
 | 2026-06-11 | Added Testing & quality (R-TEST-*) and Delivery process (R-PROC-*); added ROADMAP.md. |
 | 2026-06-12 | Phase 0 approved → R-TEST-4/5 to Built. Added composite-supplement reqs (R-CAP-13/14/15, R-PAT-5) + open question Q5. |
 | 2026-06-12 | Phase 1 approved → R-CAP-1/7/12 to Built (event-log schema). |
+| 2026-06-12 | Phase 2 approved → R-CAP-3 to Built (POST /events manual capture). |

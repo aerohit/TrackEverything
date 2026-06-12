@@ -54,6 +54,55 @@ Deno.test({
 });
 
 Deno.test({
+  name: "POST /events: batch persists confirmed candidates (201, all rows)",
+  ignore: !databaseUrl,
+  async fn() {
+    const sql = await connect(databaseUrl!);
+    try {
+      await applyMigrations(sql);
+      const handler = makeEventsHandler({ sql, token: null });
+
+      const res = await handler(
+        new Request("http://localhost/events", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            events: [
+              {
+                category: "drink",
+                occurredAt: "2026-06-12T08:00:00Z",
+                source: "voice",
+                fields: { item: "coffee" },
+              },
+              {
+                category: "supplement",
+                occurredAt: "2026-06-12T08:00:00Z",
+                source: "voice",
+                fields: { item: "magnesium", dose_mg: 400 },
+              },
+            ],
+          }),
+        }),
+      );
+
+      assertEquals(res.status, 201);
+      const body = await res.json();
+      assertEquals(body.events.length, 2);
+      const ids: string[] = body.events.map((e: { id: string }) => e.id);
+
+      const rows = await sql<{ n: number }[]>`
+        select count(*)::int as n from events where id = any(${ids})
+      `;
+      assertEquals(rows[0].n, 2);
+
+      await sql`delete from events where id = any(${ids})`;
+    } finally {
+      await sql.end();
+    }
+  },
+});
+
+Deno.test({
   name: "POST /events: source defaults to manual when omitted",
   ignore: !databaseUrl,
   async fn() {

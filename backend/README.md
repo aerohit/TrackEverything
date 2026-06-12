@@ -31,18 +31,19 @@ dependencies the first time. This is what CI runs and what gates each phase.
 
 Other tasks:
 
-| Command                       | What it does                                                        |
-| ----------------------------- | ------------------------------------------------------------------- |
-| `deno task test`              | Unit + integration (deterministic). **Use this.**                   |
-| `deno task test:unit`         | Unit tests only (fully offline).                                    |
-| `deno task test:live`         | Hits the **real** Claude API. Needs `ANTHROPIC_API_KEY`.            |
-| `deno task fmt` / `fmt:check` | Format / check formatting.                                          |
-| `deno task lint`              | Lint.                                                               |
-| `deno task check`             | Type-check.                                                         |
-| `deno task migrate`           | Apply DB migrations. Needs `DATABASE_URL`.                          |
-| `deno task seed`              | Migrate + insert a sample event and print it. Needs `DATABASE_URL`. |
-| `deno task serve:hello`       | Run the hello server locally (needs `ANTHROPIC_API_KEY`).           |
-| `deno task serve:events`      | Run the `POST /events` capture server (needs `DATABASE_URL`).       |
+| Command                       | What it does                                                           |
+| ----------------------------- | ---------------------------------------------------------------------- |
+| `deno task test`              | Unit + integration (deterministic). **Use this.**                      |
+| `deno task test:unit`         | Unit tests only (fully offline).                                       |
+| `deno task test:live`         | Hits the **real** Claude API. Needs `ANTHROPIC_API_KEY`.               |
+| `deno task fmt` / `fmt:check` | Format / check formatting.                                             |
+| `deno task lint`              | Lint.                                                                  |
+| `deno task check`             | Type-check.                                                            |
+| `deno task migrate`           | Apply DB migrations. Needs `DATABASE_URL`.                             |
+| `deno task seed`              | Migrate + insert a sample event and print it. Needs `DATABASE_URL`.    |
+| `deno task serve:hello`       | Run the hello server locally (needs `ANTHROPIC_API_KEY`).              |
+| `deno task serve:events`      | Run the `POST /events` capture server (needs `DATABASE_URL`).          |
+| `deno task serve:capture`     | Run the `POST /capture` extraction server (needs `ANTHROPIC_API_KEY`). |
 
 ## Configuration
 
@@ -73,16 +74,19 @@ backend/
   docs/
     data-dictionary.md        # category/source/field + unit conventions
     manual-capture.md         # POST /events: request shape, curl, Shortcut, deploy (Phase 2)
+    voice-capture.md          # POST /capture extract + confirm flow (Phase 3)
   src/
     config.ts                 # env -> Config (pure, unit-tested)
-    claude.ts                 # ClaudeClient seam: Mock + Anthropic implementations
+    claude.ts                 # ClaudeClient seam: Mock + Anthropic (hello + extractJson)
     db.ts                     # connect() + pingDatabase()
     vocab.ts                  # controlled vocabularies (categories/sources/...)
-    events.ts                 # event validation + insert/read repository
+    events.ts                 # event validation + insert/insertEvents/read repository
+    extract.ts                # transcript -> candidate events; time resolution (Phase 3)
     migrate.ts                # tiny forward-only migration runner
   functions/
     hello/index.ts            # request -> Claude -> JSON (Edge-Function-shaped)
-    events/index.ts           # POST /events manual capture (Phase 2)
+    events/index.ts           # POST /events manual capture, single + batch (Phase 2/3)
+    capture/index.ts          # POST /capture transcript -> candidates (Phase 3)
   scripts/
     migrate.ts                # deno task migrate
     insert_sample_event.ts    # deno task seed (Phase 1 acceptance helper)
