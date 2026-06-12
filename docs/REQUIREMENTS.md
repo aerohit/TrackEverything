@@ -43,8 +43,8 @@ The product succeeds only if **capture is nearly frictionless** and the
 | R-CAP-2 | Support **voice** capture: speak freely, system extracts structured records. | Built |
 | R-CAP-3 | Support **manual** entry as an alternative to voice. | Built |
 | R-CAP-4 | Support **device/integration** capture (see §4). | Proposed |
-| R-CAP-5 | **Quick-log templates** for repeated habits (coffee, protein shake) — one tap/utterance logs a pre-defined event with sensible defaults. | Proposed |
-| R-CAP-6 | Quick-log is reachable with minimal friction (Lock/Home screen, Siri, later a watch complication). | Proposed |
+| R-CAP-5 | **Quick-log templates** for repeated habits (coffee, protein shake) — one tap/utterance logs a pre-defined event with sensible defaults. | Built |
+| R-CAP-6 | Quick-log is reachable with minimal friction (Lock/Home screen, Siri, later a watch complication). | Built |
 | R-CAP-7 | **Dual timestamps** on every event: `occurred_at` (when it happened) and `recorded_at` (when it was logged). After-the-fact entry must preserve this distinction. | Built |
 | R-CAP-8 | Voice/LLM resolves relative time references ("at 10am", "an hour ago", "this morning") into `occurred_at`. | Built |
 | R-CAP-9 | Before saving extracted records, show a **confirmation card** with one-tap edit. Errors must be cheap to correct. | Built |
@@ -168,3 +168,4 @@ This document is kept current by an explicit process, not by hope. See
 | 2026-06-12 | Phase 1 approved → R-CAP-1/7/12 to Built (event-log schema). |
 | 2026-06-12 | Phase 2 approved → R-CAP-3 to Built (POST /events manual capture). |
 | 2026-06-12 | Phase 3 approved → R-CAP-2/8/9/10 + R-TEST-3 to Built (voice extraction). |
+| 2026-06-12 | Phase 4 approved → R-CAP-5/6 to Built (quick-log templates). |

@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-12 (Phase 4 implemented, in review)
+> **Status:** Living document. **Last updated:** 2026-06-12 (Phase 4b implemented, in review)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -101,7 +101,7 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
   - ⚠️ **Unverified by me:** the live extraction against the real model (needs your `ANTHROPIC_API_KEY`). Run `deno task test:live` to confirm the prompt yields the expected JSON before approving.
   - **Status: APPROVED (2026-06-12)** — PR #4 merged; CI green. `R-CAP-2`/`R-CAP-8`/`R-CAP-9`/`R-CAP-10`/`R-TEST-3` → Built.
 
-### Phase 4 — Quick-log templates ◐
+### Phase 4 — Quick-log templates ☑
 - **Goal:** One tap to log a repeated habit.
 - **Build:** Template CRUD + expansion (template + defaults → event); Shortcuts for "my coffee", "protein shake".
 - **Tests:** Unit (expansion, default fields, time-aware defaults); integration (one call → correct stored event).
@@ -113,14 +113,21 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
   - Flow + curl + one-tap Shortcut: [`backend/docs/quick-log.md`](../backend/docs/quick-log.md).
   - **Scope note:** "time-aware defaults" is realized as `occurredAt = tap time` (overridable). The smarter *time-aware suggestion* (offer the morning stack at 7am) is deferred — it's a client/UX refinement, not needed for one-tap.
   - **Local status:** deterministic suite green against real Postgres — **51 passed**; also smoke-tested the running server: seed → tap "my coffee" → `201` (expanded event stored, `source` quicklog), unknown template → `404`.
-  - **On approval:** flip `R-CAP-5`/`R-CAP-6` → Built and this phase → ☑.
+  - **Status: APPROVED (2026-06-12)** — PR #5 merged; CI green. `R-CAP-5`/`R-CAP-6` → Built.
 
-### Phase 4b — Composite supplements & label-photo ingredients ☐
+### Phase 4b — Composite supplements & label-photo ingredients ◐
 - **Goal:** Log multi-ingredient supplements by product name; define their ingredients once, including from a label photo.
 - **Build:** `products` + `ingredients` schema (per-ingredient name/amount/unit + canonical ingredient); product-aware quick-log (logs reference a product + optional `servings`); label-photo → Claude vision → structured ingredient list → confirm → save on the product.
 - **Tests:** Unit (ingredient parsing, servings multiplier, product→ingredient expansion math); fixture (label image → expected ingredient list); integration (define a product, log it, expand it to ingredient amounts).
 - **You verify:** Photograph a supplement label → confirm the extracted ingredients → log the product by name → see it both as the product and expanded into its ingredients.
 - **Builds:** R-CAP-13, R-CAP-14, R-CAP-15, R-PAT-5, [ADR-010](ARCHITECTURE.md#adr-010)
+- **Implementation notes (in progress):**
+  - Schema [`0002_products_ingredients.sql`](../backend/migrations/0002_products_ingredients.sql): `ingredients` table (FK to `items`, `amount` double precision, `canonical_name`, `position`) + `events.item_id` linking a log to its product.
+  - [`backend/src/products.ts`](../backend/src/products.ts): validation, CRUD, pure `expandToIngredients` (servings multiplier; null amounts stay null), `parseIngredientCandidates`, and `extractIngredientsFromImage` (Claude **vision** via the seam's new `extractJsonFromImage`).
+  - Endpoints: `POST /ingredient-scan` (label photo → candidates, unsaved — R-CAP-15), `GET/POST /products` (manage; `GET ?name&servings` returns expanded amounts), and `POST /quicklog {product, servings}` to log by name (R-CAP-13). Flow: [`backend/docs/composite-supplements.md`](../backend/docs/composite-supplements.md).
+  - **Local status:** deterministic suite green against real Postgres — **69 passed** (incl. expansion math, vision-fixture parsing, create→get+expand, and product-by-name logging with `item_id`). Smoke-tested the products server: create + `GET ?servings=2` → amounts doubled.
+  - ⚠️ **Unverified by me:** the live **vision** extraction from a real label photo (needs your `ANTHROPIC_API_KEY` + a label image). Run `deno task test:live` with `TEST_LABEL_IMAGE` set before approving.
+  - **On approval:** flip `R-CAP-13`/`R-CAP-14`/`R-CAP-15`/`R-PAT-5` → Built and this phase → ☑.
 
 ### Phase 5 — Subjective check-ins ☐
 - **Goal:** Capture mood/energy/focus, nudged and on-demand.
@@ -203,3 +210,5 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 | 2026-06-12 | Phase 3 implemented (`POST /capture` extraction, time resolution, `/events` batch confirm, tests) → ◐ in review. |
 | 2026-06-12 | Phase 3 approved (PR #4 merged) → ☑; R-CAP-2/8/9/10 + R-TEST-3 → Built. |
 | 2026-06-12 | Phase 4 implemented (quick-log templates: `/templates` CRUD, `POST /quicklog`, expansion, tests) → ◐ in review. |
+| 2026-06-12 | Phase 4 approved (PR #5 merged) → ☑; R-CAP-5/6 → Built. |
+| 2026-06-12 | Phase 4b implemented (products + ingredients, label-scan vision, product quicklog, expansion, tests) → ◐ in review. |

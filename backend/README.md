@@ -31,22 +31,24 @@ dependencies the first time. This is what CI runs and what gates each phase.
 
 Other tasks:
 
-| Command                       | What it does                                                            |
-| ----------------------------- | ----------------------------------------------------------------------- |
-| `deno task test`              | Unit + integration (deterministic). **Use this.**                       |
-| `deno task test:unit`         | Unit tests only (fully offline).                                        |
-| `deno task test:live`         | Hits the **real** Claude API. Needs `ANTHROPIC_API_KEY`.                |
-| `deno task fmt` / `fmt:check` | Format / check formatting.                                              |
-| `deno task lint`              | Lint.                                                                   |
-| `deno task check`             | Type-check.                                                             |
-| `deno task migrate`           | Apply DB migrations. Needs `DATABASE_URL`.                              |
-| `deno task seed`              | Migrate + insert a sample event and print it. Needs `DATABASE_URL`.     |
-| `deno task templates:seed`    | Add example quick-log templates ("my coffee", …). Needs `DATABASE_URL`. |
-| `deno task serve:hello`       | Run the hello server locally (needs `ANTHROPIC_API_KEY`).               |
-| `deno task serve:events`      | Run the `POST /events` capture server (needs `DATABASE_URL`).           |
-| `deno task serve:capture`     | Run the `POST /capture` extraction server (needs `ANTHROPIC_API_KEY`).  |
-| `deno task serve:templates`   | Run the `/templates` management server (needs `DATABASE_URL`).          |
-| `deno task serve:quicklog`    | Run the `POST /quicklog` one-tap server (needs `DATABASE_URL`).         |
+| Command                           | What it does                                                               |
+| --------------------------------- | -------------------------------------------------------------------------- |
+| `deno task test`                  | Unit + integration (deterministic). **Use this.**                          |
+| `deno task test:unit`             | Unit tests only (fully offline).                                           |
+| `deno task test:live`             | Hits the **real** Claude API. Needs `ANTHROPIC_API_KEY`.                   |
+| `deno task fmt` / `fmt:check`     | Format / check formatting.                                                 |
+| `deno task lint`                  | Lint.                                                                      |
+| `deno task check`                 | Type-check.                                                                |
+| `deno task migrate`               | Apply DB migrations. Needs `DATABASE_URL`.                                 |
+| `deno task seed`                  | Migrate + insert a sample event and print it. Needs `DATABASE_URL`.        |
+| `deno task templates:seed`        | Add example quick-log templates ("my coffee", …). Needs `DATABASE_URL`.    |
+| `deno task serve:hello`           | Run the hello server locally (needs `ANTHROPIC_API_KEY`).                  |
+| `deno task serve:events`          | Run the `POST /events` capture server (needs `DATABASE_URL`).              |
+| `deno task serve:capture`         | Run the `POST /capture` extraction server (needs `ANTHROPIC_API_KEY`).     |
+| `deno task serve:templates`       | Run the `/templates` management server (needs `DATABASE_URL`).             |
+| `deno task serve:quicklog`        | Run the `POST /quicklog` one-tap server (needs `DATABASE_URL`).            |
+| `deno task serve:products`        | Run the `/products` composite-supplement server (needs `DATABASE_URL`).    |
+| `deno task serve:ingredient-scan` | Run the `POST /ingredient-scan` vision server (needs `ANTHROPIC_API_KEY`). |
 
 ## Configuration
 
@@ -74,26 +76,31 @@ backend/
   .env.example
   migrations/
     0001_event_log.sql        # events + items + templates (Phase 1)
+    0002_products_ingredients.sql # ingredients table + events.item_id (Phase 4b)
   docs/
     data-dictionary.md        # category/source/field + unit conventions
     manual-capture.md         # POST /events: request shape, curl, Shortcut, deploy (Phase 2)
     voice-capture.md          # POST /capture extract + confirm flow (Phase 3)
     quick-log.md              # /templates + POST /quicklog one-tap flow (Phase 4)
+    composite-supplements.md  # products, label scan, ingredient expansion (Phase 4b)
   src/
     config.ts                 # env -> Config (pure, unit-tested)
-    claude.ts                 # ClaudeClient seam: Mock + Anthropic (hello + extractJson)
+    claude.ts                 # ClaudeClient seam: hello + extractJson + extractJsonFromImage
     db.ts                     # connect() + pingDatabase()
     vocab.ts                  # controlled vocabularies (categories/sources/...)
     events.ts                 # event validation + insert/insertEvents/read repository
     extract.ts                # transcript -> candidate events; time resolution (Phase 3)
     templates.ts              # template validation + expansion + CRUD (Phase 4)
+    products.ts               # composite supplements: products + ingredients + expansion (Phase 4b)
     migrate.ts                # tiny forward-only migration runner
   functions/
     hello/index.ts            # request -> Claude -> JSON (Edge-Function-shaped)
     events/index.ts           # POST /events manual capture, single + batch (Phase 2/3)
     capture/index.ts          # POST /capture transcript -> candidates (Phase 3)
     templates/index.ts        # GET/POST /templates (Phase 4)
-    quicklog/index.ts         # POST /quicklog one-tap (Phase 4)
+    quicklog/index.ts         # POST /quicklog one-tap: template or product (Phase 4/4b)
+    products/index.ts         # GET/POST /products composite supplements (Phase 4b)
+    ingredient_scan/index.ts  # POST /ingredient-scan label photo -> ingredients (Phase 4b)
   scripts/
     migrate.ts                # deno task migrate
     insert_sample_event.ts    # deno task seed (Phase 1 acceptance helper)

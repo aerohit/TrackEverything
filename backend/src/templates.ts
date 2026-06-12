@@ -61,6 +61,7 @@ export function expandTemplate(template: TemplateRow, opts: ExpandOptions): NewE
     fields: { ...template.default_fields, ...(opts.fields ?? {}) },
     rawText: null,
     templateId: template.id,
+    itemId: template.item_id,
   };
 }
 
