@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-12 (Phase 4b implemented, in review)
+> **Status:** Living document. **Last updated:** 2026-06-12 (Phase 5 implemented, in review)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -115,7 +115,7 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
   - **Local status:** deterministic suite green against real Postgres — **51 passed**; also smoke-tested the running server: seed → tap "my coffee" → `201` (expanded event stored, `source` quicklog), unknown template → `404`.
   - **Status: APPROVED (2026-06-12)** — PR #5 merged; CI green. `R-CAP-5`/`R-CAP-6` → Built.
 
-### Phase 4b — Composite supplements & label-photo ingredients ◐
+### Phase 4b — Composite supplements & label-photo ingredients ☑
 - **Goal:** Log multi-ingredient supplements by product name; define their ingredients once, including from a label photo.
 - **Build:** `products` + `ingredients` schema (per-ingredient name/amount/unit + canonical ingredient); product-aware quick-log (logs reference a product + optional `servings`); label-photo → Claude vision → structured ingredient list → confirm → save on the product.
 - **Tests:** Unit (ingredient parsing, servings multiplier, product→ingredient expansion math); fixture (label image → expected ingredient list); integration (define a product, log it, expand it to ingredient amounts).
@@ -127,14 +127,21 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
   - Endpoints: `POST /ingredient-scan` (label photo → candidates, unsaved — R-CAP-15), `GET/POST /products` (manage; `GET ?name&servings` returns expanded amounts), and `POST /quicklog {product, servings}` to log by name (R-CAP-13). Flow: [`backend/docs/composite-supplements.md`](../backend/docs/composite-supplements.md).
   - **Local status:** deterministic suite green against real Postgres — **69 passed** (incl. expansion math, vision-fixture parsing, create→get+expand, and product-by-name logging with `item_id`). Smoke-tested the products server: create + `GET ?servings=2` → amounts doubled.
   - ⚠️ **Unverified by me:** the live **vision** extraction from a real label photo (needs your `ANTHROPIC_API_KEY` + a label image). Run `deno task test:live` with `TEST_LABEL_IMAGE` set before approving.
-  - **On approval:** flip `R-CAP-13`/`R-CAP-14`/`R-CAP-15`/`R-PAT-5` → Built and this phase → ☑.
+  - **Status: APPROVED (2026-06-12)** — PR #6 merged; CI green. `R-CAP-13`/`R-CAP-14`/`R-CAP-15`/`R-PAT-5` → Built.
 
-### Phase 5 — Subjective check-ins ☐
+### Phase 5 — Subjective check-ins ◐
 - **Goal:** Capture mood/energy/focus, nudged and on-demand.
 - **Build:** mood/energy/focus as events with `rating`; on-demand Shortcut; scheduled prompt (iOS automation/notification).
 - **Tests:** Unit (rating bounds/validation); integration (check-in stored as event).
 - **You verify:** Log a mood on demand; receive a scheduled nudge and complete it.
 - **Builds:** R-SUBJ-1, R-SUBJ-2, R-SUBJ-3
+- **Implementation notes (in progress):**
+  - [`backend/src/checkins.ts`](../backend/src/checkins.ts): `validateCheckin` (1–5 integers; ≥1 dimension) + pure `buildCheckinEvents` (one event per provided dimension; category mood/energy/focus, `fields.rating`).
+  - `POST /checkin` ([`backend/functions/checkin/index.ts`](../backend/functions/checkin/index.ts)) stores them atomically. On-demand + scheduled use the same endpoint; scheduling is an **iOS Time-of-Day Automation** (no backend cron) — see [`backend/docs/check-ins.md`](../backend/docs/check-ins.md).
+  - **Scope note:** R-SUBJ-2 (scheduled prompt) is realized client-side (iOS Automation triggers the check-in Shortcut). R-SUBJ-4 (rate right after an event) is a native-app UX refinement, deferred.
+  - Resolves part of **Q2**: scale is **1–5, separate** mood/energy/focus.
+  - **Local status:** deterministic suite green against real Postgres — **80 passed**; smoke-tested the running server (mood+energy+focus → 3 events; out-of-range rating → 400).
+  - **On approval:** flip `R-SUBJ-1`/`R-SUBJ-2`/`R-SUBJ-3` → Built and this phase → ☑.
 
 ---
 
@@ -174,7 +181,7 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 - **Build:** Daily aggregation (caffeine total, last-caffeine time, sleep hours, workout load, subjective averages) + a simple daily dashboard view. Aggregation **expands composite supplements into ingredient amounts** so per-ingredient totals are available (R-PAT-5).
 - **Tests:** Unit (aggregation math on synthetic days, incl. product→ingredient expansion); integration (events → aggregates).
 - **You verify:** Today's overview matches what you logged, including ingredient totals from any supplements.
-- **Builds:** R-PAT-2, R-PAT-5, R-VIEW-1
+- **Builds:** R-PAT-2, R-VIEW-1 (uses the R-PAT-5 ingredient expansion built in Phase 4b)
 
 ### Phase 10 — Weekly/monthly + correlation engine ☐
 - **Goal:** Find patterns and explain them.
@@ -212,3 +219,5 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 | 2026-06-12 | Phase 4 implemented (quick-log templates: `/templates` CRUD, `POST /quicklog`, expansion, tests) → ◐ in review. |
 | 2026-06-12 | Phase 4 approved (PR #5 merged) → ☑; R-CAP-5/6 → Built. |
 | 2026-06-12 | Phase 4b implemented (products + ingredients, label-scan vision, product quicklog, expansion, tests) → ◐ in review. |
+| 2026-06-12 | Phase 4b approved (PR #6 merged) → ☑; R-CAP-13/14/15 + R-PAT-5 → Built. |
+| 2026-06-12 | Phase 5 implemented (`POST /checkin` mood/energy/focus, validation, tests) → ◐ in review. |
