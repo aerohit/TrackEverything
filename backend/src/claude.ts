@@ -12,6 +12,10 @@ export interface ClaudeClient {
   hello(prompt: string): Promise<string>;
   /** Send system+user prompts asking for JSON; return the parsed value. */
   extractJson(args: { system: string; user: string }): Promise<unknown>;
+  /** Like extractJson, but with an image (e.g. a supplement label) attached. */
+  extractJsonFromImage(
+    args: { system: string; user: string; imageBase64: string; mediaType: string },
+  ): Promise<unknown>;
 }
 
 /** Deterministic stand-in for tests — returns canned replies, no network. */
@@ -26,6 +30,12 @@ export class MockClaudeClient implements ClaudeClient {
   }
 
   extractJson(_args: { system: string; user: string }): Promise<unknown> {
+    return Promise.resolve(this.extractJsonReply);
+  }
+
+  extractJsonFromImage(
+    _args: { system: string; user: string; imageBase64: string; mediaType: string },
+  ): Promise<unknown> {
     return Promise.resolve(this.extractJsonReply);
   }
 }
@@ -58,6 +68,32 @@ export class AnthropicClaudeClient implements ClaudeClient {
       max_tokens: 2048,
       system: args.system,
       messages: [{ role: "user", content: args.user }],
+    });
+    return parseJsonLoose(firstText(response));
+  }
+
+  async extractJsonFromImage(
+    args: { system: string; user: string; imageBase64: string; mediaType: string },
+  ): Promise<unknown> {
+    const client = await this.client();
+    const response = await client.messages.create({
+      model: this.model,
+      max_tokens: 2048,
+      system: args.system,
+      messages: [{
+        role: "user",
+        content: [
+          {
+            type: "image",
+            source: {
+              type: "base64",
+              media_type: args.mediaType as "image/png" | "image/jpeg" | "image/webp" | "image/gif",
+              data: args.imageBase64,
+            },
+          },
+          { type: "text", text: args.user },
+        ],
+      }],
     });
     return parseJsonLoose(firstText(response));
   }

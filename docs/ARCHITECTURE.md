@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-12 (Phase 3: extraction pipeline implemented — §6 points to the code)
+> **Last updated:** 2026-06-12 (Phase 4b: composite supplements implemented — §4 points to the code)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -94,6 +94,10 @@ Sketch:
   logged product into ingredient amounts (`servings × per-ingredient amount`),
   keyed by a **canonical ingredient name** so the same ingredient sums across
   products and foods. Whole-product analysis uses the event as-is. (R-PAT-5)
+  **Implemented (Phase 4b):**
+  [`backend/migrations/0002_products_ingredients.sql`](../backend/migrations/0002_products_ingredients.sql)
+  + [`backend/src/products.ts`](../backend/src/products.ts) (`expandToIngredients`);
+  label-photo extraction in `extractIngredientsFromImage`.
 - The **data dictionary** is extended with a canonical-ingredient vocabulary +
   unit normalization (open question Q5).
 

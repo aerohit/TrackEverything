@@ -24,6 +24,8 @@ export interface NewEvent {
   fields?: Record<string, unknown>;
   rawText?: string | null;
   templateId?: string | null;
+  /** Product (item) this event logged, if any — enables ingredient expansion. */
+  itemId?: string | null;
 }
 
 /** A stored event row, as returned by Postgres. */
@@ -37,6 +39,7 @@ export interface EventRow {
   fields: Record<string, unknown>;
   raw_text: string | null;
   template_id: string | null;
+  item_id: string | null;
   created_at: Date;
 }
 
@@ -103,7 +106,7 @@ function insertOne(sql: Sql, input: NewEvent): Promise<EventRow> {
   return sql<EventRow[]>`
     insert into events (
       category, occurred_at, recorded_at, occurred_at_confidence,
-      source, fields, raw_text, template_id
+      source, fields, raw_text, template_id, item_id
     ) values (
       ${input.category},
       ${toDate(input.occurredAt)},
@@ -112,7 +115,8 @@ function insertOne(sql: Sql, input: NewEvent): Promise<EventRow> {
       ${input.source},
       ${sql.json((input.fields ?? {}) as unknown as Parameters<typeof sql.json>[0])},
       ${input.rawText ?? null},
-      ${input.templateId ?? null}
+      ${input.templateId ?? null},
+      ${input.itemId ?? null}
     )
     returning *
   `.then((rows) => rows[0]);
