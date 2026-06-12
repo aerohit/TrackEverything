@@ -39,18 +39,18 @@ The product succeeds only if **capture is nearly frictionless** and the
 
 | ID | Requirement | Status |
 |---|---|---|
-| R-CAP-1 | One unified place captures all categories of input (no per-tracker silos). | Proposed |
+| R-CAP-1 | One unified place captures all categories of input (no per-tracker silos). | Built |
 | R-CAP-2 | Support **voice** capture: speak freely, system extracts structured records. | Proposed |
 | R-CAP-3 | Support **manual** entry as an alternative to voice. | Proposed |
 | R-CAP-4 | Support **device/integration** capture (see §4). | Proposed |
 | R-CAP-5 | **Quick-log templates** for repeated habits (coffee, protein shake) — one tap/utterance logs a pre-defined event with sensible defaults. | Proposed |
 | R-CAP-6 | Quick-log is reachable with minimal friction (Lock/Home screen, Siri, later a watch complication). | Proposed |
-| R-CAP-7 | **Dual timestamps** on every event: `occurred_at` (when it happened) and `recorded_at` (when it was logged). After-the-fact entry must preserve this distinction. | Proposed |
+| R-CAP-7 | **Dual timestamps** on every event: `occurred_at` (when it happened) and `recorded_at` (when it was logged). After-the-fact entry must preserve this distinction. | Built |
 | R-CAP-8 | Voice/LLM resolves relative time references ("at 10am", "an hour ago", "this morning") into `occurred_at`. | Proposed |
 | R-CAP-9 | Before saving extracted records, show a **confirmation card** with one-tap edit. Errors must be cheap to correct. | Proposed |
 | R-CAP-10 | A single utterance may produce **multiple events** ("coffee and my magnesium" → 2 records). | Proposed |
 | R-CAP-11 | Capture works **offline**; records sync when connectivity returns. | Proposed |
-| R-CAP-12 | Each event records its **source/provenance** (voice, manual, Whoop, …) and a confidence/uncertainty flag for inferred fields (esp. inferred times). | Proposed |
+| R-CAP-12 | Each event records its **source/provenance** (voice, manual, Whoop, …) and a confidence/uncertainty flag for inferred fields (esp. inferred times). | Built |
 | R-CAP-13 | Log a multi-ingredient supplement (e.g. sleep stack, pre-workout) by its **product name alone**, as a single quick entry — without re-entering ingredients each time. | Proposed |
 | R-CAP-14 | Define a supplement **product's ingredient list once** (per ingredient: name, amount, unit); it is reused for every log of that product. Support a servings/dose multiplier per log. | Proposed |
 | R-CAP-15 | Populate a product's ingredient list by **uploading a photo** of the supplement-facts / ingredients label; the system extracts the structured ingredient list for confirmation/edit (image capture modality). | Proposed |
@@ -165,3 +165,4 @@ This document is kept current by an explicit process, not by hope. See
 | 2026-06-11 | Initial requirements captured from scoping conversation. |
 | 2026-06-11 | Added Testing & quality (R-TEST-*) and Delivery process (R-PROC-*); added ROADMAP.md. |
 | 2026-06-12 | Phase 0 approved → R-TEST-4/5 to Built. Added composite-supplement reqs (R-CAP-13/14/15, R-PAT-5) + open question Q5. |
+| 2026-06-12 | Phase 1 approved → R-CAP-1/7/12 to Built (event-log schema). |

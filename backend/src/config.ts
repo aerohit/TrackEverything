@@ -11,6 +11,11 @@ export interface Config {
   databaseUrl: string | null;
   /** Claude model id to use. */
   claudeModel: string;
+  /**
+   * Shared secret that capture clients must present to write events. When null,
+   * the ingest endpoint runs unauthenticated (dev only — never deploy that way).
+   */
+  ingestToken: string | null;
 }
 
 const DEFAULT_MODEL = "claude-opus-4-8";
@@ -24,5 +29,6 @@ export function loadConfig(env: Record<string, string> = Deno.env.toObject()): C
     anthropicApiKey: env.ANTHROPIC_API_KEY ?? null,
     databaseUrl: env.DATABASE_URL ?? null,
     claudeModel: env.CLAUDE_MODEL ?? DEFAULT_MODEL,
+    ingestToken: env.INGEST_TOKEN ?? null,
   };
 }

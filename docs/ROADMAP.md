@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-12 (Phase 1 implemented, in review)
+> **Status:** Living document. **Last updated:** 2026-06-12 (Phase 2 implemented, in review)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -39,7 +39,7 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
   - **Still manual (your accounts):** create the Supabase dev project (Phase 1); add
     `ANTHROPIC_API_KEY` to run `test:live`. See [`backend/README.md`](../backend/README.md).
 
-### Phase 1 — Event-log schema ◐
+### Phase 1 — Event-log schema ☑
 - **Goal:** The system of record exists.
 - **Build:** Migration for the `events` table (dual timestamps, `source`, JSON `fields`, confidence flag) + `templates` and `items` tables; the data dictionary (units/field names).
 - **Tests:** Unit (row validation helpers); integration (insert → read an event, assert `occurred_at`/`recorded_at`, source, JSON fields survive a roundtrip).
@@ -59,18 +59,33 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
   - **Local status:** full suite green against a real Postgres — **18 passed** (incl. the
     insert→read roundtrip asserting dual timestamps + nested JSON survive). CI runs the same
     against its Postgres service.
-  - **On approval:** flip `R-CAP-1`/`R-CAP-7`/`R-CAP-12` → Built and this phase → ☑.
+  - **Status: APPROVED (2026-06-12)** — PR #2 merged; CI green. `R-CAP-1`/`R-CAP-7`/`R-CAP-12` → Built.
 
 ---
 
 ## Stage B — Capture
 
-### Phase 2 — Manual capture (no LLM) ☐
+### Phase 2 — Manual capture (no LLM) ◐
 - **Goal:** Log a structured event end to end without any AI in the path.
 - **Build:** `POST /events` Edge Function (validate + store); a Shortcut with a fill-in form that calls it.
 - **Tests:** Unit (validation, rejects bad payloads); integration (HTTP → DB roundtrip).
 - **You verify:** Tap the Shortcut, fill fields, see the row appear.
-- **Builds:** R-CAP-3, R-CAP-11
+- **Builds:** R-CAP-3
+- **Implementation notes (in progress):**
+  - Endpoint: [`backend/functions/events/index.ts`](../backend/functions/events/index.ts)
+    — `POST /events`, reuses the Phase 1 validation/repository, returns the stored row.
+    Protected by a shared secret (`INGEST_TOKEN`, as `Authorization: Bearer` or
+    `x-ingest-token`) — a public write endpoint must be guarded. `source` defaults to
+    `manual`.
+  - Client setup + curl + Supabase deploy notes: [`backend/docs/manual-capture.md`](../backend/docs/manual-capture.md).
+    Run locally with `deno task serve:events`.
+  - Tests: unit (405 / 401 / bad-JSON / invalid-event, DB untouched) + integration
+    (HTTP → DB roundtrip; `source` defaulting).
+  - **Local status:** full suite green against a real Postgres — **24 passed**; also
+    smoke-tested the running server with curl (401 without token, 201 + stored row with it).
+  - **Note:** R-CAP-11 (offline capture) moved off this phase — Shortcuts need network;
+    a true offline queue is a native-app concern (Phase 11).
+  - **On approval:** flip `R-CAP-3` → Built and this phase → ☑.
 
 ### Phase 3 — Voice → structured extraction ☐
 - **Goal:** Speak freely; get clean structured records.
@@ -156,7 +171,7 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 - **Build:** Native app wrapping the same backend; rich confirmation cards, widgets/watch complication, offline+sync.
 - **Tests:** Unit (view models); UI/integration tests against the backend.
 - **You verify:** Day-to-day capture happens in the app instead of Shortcuts.
-- **Builds:** R-CAP-6, R-NFR-6, [ADR-001](ARCHITECTURE.md#adr-001)
+- **Builds:** R-CAP-6, R-CAP-11 (offline queue + sync), R-NFR-6, [ADR-001](ARCHITECTURE.md#adr-001)
 
 ---
 
@@ -168,3 +183,5 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 | 2026-06-11 | Phase 0 implemented (Deno backend, ClaudeClient seam, tests, CI) → ◐ in progress, awaiting owner verification. |
 | 2026-06-12 | Phase 0 approved (CI green on main) → ☑. Added Phase 4b (composite supplements & label-photo ingredients); ingredient expansion noted in Phase 9. |
 | 2026-06-12 | Phase 1 implemented (event-log schema, vocab, migration runner, repository, tests) → ◐ in review. |
+| 2026-06-12 | Phase 1 approved (PR #2 merged) → ☑; R-CAP-1/7/12 → Built. |
+| 2026-06-12 | Phase 2 implemented (`POST /events` with token auth, tests) → ◐ in review. Moved R-CAP-11 (offline) from Phase 2 to Phase 11. |
