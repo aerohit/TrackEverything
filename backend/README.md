@@ -42,6 +42,7 @@ Other tasks:
 | `deno task migrate`           | Apply DB migrations. Needs `DATABASE_URL`.                          |
 | `deno task seed`              | Migrate + insert a sample event and print it. Needs `DATABASE_URL`. |
 | `deno task serve:hello`       | Run the hello server locally (needs `ANTHROPIC_API_KEY`).           |
+| `deno task serve:events`      | Run the `POST /events` capture server (needs `DATABASE_URL`).       |
 
 ## Configuration
 
@@ -51,6 +52,8 @@ Copy `.env.example` to `.env` and fill in what you need. Nothing in `.env` is re
 - `ANTHROPIC_API_KEY` — for `test:live` and the hello server.
 - `DATABASE_URL` — when set, the DB integration test runs against it.
 - `CLAUDE_MODEL` — defaults to `claude-opus-4-8`.
+- `INGEST_TOKEN` — shared secret the `POST /events` endpoint requires. Unset = unauthenticated (dev
+  only).
 
 ## CI
 
@@ -67,7 +70,9 @@ backend/
   .env.example
   migrations/
     0001_event_log.sql        # events + items + templates (Phase 1)
-  docs/data-dictionary.md     # category/source/field + unit conventions
+  docs/
+    data-dictionary.md        # category/source/field + unit conventions
+    manual-capture.md         # POST /events: request shape, curl, Shortcut, deploy (Phase 2)
   src/
     config.ts                 # env -> Config (pure, unit-tested)
     claude.ts                 # ClaudeClient seam: Mock + Anthropic implementations
@@ -75,7 +80,9 @@ backend/
     vocab.ts                  # controlled vocabularies (categories/sources/...)
     events.ts                 # event validation + insert/read repository
     migrate.ts                # tiny forward-only migration runner
-  functions/hello/index.ts    # request -> Claude -> JSON (Edge-Function-shaped)
+  functions/
+    hello/index.ts            # request -> Claude -> JSON (Edge-Function-shaped)
+    events/index.ts           # POST /events manual capture (Phase 2)
   scripts/
     migrate.ts                # deno task migrate
     insert_sample_event.ts    # deno task seed (Phase 1 acceptance helper)
