@@ -40,15 +40,15 @@ The product succeeds only if **capture is nearly frictionless** and the
 | ID | Requirement | Status |
 |---|---|---|
 | R-CAP-1 | One unified place captures all categories of input (no per-tracker silos). | Built |
-| R-CAP-2 | Support **voice** capture: speak freely, system extracts structured records. | Proposed |
+| R-CAP-2 | Support **voice** capture: speak freely, system extracts structured records. | Built |
 | R-CAP-3 | Support **manual** entry as an alternative to voice. | Built |
 | R-CAP-4 | Support **device/integration** capture (see §4). | Proposed |
 | R-CAP-5 | **Quick-log templates** for repeated habits (coffee, protein shake) — one tap/utterance logs a pre-defined event with sensible defaults. | Proposed |
 | R-CAP-6 | Quick-log is reachable with minimal friction (Lock/Home screen, Siri, later a watch complication). | Proposed |
 | R-CAP-7 | **Dual timestamps** on every event: `occurred_at` (when it happened) and `recorded_at` (when it was logged). After-the-fact entry must preserve this distinction. | Built |
-| R-CAP-8 | Voice/LLM resolves relative time references ("at 10am", "an hour ago", "this morning") into `occurred_at`. | Proposed |
-| R-CAP-9 | Before saving extracted records, show a **confirmation card** with one-tap edit. Errors must be cheap to correct. | Proposed |
-| R-CAP-10 | A single utterance may produce **multiple events** ("coffee and my magnesium" → 2 records). | Proposed |
+| R-CAP-8 | Voice/LLM resolves relative time references ("at 10am", "an hour ago", "this morning") into `occurred_at`. | Built |
+| R-CAP-9 | Before saving extracted records, show a **confirmation card** with one-tap edit. Errors must be cheap to correct. | Built |
+| R-CAP-10 | A single utterance may produce **multiple events** ("coffee and my magnesium" → 2 records). | Built |
 | R-CAP-11 | Capture works **offline**; records sync when connectivity returns. | Proposed |
 | R-CAP-12 | Each event records its **source/provenance** (voice, manual, Whoop, …) and a confidence/uncertainty flag for inferred fields (esp. inferred times). | Built |
 | R-CAP-13 | Log a multi-ingredient supplement (e.g. sleep stack, pre-workout) by its **product name alone**, as a single quick entry — without re-entering ingredients each time. | Proposed |
@@ -121,7 +121,7 @@ Operates over the recent timeline (last 24–48h) and answers questions in the m
 |---|---|---|
 | R-TEST-1 | All non-trivial code has **unit tests** covering its logic (validation, time resolution, template expansion, aggregation math, correlation math). | Proposed |
 | R-TEST-2 | Each endpoint and pipeline has **integration tests** exercising the real path (HTTP → DB roundtrip; adapter → event log). | Proposed |
-| R-TEST-3 | LLM extraction and analysis are covered by **fixture/golden tests**: known transcripts/timelines → expected structured output or asserted properties (e.g. "answer cites event X"). | Proposed |
+| R-TEST-3 | LLM extraction and analysis are covered by **fixture/golden tests**: known transcripts/timelines → expected structured output or asserted properties (e.g. "answer cites event X"). | Built |
 | R-TEST-4 | External services (Claude, Whoop) are **mockable** for deterministic tests; a small separate live suite exercises the real services. | Built |
 | R-TEST-5 | **CI runs all tests**; a phase is not approvable while tests are red. | Built |
 | R-TEST-6 | Every phase has explicit **acceptance criteria** the owner verifies before the next phase begins (see [ROADMAP.md](ROADMAP.md)). | Proposed |
@@ -167,3 +167,4 @@ This document is kept current by an explicit process, not by hope. See
 | 2026-06-12 | Phase 0 approved → R-TEST-4/5 to Built. Added composite-supplement reqs (R-CAP-13/14/15, R-PAT-5) + open question Q5. |
 | 2026-06-12 | Phase 1 approved → R-CAP-1/7/12 to Built (event-log schema). |
 | 2026-06-12 | Phase 2 approved → R-CAP-3 to Built (POST /events manual capture). |
+| 2026-06-12 | Phase 3 approved → R-CAP-2/8/9/10 + R-TEST-3 to Built (voice extraction). |
