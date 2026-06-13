@@ -61,6 +61,34 @@
       "name": "Events",
       "item": [
         {
+          "name": "List events (timeline)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/events?limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["events"],
+              "query": [
+                { "key": "limit", "value": "50", "description": "1-200, default 50" },
+                {
+                  "key": "from",
+                  "value": "",
+                  "description": "optional ISO lower bound (inclusive)",
+                  "disabled": true
+                },
+                {
+                  "key": "to",
+                  "value": "",
+                  "description": "optional ISO upper bound (exclusive)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Newest-first list of events for the timeline (R-VIEW-4). Optional `from`/`to` ISO window; `limit` clamps to 1-200 (default 50). Returns `{ events: [...] }`."
+          }
+        },
+        {
           "name": "Create event (single)",
           "request": {
             "method": "POST",

@@ -61,6 +61,9 @@ export const APP_HTML = `<!DOCTYPE html>
   .ingrow .iamt { flex:1; }
   .ingrow .iunit { flex:1; }
   input[type=file] { width:100%; color:var(--mut); font-size:14px; margin:4px 0; }
+  .tlrow { padding:7px 0; border-bottom:1px solid var(--line); font-size:14px; }
+  .tlrow:last-child { border-bottom:none; }
+  .tltime { color:var(--mut); margin-right:6px; }
 </style>
 </head>
 <body>
@@ -77,6 +80,12 @@ export const APP_HTML = `<!DOCTYPE html>
     <h2>Today</h2>
     <div class="row"><input type="text" id="ovDate" placeholder="YYYY-MM-DD (blank = today)" autocapitalize="off" autocorrect="off" /><button id="ovLoad">Load</button></div>
     <div id="overview" class="mut">Loading&hellip;</div>
+  </section>
+
+  <section class="card">
+    <h2>Timeline</h2>
+    <div id="timeline" class="mut">Loading&hellip;</div>
+    <button class="ghost" id="tlLoad" type="button">Refresh</button>
   </section>
 
   <section class="card">
@@ -126,6 +135,7 @@ export const APP_HTML = `<!DOCTYPE html>
     </div>
     <div class="row" style="margin-top:10px"><input type="text" id="feeling" placeholder="anxious, foggy&hellip;" /><button id="whyBtn">Why?</button></div>
     <div class="row"><input type="text" id="action" placeholder="have another coffee&hellip;" /><button id="shouldBtn">Should I?</button></div>
+    <div class="row"><span class="lbl">Window</span><select id="askWindow"><option value="24">last 24h</option><option value="48" selected>last 48h</option><option value="72">last 72h</option></select></div>
     <div class="answer mut" id="answer"></div>
   </section>
 
@@ -159,7 +169,20 @@ export const APP_HTML = `<!DOCTYPE html>
 (function () {
   "use strict";
   var TOKEN_KEY = "te_token";
-  var token = localStorage.getItem(TOKEN_KEY) || "";
+
+  function getCookie(name) {
+    var m = document.cookie.match(new RegExp("(?:^|; )" + name + "=([^;]*)"));
+    return m ? decodeURIComponent(m[1]) : "";
+  }
+  function setCookie(name, value) {
+    var secure = location.protocol === "https:" ? "; Secure" : "";
+    // ~400 days (the max browsers honour). SameSite=Lax is fine for same-origin use.
+    document.cookie = name + "=" + encodeURIComponent(value) +
+      "; path=/; max-age=34560000; SameSite=Lax" + secure;
+  }
+  // Prefer the cookie (survives reloads even when localStorage gets cleared, e.g. an
+  // iOS standalone PWA); fall back to a previously-saved localStorage value.
+  var token = getCookie(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY) || "";
 
   function $(sel) { return document.querySelector(sel); }
   function toast(msg, bad) {
@@ -185,8 +208,9 @@ export const APP_HTML = `<!DOCTYPE html>
   $("#gear").addEventListener("click", function () { showTokenBanner($("#tokenBanner").hidden); });
   $("#tokenSave").addEventListener("click", function () {
     token = $("#tokenInput").value.trim();
+    setCookie(TOKEN_KEY, token);
     localStorage.setItem(TOKEN_KEY, token);
-    showTokenBanner(false); toast("Saved"); loadQuick();
+    showTokenBanner(false); toast("Saved"); loadQuick(); loadOverview(); loadTimeline();
   });
   if (!token) showTokenBanner(true);
 
@@ -552,15 +576,30 @@ export const APP_HTML = `<!DOCTYPE html>
   })();
 
   // ---- ask ----
+  function renderAnswer(answer, cited) {
+    var html = "<div>" + escapeHtml(answer || "(no answer)").replace(/\\n/g, "<br>") + "</div>";
+    if (cited.length) {
+      html += "<div class='mut' style='margin-top:10px'>Based on " + cited.length + " event(s):</div>";
+      html += cited.map(function (e) {
+        var fs = fieldSummary(e.fields);
+        return "<div class='tlrow'><span class='tltime'>" + fmtDateTime(e.occurredAt) +
+          "</span><strong>" + escapeHtml(e.category) + "</strong>" +
+          (fs ? (" <span class='mut'>" + escapeHtml(fs) + "</span>") : "") + "</div>";
+      }).join("");
+    }
+    return html;
+  }
   function ask(question, param) {
-    var body = { question: question }; if (param) body.param = param;
+    var body = { question: question };
+    if (param) body.param = param;
+    var w = Number($("#askWindow").value);
+    if (w) body.windowHours = w;
     $("#answer").textContent = "Thinking\\u2026";
     $("#answer").classList.add("mut");
     api("/ask", "POST", body).then(function (r) {
       if (!r.ok || !r.data) { $("#answer").textContent = "Ask failed (" + r.status + ")"; return; }
-      var n = (r.data.citedEvents || []).length;
       $("#answer").classList.remove("mut");
-      $("#answer").textContent = (r.data.answer || "(no answer)") + (n ? ("\\n\\n\\u2014 based on " + n + " logged event(s)") : "");
+      $("#answer").innerHTML = renderAnswer(r.data.answer, r.data.citedEvents || []);
     });
   }
   document.querySelectorAll("[data-q]").forEach(function (b) {
@@ -603,6 +642,47 @@ export const APP_HTML = `<!DOCTYPE html>
   }
   $("#ovLoad").addEventListener("click", loadOverview);
   loadOverview();
+
+  // ---- timeline (R-VIEW-4) ----
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>]/g, function (c) {
+      return c === "&" ? "&amp;" : c === "<" ? "&lt;" : "&gt;";
+    });
+  }
+  function fieldSummary(fields) {
+    var bits = [];
+    for (var k in (fields || {})) bits.push(k + "=" + fields[k]);
+    return bits.join(", ");
+  }
+  function fmtDateTime(iso) {
+    try {
+      return new Date(iso).toLocaleString([], {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (e) { return iso; }
+  }
+  function loadTimeline() {
+    if (!token) { $("#timeline").textContent = "Set your token first."; return; }
+    $("#timeline").textContent = "Loading\\u2026";
+    api("/events?limit=50", "GET").then(function (r) {
+      if (!r.ok || !r.data) { $("#timeline").textContent = "Failed (" + r.status + ")"; return; }
+      var evs = r.data.events || [];
+      if (!evs.length) { $("#timeline").textContent = "No events yet."; return; }
+      $("#timeline").classList.remove("mut");
+      $("#timeline").innerHTML = evs.map(function (e) {
+        var fs = fieldSummary(e.fields);
+        return "<div class='tlrow'><span class='tltime'>" + fmtDateTime(e.occurred_at) +
+          "</span><strong>" + escapeHtml(e.category) + "</strong>" +
+          (fs ? (" <span class='mut'>" + escapeHtml(fs) + "</span>") : "") +
+          " <span class='pill'>" + escapeHtml(e.source) + "</span></div>";
+      }).join("");
+    });
+  }
+  $("#tlLoad").addEventListener("click", loadTimeline);
+  loadTimeline();
 })();
 </script>
 </body>

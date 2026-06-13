@@ -11,7 +11,16 @@
 import type { Sql } from "npm:postgres@^3.4.4";
 import { connect } from "../../src/db.ts";
 import { loadConfig } from "../../src/config.ts";
-import { insertEvent, insertEvents, type NewEvent, validateNewEvent } from "../../src/events.ts";
+import {
+  insertEvent,
+  insertEvents,
+  listEvents,
+  type NewEvent,
+  validateNewEvent,
+} from "../../src/events.ts";
+
+const DEFAULT_LIMIT = 50;
+const MAX_LIMIT = 200;
 
 export interface EventsHandlerDeps {
   sql: Sql;
@@ -21,7 +30,7 @@ export interface EventsHandlerDeps {
 
 export function makeEventsHandler(deps: EventsHandlerDeps) {
   return async (req: Request): Promise<Response> => {
-    if (req.method !== "POST") {
+    if (req.method !== "GET" && req.method !== "POST") {
       return jsonResponse(405, { error: "method not allowed" });
     }
 
@@ -30,6 +39,19 @@ export function makeEventsHandler(deps: EventsHandlerDeps) {
       if (provided !== deps.token) {
         return jsonResponse(401, { error: "unauthorized" });
       }
+    }
+
+    // GET /events?limit=&from=&to= — newest-first timeline list (R-VIEW-4).
+    if (req.method === "GET") {
+      const url = new URL(req.url);
+      const from = parseDateParam(url.searchParams.get("from"));
+      const to = parseDateParam(url.searchParams.get("to"));
+      if (from === "invalid" || to === "invalid") {
+        return jsonResponse(400, { error: "from/to must be valid ISO date-times" });
+      }
+      const limit = clampLimit(url.searchParams.get("limit"));
+      const events = await listEvents(deps.sql, { from, to, limit });
+      return jsonResponse(200, { events });
     }
 
     let body: unknown;
@@ -94,6 +116,19 @@ function toNewEvent(body: Record<string, unknown>): NewEvent {
     rawText: typeof body.rawText === "string" ? body.rawText : null,
     templateId: typeof body.templateId === "string" ? body.templateId : null,
   };
+}
+
+/** null = absent, "invalid" = present but unparseable, else the Date. */
+function parseDateParam(value: string | null): Date | null | "invalid" {
+  if (value === null || value === "") return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? "invalid" : d;
+}
+
+function clampLimit(value: string | null): number {
+  const n = value === null ? DEFAULT_LIMIT : Number(value);
+  if (!Number.isFinite(n) || n <= 0) return DEFAULT_LIMIT;
+  return Math.min(Math.floor(n), MAX_LIMIT);
 }
 
 function bearerToken(req: Request): string | null {

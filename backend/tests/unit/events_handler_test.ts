@@ -24,11 +24,18 @@ const validBody = JSON.stringify({
   source: "manual",
 });
 
-Deno.test("events handler: rejects non-POST with 405", async () => {
+Deno.test("events handler: rejects unsupported methods with 405", async () => {
   const res = await makeEventsHandler({ sql: noSql, token: null })(
-    new Request("http://localhost/events", { method: "GET" }),
+    new Request("http://localhost/events", { method: "PUT" }),
   );
   assertEquals(res.status, 405);
+});
+
+Deno.test("events handler: GET with an invalid date is 400 (DB untouched)", async () => {
+  const res = await makeEventsHandler({ sql: noSql, token: null })(
+    new Request("http://localhost/events?from=not-a-date", { method: "GET" }),
+  );
+  assertEquals(res.status, 400);
 });
 
 Deno.test("events handler: 401 when the token is wrong", async () => {

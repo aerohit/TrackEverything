@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-13 (Phase 11a approved; Phase 11b/11c in review; Phase 8 deferred)
+> **Status:** Living document. **Last updated:** 2026-06-13 (Phase 11a approved; Phase 11b/11c/11d in review; Phase 8 deferred)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -306,7 +306,7 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
   - ⚠️ **Device-verified** (esp. the live label scan: needs `ANTHROPIC_API_KEY` + a real photo;
     iOS may hand over HEIC — if the scan 400s, the label was an unsupported type).
 
-### Phase 11d — Timeline / history view ☐
+### Phase 11d — Timeline / history view ◐
 - **Goal:** See and scroll the actual event log, and see which events an answer cited.
 - **Build:** A backend **`GET /events`** list endpoint (date-range + limit, token-guarded,
   reusing `getEventsBetween`/`getRecentEvents`); a **Timeline** card that lists recent events;
@@ -317,6 +317,20 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 - **You verify:** Open Timeline, see today's events in order; ask a question and see the specific
   cited events; widen the Ask window.
 - **Builds:** R-VIEW-4 (new), R-RT-6 (cited-event detail in UI).
+- **Implementation notes (in progress):**
+  - **Backend:** `listEvents` ([`src/events.ts`](../backend/src/events.ts)) — newest-first, capped
+    `limit`, optional `[from, to)`. `GET /events?limit&from&to`
+    ([`functions/events/index.ts`](../backend/functions/events/index.ts), limit clamped 1–200/def 50,
+    bad date → 400). `CitedEvent` ([`src/ask.ts`](../backend/src/ask.ts)) enriched with `occurredAt`
+    + `fields` so answers can show the cited events.
+  - **UI** ([`backend/ui/app.ts`](../backend/ui/app.ts)): a **Timeline** card (`GET /events?limit=50`),
+    cited-event detail under Ask, and a 24/48/72h **Window** control sending `windowHours`. Also a
+    **cookie**-backed token (survives reloads where a standalone PWA clears `localStorage`).
+  - **Tests:** unit (limit/date 400 path, router PUT→405), integration (newest-first list with
+    limit + window — verified against a real Postgres), UI parse + 11d feature-lock. **126 passed**
+    with DB (111 without).
+  - **On approval:** flip `R-VIEW-4` → Built.
+  - **Bundled fix:** token persistence moved to a cookie (the user reported it was lost on reload).
 
 ---
 
@@ -352,3 +366,4 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 | 2026-06-13 | Phase 11a approved (PR #13 merged) → ☑. Shipped `/capture` timezone fix (PR #14) and a Postman collection + drift test (PR #15). |
 | 2026-06-13 | Phase 11b implemented (manual single-event form, check-in note, quick-log servings/fields override) → ◐ in review. |
 | 2026-06-13 | Phase 11c implemented (Manage card: label-scan→product, create product/template, ingredient-breakdown preview) → ◐ in review. |
+| 2026-06-13 | Phase 11d implemented (`GET /events` list endpoint + Timeline card, cited-event detail + windowHours in Ask, cookie-backed token) → ◐ in review. |

@@ -103,6 +103,53 @@ Deno.test({
 });
 
 Deno.test({
+  name: "GET /events: newest-first list, honouring limit and a from/to window",
+  ignore: !databaseUrl,
+  async fn() {
+    const sql = await connect(databaseUrl!);
+    try {
+      await applyMigrations(sql);
+      const handler = makeEventsHandler({ sql, token: null });
+
+      // Three events at distinct, recognisable times.
+      const base = new Date("2026-03-01T00:00:00Z").getTime();
+      const mk = (hours: number, item: string) =>
+        handler(
+          new Request("http://localhost/events", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              category: "drink",
+              occurredAt: new Date(base + hours * 3600_000).toISOString(),
+              source: "manual",
+              fields: { item },
+            }),
+          }),
+        );
+      const ids: string[] = [];
+      for (const [h, item] of [[1, "a"], [2, "b"], [3, "c"]] as Array<[number, string]>) {
+        ids.push((await (await mk(h, item)).json()).id);
+      }
+
+      // limit=2 returns the two newest (c, b), newest first.
+      const res = await handler(
+        new Request(
+          "http://localhost/events?limit=2&from=2026-03-01T00:00:00Z&to=2026-03-02T00:00:00Z",
+        ),
+      );
+      assertEquals(res.status, 200);
+      const body = await res.json();
+      assertEquals(body.events.length, 2);
+      assertEquals(body.events.map((e: { fields: { item: string } }) => e.fields.item), ["c", "b"]);
+
+      await sql`delete from events where id = any(${ids})`;
+    } finally {
+      await sql.end();
+    }
+  },
+});
+
+Deno.test({
   name: "POST /events: source defaults to manual when omitted",
   ignore: !databaseUrl,
   async fn() {

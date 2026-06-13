@@ -14,15 +14,18 @@ Safari → https://<your-app>.deno.dev/  →  Share → Add to Home Screen  → 
 
 ## First run
 
-Open the URL, tap the **⚙ gear**, paste your `INGEST_TOKEN`, **Save**. It's stored in the browser's
-`localStorage` on that device only (same trust level as putting it in a Shortcut). A `401` from any
-action re-opens the token box.
+Open the URL, tap the **⚙ gear**, paste your `INGEST_TOKEN`, **Save**. It's stored in a **cookie**
+(plus `localStorage` as a fallback) on that device only (same trust level as putting it in a
+Shortcut) — the cookie survives reloads and app relaunches even where an iOS standalone PWA clears
+`localStorage`. A `401` from any action re-opens the token box.
 
 ## Screens (the daily slice)
 
 - **Today** — a daily summary (caffeine, sleep, workout, mood/energy/focus averages, ingredient
   totals) from `GET /overview`; loads on open and refreshes after a check-in or quick-log. A date
   box loads any day (Phase 9).
+- **Timeline** — a newest-first list of recent events from `GET /events?limit=50` (time, category,
+  fields, source). **Refresh** reloads it (Phase 11d, R-VIEW-4).
 - **Check in** — tap a 1–5 button for mood / energy / focus (any subset), add an optional **note**,
   **Log check-in** → `POST /checkin`.
 - **Quick log** — buttons built from your `/templates` and `/products`; tap one to log it →
@@ -36,8 +39,10 @@ action re-opens the token box.
   values, and the **time** (a `datetime-local` picker; set it earlier to **backdate**, R-CAP-7) — or
   untick to skip it. **Save selected** → `POST /events`. (The confirmation step, R-CAP-9; an edited
   time is sent as `occurredAtConfidence: high`.)
-- **Ask** — the five real-time questions → `POST /ask`; the answer shows with a count of the events
-  it was based on. Two questions take a word: "Why?" (a feeling) and "Should I?" (an action).
+- **Ask** — the five real-time questions → `POST /ask`. A **Window** control (24/48/72h) sets the
+  look-back (`windowHours`); the answer shows with the **specific cited events** (time, category,
+  fields) it reasoned from, not just a count (Phase 11d). Two questions take a word: "Why?" (a
+  feeling) and "Should I?" (an action).
 - **Manage** (Phase 11c) — set-up surfaces you reach rarely:
   - **New product** — name + category + ingredient rows → `POST /products`. **Scan label →
     ingredients** sends a photo to `POST /ingredient-scan` (Claude vision) and fills the rows for
@@ -65,7 +70,6 @@ DATABASE_URL=... INGEST_TOKEN=... ANTHROPIC_API_KEY=... deno task start
 
 ## Not in this slice (future)
 
-- A **timeline/history** view (needs a `GET /events` list endpoint) — Phase 11d.
 - Offline queue / widgets / Apple Watch — those need a native app (R-CAP-11), still future.
 
 ## Why not native SwiftUI

@@ -66,6 +66,21 @@ Deno.test("ui: manage — products, templates, label scan (11c)", () => {
   assert(js.includes("loadQuick()"), "saving should refresh quick-log buttons");
 });
 
+Deno.test("ui: timeline, cited-event detail, window control & cookie token (11d)", () => {
+  const js = scriptBody();
+  const html = APP_HTML;
+  // Timeline view backed by GET /events.
+  assert(html.includes('id="timeline"'), "should have a timeline card");
+  assert(js.includes("loadTimeline") && js.includes('api("/events?limit='), "should list events");
+  // Ask: a window control + cited-event detail (not just a count).
+  assert(html.includes('id="askWindow"'), "should have an Ask window control");
+  assert(js.includes("body.windowHours = w"), "Ask should send windowHours");
+  assert(js.includes("renderAnswer") && js.includes("e.occurredAt"), "should render cited events");
+  // Token stored in a cookie so it survives reloads.
+  assert(js.includes("setCookie") && js.includes("getCookie"), "token should use a cookie");
+  assert(js.includes("max-age="), "cookie should be persistent");
+});
+
 Deno.test("ui: the editable category list matches the backend vocabulary", async () => {
   const { CATEGORIES } = await import("../../src/vocab.ts");
   const js = scriptBody();

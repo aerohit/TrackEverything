@@ -143,6 +143,34 @@ export async function getEventsBetween(sql: Sql, from: Date, to: Date): Promise<
   `;
 }
 
+/**
+ * List events for the timeline view (R-VIEW-4): newest first, capped at `limit`,
+ * with an optional `[from, to)` window (either bound may be omitted).
+ */
+export async function listEvents(
+  sql: Sql,
+  opts: { from?: Date | null; to?: Date | null; limit: number },
+): Promise<EventRow[]> {
+  const { from, to, limit } = opts;
+  if (from && to) {
+    return await sql<EventRow[]>`
+      select * from events where occurred_at >= ${from} and occurred_at < ${to}
+      order by occurred_at desc limit ${limit}
+    `;
+  }
+  if (from) {
+    return await sql<EventRow[]>`
+      select * from events where occurred_at >= ${from} order by occurred_at desc limit ${limit}
+    `;
+  }
+  if (to) {
+    return await sql<EventRow[]>`
+      select * from events where occurred_at < ${to} order by occurred_at desc limit ${limit}
+    `;
+  }
+  return await sql<EventRow[]>`select * from events order by occurred_at desc limit ${limit}`;
+}
+
 function isValidDate(value: unknown): boolean {
   if (value instanceof Date) return !Number.isNaN(value.getTime());
   if (typeof value === "string") return !Number.isNaN(new Date(value).getTime());

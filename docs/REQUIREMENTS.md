@@ -1,7 +1,7 @@
 # TrackEverything — Requirements
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-13 (Phase 11c UI: Manage — label-scan, create product/template, breakdown)
+> **Last updated:** 2026-06-13 (Phase 11d: GET /events + Timeline, cited-event detail, cookie token)
 > **Owner:** aerohit
 > **Companion doc:** [ARCHITECTURE.md](ARCHITECTURE.md)
 
@@ -183,3 +183,4 @@ This document is kept current by an explicit process, not by hope. See
 | 2026-06-13 | Bugfix (R-CAP-8): mentioned clock times are interpreted in the user's local timezone. `/capture` takes `tzOffsetMinutes`; the model reports a local wall-clock and `extract.ts` applies the offset deterministically. |
 | 2026-06-13 | Phase 11b: UI surfaces for manual single-event entry (R-CAP-3), check-in note (R-SUBJ-1), and quick-log servings/fields override (R-CAP-14) — no new endpoints. |
 | 2026-06-13 | Phase 11c: Manage UI — label-scan→product (R-CAP-15 image path), create product/template (R-CAP-13/14, R-CAP-5), ingredient-breakdown preview (R-PAT-5) — no new endpoints. |
+| 2026-06-13 | Phase 11d: `GET /events` list endpoint + Timeline view (R-VIEW-4), cited-event detail + window control in Ask (R-RT-6), cookie-backed token. |
