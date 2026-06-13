@@ -35,11 +35,17 @@ export const APP_HTML = `<!DOCTYPE html>
   .btns button, .primary { padding:12px 14px; border:1px solid var(--line); background:#202227; color:var(--fg); border-radius:10px; font-size:15px; }
   .primary { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; width:100%; margin-top:12px; }
   .primary:active { opacity:.85; }
-  textarea, input[type=text] { width:100%; background:#202227; border:1px solid var(--line); color:var(--fg); border-radius:10px; padding:12px; font:inherit; }
+  textarea, input[type=text], input[type=datetime-local], select { width:100%; background:#202227; border:1px solid var(--line); color:var(--fg); border-radius:10px; padding:12px; font:inherit; }
   textarea { min-height:84px; resize:vertical; }
   .mut { color:var(--mut); font-size:13px; }
   .cand { border:1px solid var(--line); border-radius:10px; padding:10px; margin:8px 0; display:flex; gap:10px; align-items:flex-start; }
-  .cand input { margin-top:3px; }
+  .cand > input[type=checkbox] { margin-top:14px; width:18px; height:18px; }
+  .cand .cfields { flex:1; display:flex; flex-direction:column; gap:6px; min-width:0; }
+  .cand .lbl { width:96px; }
+  .cand .row { margin:0; }
+  .cand .row input, .cand .row select { flex:1; min-width:0; padding:8px 10px; }
+  .cand.off { opacity:.45; }
+  .cand .rawtext { font-size:12px; margin-top:2px; }
   .answer { white-space:pre-wrap; margin-top:10px; }
   #toast { position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:#26282d; border:1px solid var(--line); color:var(--fg); padding:10px 16px; border-radius:24px; opacity:0; transition:opacity .2s; pointer-events:none; max-width:90%; }
   #toast.show { opacity:1; }
@@ -78,7 +84,7 @@ export const APP_HTML = `<!DOCTYPE html>
 
   <section class="card">
     <h2>Capture (voice or text)</h2>
-    <p class="mut">Tap the mic on your keyboard and speak, or type. Then extract &amp; review.</p>
+    <p class="mut">Tap the mic on your keyboard and speak, or type. Extract, then edit each record (category, values, time) before saving. Set an earlier time to backdate.</p>
     <textarea id="captureText" placeholder="e.g. coffee and my magnesium at 10am, slept badly"></textarea>
     <button class="primary" id="extractBtn">Extract</button>
     <div id="candidates"></div>
@@ -204,27 +210,102 @@ export const APP_HTML = `<!DOCTYPE html>
       renderCandidates(cands);
     });
   });
-  function summarise(c) {
-    var bits = [c.category];
-    if (c.fields) { for (var k in c.fields) { bits.push(k + "=" + c.fields[k]); } }
-    return bits.join("  ");
+  var CATEGORIES = ["food", "drink", "supplement", "sleep", "workout", "breathwork", "mood", "energy", "focus", "stressor", "hydration", "note"];
+
+  // ISO instant -> "YYYY-MM-DDTHH:mm" in the device's local time, for datetime-local.
+  function toLocalInput(iso) {
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    function p(n) { return (n < 10 ? "0" : "") + n; }
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + "T" + p(d.getHours()) + ":" + p(d.getMinutes());
   }
+  function el(tag, cls) { var e = document.createElement(tag); if (cls) e.className = cls; return e; }
+  function labelledRow(text, control) {
+    var row = el("div", "row"); var lbl = el("span", "lbl"); lbl.textContent = text;
+    row.appendChild(lbl); row.appendChild(control); return row;
+  }
+
+  // An editable candidate card: include/exclude, category, each field value, and time
+  // (R-CAP-9 edit + R-CAP-7 backdating). Reads its values back live on save.
+  function candidateCard(c, i) {
+    var card = el("div", "cand"); card.dataset.i = String(i);
+    var cb = el("input"); cb.type = "checkbox"; cb.checked = true; cb.className = "inc";
+    cb.addEventListener("change", function () { card.classList.toggle("off", !cb.checked); });
+    var body = el("div", "cfields");
+
+    var cat = el("select", "cat");
+    CATEGORIES.forEach(function (name) {
+      var o = el("option"); o.value = name; o.textContent = name;
+      if (name === c.category) o.selected = true; cat.appendChild(o);
+    });
+    if (CATEGORIES.indexOf(c.category) === -1 && c.category) {
+      var o2 = el("option"); o2.value = c.category; o2.textContent = c.category; o2.selected = true; cat.appendChild(o2);
+    }
+    body.appendChild(labelledRow("Category", cat));
+
+    var fields = c.fields || {};
+    Object.keys(fields).forEach(function (k) {
+      var v = fields[k];
+      var inp = el("input"); inp.type = "text"; inp.className = "fld";
+      inp.dataset.k = k; inp.dataset.num = String(typeof v === "number");
+      inp.value = (v != null && typeof v === "object") ? JSON.stringify(v) : String(v == null ? "" : v);
+      body.appendChild(labelledRow(k, inp));
+    });
+
+    var when = el("input"); when.type = "datetime-local"; when.className = "when";
+    when.value = toLocalInput(c.occurredAt); when.dataset.orig = when.value;
+    var tRow = labelledRow("Time", when);
+    if (c.occurredAtConfidence === "inferred") {
+      var pill = el("span", "pill"); pill.textContent = "inferred"; tRow.appendChild(pill);
+    }
+    body.appendChild(tRow);
+
+    if (c.rawText) { var raw = el("div", "mut rawtext"); raw.textContent = "\\u201c" + c.rawText + "\\u201d"; body.appendChild(raw); }
+
+    card.appendChild(cb); card.appendChild(body);
+    return card;
+  }
+
+  function collectEdited(card, orig) {
+    var fields = {};
+    card.querySelectorAll(".fld").forEach(function (inp) {
+      var raw = inp.value;
+      if (inp.dataset.num === "true") {
+        var n = Number(raw);
+        fields[inp.dataset.k] = (raw.trim() !== "" && !isNaN(n)) ? n : raw;
+      } else { fields[inp.dataset.k] = raw; }
+    });
+    var when = card.querySelector(".when");
+    var occurredAt = when.value ? new Date(when.value).toISOString() : orig.occurredAt;
+    // If the user touched the time, it's an asserted time, not an inferred one.
+    var confidence = (when.value !== when.dataset.orig) ? "high" : (orig.occurredAtConfidence || "high");
+    var ev = {
+      category: card.querySelector(".cat").value,
+      occurredAt: occurredAt,
+      occurredAtConfidence: confidence,
+      source: orig.source || "voice",
+      fields: fields,
+    };
+    if (orig.rawText) ev.rawText = orig.rawText;
+    if (orig.itemId) ev.itemId = orig.itemId;
+    return ev;
+  }
+
   function renderCandidates(cands) {
     var box = $("#candidates"); box.innerHTML = "";
-    cands.forEach(function (c, i) {
-      var row = document.createElement("label"); row.className = "cand";
-      var cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = true; cb.dataset.i = String(i);
-      var span = document.createElement("span");
-      span.innerHTML = "<strong>" + summarise(c) + "</strong><br><span class='mut'>" + (c.rawText || "") + "</span>";
-      row.appendChild(cb); row.appendChild(span); box.appendChild(row);
-    });
-    var save = document.createElement("button"); save.className = "primary"; save.textContent = "Save selected";
+    var note = el("p", "mut"); note.textContent = "Review and edit, then save. Untick to skip one.";
+    box.appendChild(note);
+    var cards = [];
+    cands.forEach(function (c, i) { var card = candidateCard(c, i); cards.push(card); box.appendChild(card); });
+    var save = el("button", "primary"); save.textContent = "Save selected";
     save.addEventListener("click", function () {
       var chosen = [];
-      box.querySelectorAll("input[type=checkbox]").forEach(function (cb) { if (cb.checked) chosen.push(cands[Number(cb.dataset.i)]); });
+      cards.forEach(function (card) {
+        if (card.querySelector(".inc").checked) chosen.push(collectEdited(card, cands[Number(card.dataset.i)]));
+      });
       if (chosen.length === 0) { toast("Nothing selected", true); return; }
       api("/events", "POST", { events: chosen }).then(function (r) {
-        if (r.ok) { toast("Saved " + chosen.length); box.innerHTML = ""; $("#captureText").value = ""; }
+        if (r.ok) { toast("Saved " + chosen.length); box.innerHTML = ""; $("#captureText").value = ""; loadOverview(); }
         else { toast("Save failed (" + r.status + ")", true); }
       });
     });
