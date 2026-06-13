@@ -113,7 +113,7 @@ Operates over the recent timeline (last 24–48h) and answers questions in the m
 | R-NFR-3 | Capture latency must feel instant; analysis may take a few seconds. | Proposed |
 | R-NFR-4 | Data is durable and backed up; the event log is the system of record. | Proposed |
 | R-NFR-5 | LLM/API cost should be tracked and kept reasonable for a single user. | Proposed |
-| R-NFR-6 | iPhone is the primary capture surface. | Designed |
+| R-NFR-6 | iPhone is the primary capture surface. | Built |
 
 ## 10. Testing & quality
 
@@ -175,3 +175,5 @@ This document is kept current by an explicit process, not by hope. See
 | 2026-06-13 | Phase 6 approved → R-RT-3/6 to Built (real-time /ask + citations). |
 | 2026-06-13 | Phase 7 approved (PR #9 merged) → R-RT-1/2/4/5 to Built (all real-time questions). |
 | 2026-06-13 | Phases 8–10 deferred; building Phase 11 (web UI) first. R-NFR-6 → Designed (PWA). See ADR-012. |
+| 2026-06-13 | Phase 11 (web UI / PWA daily slice) approved (PR #11 merged) → R-NFR-6 → Built. |
+| 2026-06-13 | Phase 8 still deferred; building Phase 9 (daily overview) next. |

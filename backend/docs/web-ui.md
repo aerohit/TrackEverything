@@ -20,6 +20,9 @@ action re-opens the token box.
 
 ## Screens (the daily slice)
 
+- **Today** — a daily summary (caffeine, sleep, workout, mood/energy/focus averages, ingredient
+  totals) from `GET /overview`; loads on open and refreshes after a check-in or quick-log. A date
+  box loads any day (Phase 9).
 - **Check in** — tap a 1–5 button for mood / energy / focus (any subset), **Log check-in** →
   `POST /checkin`.
 - **Quick log** — buttons built from your `/templates` and `/products`; tap one to log it →
