@@ -53,6 +53,7 @@ Other tasks:
 | `deno task serve:ingredient-scan` | Run the `POST /ingredient-scan` vision server (needs `ANTHROPIC_API_KEY`).                    |
 | `deno task serve:checkin`         | Run the `POST /checkin` subjective-rating server (needs `DATABASE_URL`).                      |
 | `deno task serve:ask`             | Run the `POST /ask` real-time analysis server (needs `DATABASE_URL` + `ANTHROPIC_API_KEY`).   |
+| `deno task serve:overview`        | Run the `GET /overview` daily-summary server (needs `DATABASE_URL`).                          |
 | `deno task start`                 | Run the combined router (`main.ts`) — all endpoints on one server. The production entrypoint. |
 
 ## Configuration
@@ -112,6 +113,7 @@ backend/
     composite-supplements.md  # products, label scan, ingredient expansion (Phase 4b)
     check-ins.md              # POST /checkin mood/energy/focus ratings (Phase 5)
     real-time-analysis.md     # POST /ask: timeline -> grounded, citing answer (Phase 6)
+    overview.md               # GET /overview daily summary (Phase 9)
     web-ui.md                 # the PWA iPhone UI served at / and /app (Phase 11)
     deploy.md                 # Deno Deploy + Supabase deployment walkthrough
   src/
@@ -121,6 +123,7 @@ backend/
     vocab.ts                  # controlled vocabularies (categories/sources/...)
     events.ts                 # event validation + insert/insertEvents/read repository
     extract.ts                # transcript -> candidate events; time resolution (Phase 3)
+    aggregate.ts              # daily aggregation (caffeine/sleep/subjective/ingredients) (Phase 9)
     templates.ts              # template validation + expansion + CRUD (Phase 4)
     products.ts               # composite supplements: products + ingredients + expansion (Phase 4b)
     checkins.ts               # subjective check-in validation + event building (Phase 5)
@@ -137,6 +140,7 @@ backend/
     ingredient_scan/index.ts  # POST /ingredient-scan label photo -> ingredients (Phase 4b)
     checkin/index.ts          # POST /checkin subjective ratings (Phase 5)
     ask/index.ts              # POST /ask real-time analysis (Phase 6)
+    overview/index.ts         # GET /overview daily summary (Phase 9)
   scripts/
     migrate.ts                # deno task migrate
     insert_sample_event.ts    # deno task seed (Phase 1 acceptance helper)

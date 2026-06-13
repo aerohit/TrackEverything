@@ -188,6 +188,17 @@ export async function listProducts(sql: Sql): Promise<ProductRow[]> {
   return products;
 }
 
+/** Fetch ingredient rows for a set of product (item) ids — for daily aggregation. */
+export async function getIngredientsForItems(
+  sql: Sql,
+  itemIds: string[],
+): Promise<IngredientRow[]> {
+  if (itemIds.length === 0) return [];
+  return await sql<IngredientRow[]>`
+    select * from ingredients where item_id = any(${itemIds}) order by position
+  `;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }

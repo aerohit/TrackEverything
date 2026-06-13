@@ -58,6 +58,12 @@ export const APP_HTML = `<!DOCTYPE html>
   </section>
 
   <section class="card">
+    <h2>Today</h2>
+    <div class="row"><input type="text" id="ovDate" placeholder="YYYY-MM-DD (blank = today)" autocapitalize="off" autocorrect="off" /><button id="ovLoad">Load</button></div>
+    <div id="overview" class="mut">Loading&hellip;</div>
+  </section>
+
+  <section class="card">
     <h2>Check in</h2>
     <div class="row"><span class="lbl">Mood</span><div class="scale" data-dim="mood"></div></div>
     <div class="row"><span class="lbl">Energy</span><div class="scale" data-dim="energy"></div></div>
@@ -151,6 +157,7 @@ export const APP_HTML = `<!DOCTYPE html>
         toast("Checked in");
         picked = { mood: null, energy: null, focus: null };
         document.querySelectorAll(".scale button").forEach(function (x) { x.classList.remove("sel"); });
+        loadOverview();
       } else { toast("Check-in failed (" + r.status + ")", true); }
     });
   });
@@ -159,6 +166,7 @@ export const APP_HTML = `<!DOCTYPE html>
   function quickLog(payload, label) {
     api("/quicklog", "POST", payload).then(function (r) {
       toast(r.ok ? ("Logged " + label) : ("Failed (" + r.status + ")"), !r.ok);
+      if (r.ok) loadOverview();
     });
   }
   function loadQuick() {
@@ -244,6 +252,37 @@ export const APP_HTML = `<!DOCTYPE html>
   $("#shouldBtn").addEventListener("click", function () {
     var a = $("#action").value.trim(); if (!a) { toast("Enter an action", true); return; } ask("should_i", a);
   });
+
+  // ---- today overview ----
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  function fmtTime(iso) { try { return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); } catch (e) { return iso; } }
+  function renderOverview(s) {
+    var L = ["<strong>" + s.date + "</strong> &middot; " + s.eventCount + " events"];
+    if (s.caffeineMg) L.push("Caffeine: " + s.caffeineMg + " mg" + (s.lastCaffeineAt ? (" &middot; last " + fmtTime(s.lastCaffeineAt)) : ""));
+    if (s.sleepMinutes) L.push("Sleep: " + (s.sleepMinutes / 60).toFixed(1) + " h");
+    if (s.workout && s.workout.count) L.push("Workout: " + s.workout.count + " (" + s.workout.durationMin + " min)");
+    ["mood", "energy", "focus"].forEach(function (d) {
+      if (s.subjective && s.subjective[d]) L.push(cap(d) + ": " + s.subjective[d].avg + " (avg of " + s.subjective[d].n + ")");
+    });
+    if (s.ingredients && s.ingredients.length) {
+      L.push("<span class='mut'>Ingredients:</span>");
+      s.ingredients.forEach(function (i) { L.push("&nbsp;&nbsp;" + i.canonical_name + (i.amount != null ? (" " + i.amount + (i.unit || "")) : "")); });
+    }
+    if (L.length === 1) L.push("<span class='mut'>Nothing logged.</span>");
+    $("#overview").classList.remove("mut");
+    $("#overview").innerHTML = L.join("<br>");
+  }
+  function loadOverview() {
+    if (!token) { $("#overview").textContent = "Set your token first."; return; }
+    var d = $("#ovDate").value.trim();
+    $("#overview").textContent = "Loading\\u2026";
+    api("/overview" + (d ? ("?date=" + encodeURIComponent(d)) : ""), "GET").then(function (r) {
+      if (!r.ok || !r.data) { $("#overview").textContent = "Failed (" + r.status + ")"; return; }
+      renderOverview(r.data);
+    });
+  }
+  $("#ovLoad").addEventListener("click", loadOverview);
+  loadOverview();
 })();
 </script>
 </body>

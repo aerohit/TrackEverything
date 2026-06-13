@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-13 (Phase 7 approved; Phases 8–10 deferred; Phase 11 reworked to a PWA, in review)
+> **Status:** Living document. **Last updated:** 2026-06-13 (Phase 11 approved; Phase 9 daily overview in review; Phase 8 deferred)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -179,10 +179,10 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 
 ## Stage D — Integrations
 
-> **Stages D & E (Phases 8–10) are deferred (2026-06-13).** We're building the iPhone
-> UI (Phase 11) first, so the app can be used daily and accumulate real data — which
-> the overviews/correlation phases (9–10) need to be worth building. These phases keep
-> their plan; only the ordering changed.
+> **Ordering note (2026-06-13).** Phase 11 (web UI) was built first so the app can be
+> used daily. **Phase 8 (Whoop) is deferred**; **Phase 9 (daily overview) is being built
+> next** to give that UI something to show over real data. Phase 10 follows. Plans are
+> unchanged; only the ordering moved.
 
 ### Phase 8 — Whoop adapter ☐ (deferred)
 - **Goal:** Whoop sleep/recovery/strain flows into the event log.
@@ -195,12 +195,18 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 
 ## Stage E — Overviews & insights
 
-### Phase 9 — Daily overview ☐ (deferred)
+### Phase 9 — Daily overview ◐
 - **Goal:** See today at a glance.
 - **Build:** Daily aggregation (caffeine total, last-caffeine time, sleep hours, workout load, subjective averages) + a simple daily dashboard view. Aggregation **expands composite supplements into ingredient amounts** so per-ingredient totals are available (R-PAT-5).
 - **Tests:** Unit (aggregation math on synthetic days, incl. product→ingredient expansion); integration (events → aggregates).
 - **You verify:** Today's overview matches what you logged, including ingredient totals from any supplements.
 - **Builds:** R-PAT-2, R-VIEW-1 (uses the R-PAT-5 ingredient expansion built in Phase 4b)
+- **Implementation notes (in progress):**
+  - Pure aggregator [`backend/src/aggregate.ts`](../backend/src/aggregate.ts) (`aggregateDay`): caffeine total + last time, sleep minutes, workout count/duration, mood/energy/focus averages, by-category counts, and a per-ingredient rollup (products expanded via `expandToIngredients`, summed by canonical name).
+  - `GET /overview?date=YYYY-MM-DD` ([`backend/functions/overview/index.ts`](../backend/functions/overview/index.ts), UTC day, default today) → the summary. Repo: `getEventsBetween` + `getIngredientsForItems`. Doc: [`backend/docs/overview.md`](../backend/docs/overview.md).
+  - PWA **Today** card renders it on open and after a check-in/quick-log.
+  - **Local status:** deterministic suite green against real Postgres — **109 passed** (aggregation math incl. ingredient expansion + null amounts; handler guards; DB-backed `/overview` integration). Smoke-tested the running server (`/overview` returns the day's summary).
+  - **On approval:** flip `R-PAT-2`/`R-VIEW-1` → Built and this phase → ☑.
 
 ### Phase 10 — Weekly/monthly + correlation engine ☐ (deferred)
 - **Goal:** Find patterns and explain them.
@@ -226,7 +232,7 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
   - **Local status:** lint/check green; embedded script parses; **87 unit tests** (incl. router serves `/app`). Smoke-tested the running server: `/app` 200 text/html, and `/templates`/`/quicklog`/`/checkin` taps all 201.
   - ⚠️ **In-browser behaviour is device-verified** (like the Shortcuts) — I serve and parse it, but you confirm the live feel on your phone.
   - **Next slices (not in this PR):** a timeline/history view (needs `GET /events`), inline editing of capture candidates, product label-scan screen, settings polish.
-  - **On approval:** flip `R-NFR-6` → Built and this slice → ☑ (phase stays open for further slices).
+  - **Status: APPROVED (2026-06-13)** — PR #11 merged; CI + Deno Deploy build green. `R-NFR-6` → Built. (Phase stays open for further slices: timeline view, candidate editing, label-scan screen.)
 
 ---
 
@@ -255,3 +261,5 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 | 2026-06-13 | Deploy enablement merged (PR #10): single `main.ts` router for Deno Deploy + Supabase (ADR-011). |
 | 2026-06-13 | Phase 7 approved (PR #9 merged) → ☑; R-RT-1/2/4/5 → Built (Stage C complete). |
 | 2026-06-13 | Phases 8–10 deferred; reworked Phase 11 from native SwiftUI to a **Web UI (PWA)** (ADR-012), implemented the daily slice → ◐ in review. |
+| 2026-06-13 | Phase 11 approved (PR #11 merged) → ☑; R-NFR-6 → Built. |
+| 2026-06-13 | Phase 9 (daily overview: `GET /overview` + aggregation + Today card) implemented → ◐ in review. (Phase 8 still deferred.) |

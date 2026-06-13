@@ -135,6 +135,14 @@ export async function getRecentEvents(sql: Sql, since: Date): Promise<EventRow[]
   `;
 }
 
+/** Read events in the half-open window [from, to), oldest first (daily overview). */
+export async function getEventsBetween(sql: Sql, from: Date, to: Date): Promise<EventRow[]> {
+  return await sql<EventRow[]>`
+    select * from events where occurred_at >= ${from} and occurred_at < ${to}
+    order by occurred_at asc
+  `;
+}
+
 function isValidDate(value: unknown): boolean {
   if (value instanceof Date) return !Number.isNaN(value.getTime());
   if (typeof value === "string") return !Number.isNaN(new Date(value).getTime());
