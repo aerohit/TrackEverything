@@ -51,6 +51,8 @@ export const APP_HTML = `<!DOCTYPE html>
   #toast.show { opacity:1; }
   #tokenBanner { background:#2a1d1d; border-color:#5a2b2b; }
   .pill { display:inline-block; font-size:12px; color:var(--mut); border:1px solid var(--line); border-radius:20px; padding:2px 8px; margin-left:6px; }
+  .ghost { background:#202227; border:1px solid var(--line); color:var(--fg); border-radius:10px; padding:8px 12px; font-size:14px; margin-top:8px; }
+  .row input.mkey, .row input.mval { flex:1; min-width:0; }
 </style>
 </head>
 <body>
@@ -74,12 +76,29 @@ export const APP_HTML = `<!DOCTYPE html>
     <div class="row"><span class="lbl">Mood</span><div class="scale" data-dim="mood"></div></div>
     <div class="row"><span class="lbl">Energy</span><div class="scale" data-dim="energy"></div></div>
     <div class="row"><span class="lbl">Focus</span><div class="scale" data-dim="focus"></div></div>
+    <input type="text" id="checkinNote" placeholder="Note (optional) — what's going on?" />
     <button class="primary" id="checkinBtn">Log check-in</button>
   </section>
 
   <section class="card">
     <h2>Quick log</h2>
     <div class="btns" id="quickBtns"><span class="mut">Loading&hellip;</span></div>
+    <button class="ghost" id="quickOptToggle" type="button">Options&hellip;</button>
+    <div id="quickOpts" hidden>
+      <div class="row"><span class="lbl">Servings</span><input type="text" id="quickServings" inputmode="decimal" placeholder="1" /></div>
+      <div class="row"><span class="lbl">Fields</span><input type="text" id="quickFields" placeholder="caffeine_mg=95, item=decaf" autocapitalize="off" /></div>
+      <p class="mut">Applied to taps below until cleared. Servings scales a product's dose.</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Log manually</h2>
+    <p class="mut">A structured event by hand. Blank time = now; an earlier time backdates it.</p>
+    <div class="row"><span class="lbl">Category</span><select id="manCat"></select></div>
+    <div id="manFields"></div>
+    <button class="ghost" id="manAddField" type="button">+ field</button>
+    <div class="row"><span class="lbl">Time</span><input type="datetime-local" id="manTime" /></div>
+    <button class="primary" id="manSave">Log event</button>
   </section>
 
   <section class="card">
@@ -158,23 +177,39 @@ export const APP_HTML = `<!DOCTYPE html>
     var body = {};
     ["mood", "energy", "focus"].forEach(function (d) { if (picked[d]) body[d] = picked[d]; });
     if (Object.keys(body).length === 0) { toast("Pick at least one", true); return; }
+    var note = $("#checkinNote").value.trim();
+    if (note) body.note = note;
     api("/checkin", "POST", body).then(function (r) {
       if (r.ok) {
         toast("Checked in");
         picked = { mood: null, energy: null, focus: null };
         document.querySelectorAll(".scale button").forEach(function (x) { x.classList.remove("sel"); });
+        $("#checkinNote").value = "";
         loadOverview();
       } else { toast("Check-in failed (" + r.status + ")", true); }
     });
   });
 
   // ---- quick log ----
+  // Optional per-tap overrides (Phase 11b): servings (products) + a fields override.
+  function quickOptions() {
+    var opts = {};
+    var s = $("#quickServings").value.trim();
+    if (s !== "") { var n = Number(s); if (!isNaN(n) && n > 0) opts.servings = n; }
+    var f = parseFields($("#quickFields").value);
+    if (Object.keys(f).length) opts.fields = f;
+    return opts;
+  }
   function quickLog(payload, label) {
-    api("/quicklog", "POST", payload).then(function (r) {
+    var body = Object.assign({}, payload, quickOptions());
+    api("/quicklog", "POST", body).then(function (r) {
       toast(r.ok ? ("Logged " + label) : ("Failed (" + r.status + ")"), !r.ok);
       if (r.ok) loadOverview();
     });
   }
+  $("#quickOptToggle").addEventListener("click", function () {
+    var box = $("#quickOpts"); box.hidden = !box.hidden;
+  });
   function loadQuick() {
     var box = $("#quickBtns"); box.innerHTML = "";
     if (!token) { box.innerHTML = "<span class='mut'>Set your token first.</span>"; return; }
@@ -314,6 +349,65 @@ export const APP_HTML = `<!DOCTYPE html>
     });
     box.appendChild(save);
   }
+
+  // "caffeine_mg=95, item=decaf" -> { caffeine_mg: 95, item: "decaf" } (numbers coerced).
+  function parseFields(text) {
+    var out = {};
+    (text || "").split(",").forEach(function (pair) {
+      var i = pair.indexOf("=");
+      if (i < 0) return;
+      var k = pair.slice(0, i).trim();
+      var v = pair.slice(i + 1).trim();
+      if (!k) return;
+      var n = Number(v);
+      out[k] = (v !== "" && !isNaN(n)) ? n : v;
+    });
+    return out;
+  }
+
+  // ---- log manually ---- (Phase 11b: a structured single event by hand, R-CAP-3)
+  (function initManual() {
+    var sel = $("#manCat");
+    CATEGORIES.forEach(function (name) {
+      var o = el("option"); o.value = name; o.textContent = name; sel.appendChild(o);
+    });
+    function addFieldRow() {
+      var row = el("div", "row");
+      var key = el("input"); key.type = "text"; key.className = "mkey";
+      key.placeholder = "field (e.g. caffeine_mg)"; key.autocapitalize = "off";
+      var val = el("input"); val.type = "text"; val.className = "mval"; val.placeholder = "value";
+      row.appendChild(key); row.appendChild(val);
+      $("#manFields").appendChild(row);
+    }
+    addFieldRow();
+    $("#manAddField").addEventListener("click", addFieldRow);
+    $("#manSave").addEventListener("click", function () {
+      var fields = {};
+      $("#manFields").querySelectorAll(".row").forEach(function (row) {
+        var k = row.querySelector(".mkey").value.trim();
+        var v = row.querySelector(".mval").value.trim();
+        if (!k) return;
+        var n = Number(v);
+        fields[k] = (v !== "" && !isNaN(n)) ? n : v;
+      });
+      var when = $("#manTime").value;
+      var occurredAt = when ? new Date(when).toISOString() : new Date().toISOString();
+      var body = {
+        category: $("#manCat").value,
+        occurredAt: occurredAt,
+        occurredAtConfidence: "high",
+        source: "manual",
+        fields: fields,
+      };
+      api("/events", "POST", body).then(function (r) {
+        if (r.ok) {
+          toast("Logged");
+          $("#manFields").innerHTML = ""; addFieldRow(); $("#manTime").value = "";
+          loadOverview();
+        } else { toast("Save failed (" + r.status + ")", true); }
+      });
+    });
+  })();
 
   // ---- ask ----
   function ask(question, param) {

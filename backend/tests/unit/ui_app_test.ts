@@ -26,6 +26,28 @@ Deno.test("ui: capture candidates are editable + backdatable (11a)", () => {
   assert(js.includes('"high"'), "edited time should be sent as high confidence");
 });
 
+Deno.test("ui: manual logging, check-in note & quick-log overrides (11b)", () => {
+  const js = scriptBody();
+  const html = APP_HTML;
+  // Manual single-event form.
+  assert(html.includes('id="manCat"'), "should have a manual category picker");
+  assert(html.includes('id="manSave"'), "should have a manual save button");
+  assert(js.includes("initManual"), "should wire the manual logging form");
+  assert(js.includes('source: "manual"'), "manual events should be sourced as manual");
+  // Check-in note.
+  assert(html.includes('id="checkinNote"'), "should have a check-in note field");
+  assert(js.includes("body.note = note"), "check-in should send the note");
+  // Quick-log servings / fields override.
+  assert(
+    html.includes('id="quickServings"') && html.includes('id="quickFields"'),
+    "quick-log options",
+  );
+  assert(
+    js.includes("quickOptions") && js.includes("parseFields"),
+    "quick-log should merge overrides",
+  );
+});
+
 Deno.test("ui: the editable category list matches the backend vocabulary", async () => {
   const { CATEGORIES } = await import("../../src/vocab.ts");
   const js = scriptBody();
