@@ -1,7 +1,7 @@
 # TrackEverything — Requirements
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-13
+> **Last updated:** 2026-06-13 (Phase 9 approved → R-PAT-2/R-VIEW-1 Built; added R-VIEW-4; UI slices 11a–11d planned)
 > **Owner:** aerohit
 > **Companion doc:** [ARCHITECTURE.md](ARCHITECTURE.md)
 
@@ -91,7 +91,7 @@ Operates over the recent timeline (last 24–48h) and answers questions in the m
 | ID | Requirement | Status |
 |---|---|---|
 | R-PAT-1 | Link low energy/mood/focus back to nutrition, sleep, workouts, supplements, stressors, etc. | Proposed |
-| R-PAT-2 | Compute **daily aggregates** (e.g. total caffeine, last-caffeine time, sleep hours, workout load) and outcome metrics. | Proposed |
+| R-PAT-2 | Compute **daily aggregates** (e.g. total caffeine, last-caffeine time, sleep hours, workout load) and outcome metrics. | Built |
 | R-PAT-3 | Run **correlation / lagged analysis** between inputs and outcomes (including next-day effects). | Proposed |
 | R-PAT-4 | Have the LLM **interpret** the statistical findings into plain-language insights and suggested experiments. | Proposed |
 | R-PAT-5 | Analyze supplement intake at **two granularities**: whole-product and decomposed into ingredients (e.g. total magnesium summed across all products/foods; correlate a single ingredient such as L-theanine with outcomes). | Built |
@@ -100,9 +100,10 @@ Operates over the recent timeline (last 24–48h) and answers questions in the m
 
 | ID | Requirement | Status |
 |---|---|---|
-| R-VIEW-1 | **Daily** overview of inputs and subjective state. | Proposed |
+| R-VIEW-1 | **Daily** overview of inputs and subjective state. | Built |
 | R-VIEW-2 | **Weekly** overview with trends. | Proposed |
 | R-VIEW-3 | **Monthly** overview with trends and surfaced patterns. | Proposed |
+| R-VIEW-4 | **Event timeline / history** list view: scroll recent events in time order (backed by a `GET /events` list endpoint). | Proposed |
 
 ## 9. Non-functional requirements
 
@@ -177,3 +178,5 @@ This document is kept current by an explicit process, not by hope. See
 | 2026-06-13 | Phases 8–10 deferred; building Phase 11 (web UI) first. R-NFR-6 → Designed (PWA). See ADR-012. |
 | 2026-06-13 | Phase 11 (web UI / PWA daily slice) approved (PR #11 merged) → R-NFR-6 → Built. |
 | 2026-06-13 | Phase 8 still deferred; building Phase 9 (daily overview) next. |
+| 2026-06-13 | Phase 9 approved (PR #12 merged) → R-PAT-2/R-VIEW-1 to Built (daily overview). |
+| 2026-06-13 | Added R-VIEW-4 (event timeline/history view); planned UI completion slices 11a–11d in ROADMAP. |

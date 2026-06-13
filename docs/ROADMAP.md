@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-13 (Phase 11 approved; Phase 9 daily overview in review; Phase 8 deferred)
+> **Status:** Living document. **Last updated:** 2026-06-13 (Phase 9 approved; UI completion slices 11a–11d planned; Phase 8 deferred)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -195,7 +195,7 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 
 ## Stage E — Overviews & insights
 
-### Phase 9 — Daily overview ◐
+### Phase 9 — Daily overview ☑
 - **Goal:** See today at a glance.
 - **Build:** Daily aggregation (caffeine total, last-caffeine time, sleep hours, workout load, subjective averages) + a simple daily dashboard view. Aggregation **expands composite supplements into ingredient amounts** so per-ingredient totals are available (R-PAT-5).
 - **Tests:** Unit (aggregation math on synthetic days, incl. product→ingredient expansion); integration (events → aggregates).
@@ -206,7 +206,7 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
   - `GET /overview?date=YYYY-MM-DD` ([`backend/functions/overview/index.ts`](../backend/functions/overview/index.ts), UTC day, default today) → the summary. Repo: `getEventsBetween` + `getIngredientsForItems`. Doc: [`backend/docs/overview.md`](../backend/docs/overview.md).
   - PWA **Today** card renders it on open and after a check-in/quick-log.
   - **Local status:** deterministic suite green against real Postgres — **109 passed** (aggregation math incl. ingredient expansion + null amounts; handler guards; DB-backed `/overview` integration). Smoke-tested the running server (`/overview` returns the day's summary).
-  - **On approval:** flip `R-PAT-2`/`R-VIEW-1` → Built and this phase → ☑.
+  - **Status: APPROVED (2026-06-13)** — PR #12 merged; CI green. `R-PAT-2`/`R-VIEW-1` → Built.
 
 ### Phase 10 — Weekly/monthly + correlation engine ☐ (deferred)
 - **Goal:** Find patterns and explain them.
@@ -233,6 +233,64 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
   - ⚠️ **In-browser behaviour is device-verified** (like the Shortcuts) — I serve and parse it, but you confirm the live feel on your phone.
   - **Next slices (not in this PR):** a timeline/history view (needs `GET /events`), inline editing of capture candidates, product label-scan screen, settings polish.
   - **Status: APPROVED (2026-06-13)** — PR #11 merged; CI + Deno Deploy build green. `R-NFR-6` → Built. (Phase stays open for further slices: timeline view, candidate editing, label-scan screen.)
+
+---
+
+## Stage F (cont.) — UI completion slices
+
+> **Why (2026-06-13).** Phase 11 shipped the daily-capture loop (check-in, quick-log,
+> capture→confirm, ask, today). These slices close the gap between what the backend exposes
+> and what the UI uses: editable confirmation, manual/detailed logging, product/template
+> management incl. label-scan, and a history view. Each is a small, independently-shippable
+> slice with its own approval gate. Slices 11a–11c are **UI-only** over existing endpoints;
+> 11d adds one backend list endpoint.
+
+### Phase 11a — Editable confirmation card + backdating ☐
+- **Goal:** Capture's review step becomes truly correctable, and any log can be backdated.
+- **Build:** In the Capture candidate list, make each candidate **editable before save** —
+  category, the key field value(s), and `occurredAt` (date/time) — not just include/exclude.
+  Send the edited candidates to `POST /events`. Fully realizes R-CAP-9's "one-tap edit" and
+  surfaces the existing `occurredAt` backdating (R-CAP-7) in the UI.
+- **Tests:** Router still serves `/app` (200, text/html); embedded-script parse check;
+  endpoints unchanged (already covered). Manual device verification of the edit/backdate feel.
+- **You verify:** Extract "coffee at 10am", change the amount and time on a candidate, save,
+  and the stored event reflects your edits and `occurred_at`.
+- **Builds:** completes R-CAP-9 (UI), R-CAP-7 (UI surface).
+
+### Phase 11b — Manual & detailed logging ☐
+- **Goal:** Log a structured event by hand, and reach the per-log options the UI hides.
+- **Build:** A **Log manually** form (category + a couple of fields + optional `occurredAt`) →
+  single `POST /events`; a **note** field on Check-in (`POST /checkin {note}`); a
+  **servings / fields override** on a quick-log tap (`POST /quicklog {servings, fields}`).
+- **Tests:** UI serve/parse checks; endpoints already covered (servings/note/occurredAt are
+  existing inputs). Manual device verification.
+- **You verify:** Hand-log a backdated event; add a note to a check-in; log a 2-serving dose.
+- **Builds:** R-CAP-3 (UI manual entry), R-SUBJ-1 (note), R-CAP-14 (servings in UI).
+
+### Phase 11c — Manage: products, templates, label scan ☐
+- **Goal:** Define supplements (incl. from a label photo) and quick-log templates from the app.
+- **Build:** A **Manage** screen: (1) **label-scan** — pick/take a photo, `POST /ingredient-scan`
+  (vision) → confirm/edit the extracted ingredient list → `POST /products` (realizes the
+  R-CAP-15 image path in the UI); (2) **create product** by hand; (3) **create template**
+  (`POST /templates`); (4) an **expansion preview** (`GET /products?name&servings`). New products/
+  templates immediately appear as Quick-log buttons.
+- **Tests:** UI serve/parse checks; endpoints already covered. ⚠️ live vision verified on device
+  (needs `ANTHROPIC_API_KEY` + a real label).
+- **You verify:** Photograph a label → confirm ingredients → save product → see it in Quick log;
+  create a template and tap it.
+- **Builds:** R-CAP-13/14/15 (UI), R-CAP-5 (UI template creation), R-PAT-5 (expansion preview).
+
+### Phase 11d — Timeline / history view ☐
+- **Goal:** See and scroll the actual event log, and see which events an answer cited.
+- **Build:** A backend **`GET /events`** list endpoint (date-range + limit, token-guarded,
+  reusing `getEventsBetween`/`getRecentEvents`); a **Timeline** card that lists recent events;
+  render the **cited events** (not just a count) under an Ask answer; a **`windowHours`** control
+  on Ask. (R-VIEW-4.)
+- **Tests:** Unit (query-param parsing/clamping); integration (HTTP → DB list roundtrip, range +
+  limit); UI serve/parse checks.
+- **You verify:** Open Timeline, see today's events in order; ask a question and see the specific
+  cited events; widen the Ask window.
+- **Builds:** R-VIEW-4 (new), R-RT-6 (cited-event detail in UI).
 
 ---
 
@@ -263,3 +321,5 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 | 2026-06-13 | Phases 8–10 deferred; reworked Phase 11 from native SwiftUI to a **Web UI (PWA)** (ADR-012), implemented the daily slice → ◐ in review. |
 | 2026-06-13 | Phase 11 approved (PR #11 merged) → ☑; R-NFR-6 → Built. |
 | 2026-06-13 | Phase 9 (daily overview: `GET /overview` + aggregation + Today card) implemented → ◐ in review. (Phase 8 still deferred.) |
+| 2026-06-13 | Phase 9 approved (PR #12 merged) → ☑; R-PAT-2/R-VIEW-1 → Built. |
+| 2026-06-13 | Planned UI completion slices 11a–11d (editable confirmation, manual/detailed logging, manage/label-scan, timeline). Added R-VIEW-4. Building 11a. |

@@ -28,8 +28,10 @@ action re-opens the token box.
 - **Quick log** — buttons built from your `/templates` and `/products`; tap one to log it →
   `POST /quicklog`.
 - **Capture** — type, or tap the **mic on the iOS keyboard** and speak, then **Extract** →
-  `POST /capture`. Review the candidate events (checkboxes), **Save selected** → `POST /events`.
-  (This is the confirmation step, R-CAP-9.)
+  `POST /capture`. Each candidate is **editable** before saving — category, the extracted field
+  values, and the **time** (a `datetime-local` picker; set it earlier to **backdate**, R-CAP-7) — or
+  untick to skip it. **Save selected** → `POST /events`. (The confirmation step, R-CAP-9; an edited
+  time is sent as `occurredAtConfidence: high`.)
 - **Ask** — the five real-time questions → `POST /ask`; the answer shows with a count of the events
   it was based on. Two questions take a word: "Why?" (a feeling) and "Should I?" (an action).
 
@@ -50,9 +52,10 @@ DATABASE_URL=... INGEST_TOKEN=... ANTHROPIC_API_KEY=... deno task start
 
 ## Not in this slice (future)
 
-- A **timeline/history** view (needs a `GET /events` list endpoint).
-- Inline **editing** of capture candidates (today you include/exclude via checkboxes).
-- A **label-scan** screen for composite supplements (`/ingredient-scan` → `/products`).
+- A **timeline/history** view (needs a `GET /events` list endpoint) — Phase 11d.
+- A **label-scan** screen for composite supplements (`/ingredient-scan` → `/products`) — Phase 11c.
+- A **manual single-event** form and per-log option overrides (check-in note, quick-log servings) —
+  Phase 11b.
 - Offline queue / widgets / Apple Watch — those need a native app (R-CAP-11), still future.
 
 ## Why not native SwiftUI
