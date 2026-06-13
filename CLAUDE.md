@@ -35,3 +35,18 @@ If a requested change conflicts with an existing requirement or ADR, surface the
 conflict before implementing — don't silently diverge from the docs.
 
 At the start of a work session, skim both docs so the work reflects current scope.
+
+## API collection (binding)
+
+[`backend/postman/TrackEverything.postman_collection.json`](backend/postman/TrackEverything.postman_collection.json)
+is the source of truth for the HTTP API and MUST stay in sync with the router
+([`backend/main.ts`](backend/main.ts)) and the endpoint handlers. On **any** change to the
+API — adding/removing/renaming a route, or changing a request method, body shape, query
+parameter, header, or auth — update the collection in the **same change**:
+
+1. Add/edit/remove the affected request (folder, example body, and description).
+2. A new endpoint needs at least one request whose URL path matches the new route.
+3. The drift guard `backend/tests/unit/postman_collection_test.ts` fails CI if a router
+   route has no collection request, or the collection references a path the router no longer
+   serves — keep it green. (It checks route coverage, not body fields, so still review bodies
+   by hand.)

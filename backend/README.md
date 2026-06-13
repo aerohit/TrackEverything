@@ -116,6 +116,9 @@ backend/
     overview.md               # GET /overview daily summary (Phase 9)
     web-ui.md                 # the PWA iPhone UI served at / and /app (Phase 11)
     deploy.md                 # Deno Deploy + Supabase deployment walkthrough
+  postman/
+    TrackEverything.postman_collection.json  # importable collection for the whole API
+    README.md                 # import + usage; kept in sync by a drift test (see CLAUDE.md)
   src/
     config.ts                 # env -> Config (pure, unit-tested)
     claude.ts                 # ClaudeClient seam: hello + extractJson + extractJsonFromImage
