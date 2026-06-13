@@ -12,6 +12,13 @@ Safari → https://<your-app>.deno.dev/  →  Share → Add to Home Screen  → 
         /checkin /quicklog /capture /events /ask /templates /products
 ```
 
+## Look & feel
+
+A dark **"Aurora"** theme: an indigo→cyan gradient glow behind near-black, frosted-glass cards,
+a gradient app title, and gradient/glowing primary buttons and selected rating chips. It's pure
+CSS in [`ui/app.ts`](../ui/app.ts) (no assets, no build step) — the markup and behaviour are
+unchanged.
+
 ## First run
 
 Open the URL, tap the **⚙ gear**, paste your `INGEST_TOKEN`, **Save**. It's stored in a **cookie**
