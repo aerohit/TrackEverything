@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-13 (Phase 9 approved; UI completion slices 11a–11d planned; Phase 8 deferred)
+> **Status:** Living document. **Last updated:** 2026-06-13 (Phase 11a approved; Phase 11b in review; Phase 8 deferred)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -245,7 +245,7 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 > slice with its own approval gate. Slices 11a–11c are **UI-only** over existing endpoints;
 > 11d adds one backend list endpoint.
 
-### Phase 11a — Editable confirmation card + backdating ☐
+### Phase 11a — Editable confirmation card + backdating ☑
 - **Goal:** Capture's review step becomes truly correctable, and any log can be backdated.
 - **Build:** In the Capture candidate list, make each candidate **editable before save** —
   category, the key field value(s), and `occurredAt` (date/time) — not just include/exclude.
@@ -256,8 +256,11 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 - **You verify:** Extract "coffee at 10am", change the amount and time on a candidate, save,
   and the stored event reflects your edits and `occurred_at`.
 - **Builds:** completes R-CAP-9 (UI), R-CAP-7 (UI surface).
+- **Status: APPROVED (2026-06-13)** — PR #13 merged. Added a real embedded-script parse test
+  (the inline JS was previously invisible to `deno check`). Also shipped a separate `/capture`
+  timezone fix (PR #14) and a Postman collection + drift test (PR #15).
 
-### Phase 11b — Manual & detailed logging ☐
+### Phase 11b — Manual & detailed logging ◐
 - **Goal:** Log a structured event by hand, and reach the per-log options the UI hides.
 - **Build:** A **Log manually** form (category + a couple of fields + optional `occurredAt`) →
   single `POST /events`; a **note** field on Check-in (`POST /checkin {note}`); a
@@ -266,6 +269,16 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
   existing inputs). Manual device verification.
 - **You verify:** Hand-log a backdated event; add a note to a check-in; log a 2-serving dose.
 - **Builds:** R-CAP-3 (UI manual entry), R-SUBJ-1 (note), R-CAP-14 (servings in UI).
+- **Implementation notes (in progress):**
+  - All UI-only, over existing endpoints, in [`backend/ui/app.ts`](../backend/ui/app.ts):
+    - **Log manually** card — category `<select>`, dynamic field key/value rows (numeric values
+      coerced to numbers), optional `datetime-local` (blank = now, earlier = backdate) → a single
+      `POST /events` with `source: manual`, `occurredAtConfidence: high`.
+    - **Check-in** gains an optional `note` field → `POST /checkin {note}`.
+    - **Quick log** gains an **Options…** panel — `servings` (scales a product's dose) and a
+      `fields` override (`key=value, …`, numbers coerced), merged into each `POST /quicklog`.
+  - **Tests:** embedded-script parse check + an 11b feature-lock test. Suite green — **108 passed**.
+  - ⚠️ **Device-verified** like prior UI slices: served + parsed here; you confirm on the phone.
 
 ### Phase 11c — Manage: products, templates, label scan ☐
 - **Goal:** Define supplements (incl. from a label photo) and quick-log templates from the app.
@@ -323,3 +336,5 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 | 2026-06-13 | Phase 9 (daily overview: `GET /overview` + aggregation + Today card) implemented → ◐ in review. (Phase 8 still deferred.) |
 | 2026-06-13 | Phase 9 approved (PR #12 merged) → ☑; R-PAT-2/R-VIEW-1 → Built. |
 | 2026-06-13 | Planned UI completion slices 11a–11d (editable confirmation, manual/detailed logging, manage/label-scan, timeline). Added R-VIEW-4. Building 11a. |
+| 2026-06-13 | Phase 11a approved (PR #13 merged) → ☑. Shipped `/capture` timezone fix (PR #14) and a Postman collection + drift test (PR #15). |
+| 2026-06-13 | Phase 11b implemented (manual single-event form, check-in note, quick-log servings/fields override) → ◐ in review. |

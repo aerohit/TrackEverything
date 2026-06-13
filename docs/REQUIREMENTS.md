@@ -1,7 +1,7 @@
 # TrackEverything — Requirements
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-13 (R-CAP-8 timezone bugfix: clock times read in the user's local zone)
+> **Last updated:** 2026-06-13 (Phase 11b UI: manual entry, check-in note, quick-log overrides)
 > **Owner:** aerohit
 > **Companion doc:** [ARCHITECTURE.md](ARCHITECTURE.md)
 
@@ -181,3 +181,4 @@ This document is kept current by an explicit process, not by hope. See
 | 2026-06-13 | Phase 9 approved (PR #12 merged) → R-PAT-2/R-VIEW-1 to Built (daily overview). |
 | 2026-06-13 | Added R-VIEW-4 (event timeline/history view); planned UI completion slices 11a–11d in ROADMAP. |
 | 2026-06-13 | Bugfix (R-CAP-8): mentioned clock times are interpreted in the user's local timezone. `/capture` takes `tzOffsetMinutes`; the model reports a local wall-clock and `extract.ts` applies the offset deterministically. |
+| 2026-06-13 | Phase 11b: UI surfaces for manual single-event entry (R-CAP-3), check-in note (R-SUBJ-1), and quick-log servings/fields override (R-CAP-14) — no new endpoints. |

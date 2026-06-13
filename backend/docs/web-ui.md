@@ -23,10 +23,14 @@ action re-opens the token box.
 - **Today** — a daily summary (caffeine, sleep, workout, mood/energy/focus averages, ingredient
   totals) from `GET /overview`; loads on open and refreshes after a check-in or quick-log. A date
   box loads any day (Phase 9).
-- **Check in** — tap a 1–5 button for mood / energy / focus (any subset), **Log check-in** →
-  `POST /checkin`.
+- **Check in** — tap a 1–5 button for mood / energy / focus (any subset), add an optional **note**,
+  **Log check-in** → `POST /checkin`.
 - **Quick log** — buttons built from your `/templates` and `/products`; tap one to log it →
-  `POST /quicklog`.
+  `POST /quicklog`. **Options…** reveals a **servings** (scales a product's dose) and a **fields**
+  override (`caffeine_mg=95, item=decaf`) applied to subsequent taps (Phase 11b).
+- **Log manually** — pick a category, add field key/value rows, optionally set a **time** (blank =
+  now, earlier = backdated), **Log event** → a single `POST /events` (`source: manual`). Numeric
+  values are stored as numbers (Phase 11b).
 - **Capture** — type, or tap the **mic on the iOS keyboard** and speak, then **Extract** →
   `POST /capture`. Each candidate is **editable** before saving — category, the extracted field
   values, and the **time** (a `datetime-local` picker; set it earlier to **backdate**, R-CAP-7) — or
@@ -54,8 +58,6 @@ DATABASE_URL=... INGEST_TOKEN=... ANTHROPIC_API_KEY=... deno task start
 
 - A **timeline/history** view (needs a `GET /events` list endpoint) — Phase 11d.
 - A **label-scan** screen for composite supplements (`/ingredient-scan` → `/products`) — Phase 11c.
-- A **manual single-event** form and per-log option overrides (check-in note, quick-log servings) —
-  Phase 11b.
 - Offline queue / widgets / Apple Watch — those need a native app (R-CAP-11), still future.
 
 ## Why not native SwiftUI
