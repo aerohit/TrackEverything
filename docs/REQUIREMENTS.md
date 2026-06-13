@@ -79,11 +79,11 @@ Operates over the recent timeline (last 24–48h) and answers questions in the m
 
 | ID | Requirement | Status |
 |---|---|---|
-| R-RT-1 | "**Why** am I feeling X right now?" — diagnose current anxiety/low mood against recent inputs. | Proposed |
-| R-RT-2 | "**What can I do right now** to fix it?" — actionable suggestions (breathwork, food, walk, stop caffeine). | Proposed |
+| R-RT-1 | "**Why** am I feeling X right now?" — diagnose current anxiety/low mood against recent inputs. | Built |
+| R-RT-2 | "**What can I do right now** to fix it?" — actionable suggestions (breathwork, food, walk, stop caffeine). | Built |
 | R-RT-3 | "**What's dragging me down?**" — attribute current low energy/focus/mood to recent inputs. | Built |
-| R-RT-4 | "**Should I do X right now?**" — decision support (another coffee? work out given recovery?). | Proposed |
-| R-RT-5 | "**How will I feel later?**" — forward-looking prediction given today's inputs so far. | Proposed |
+| R-RT-4 | "**Should I do X right now?**" — decision support (another coffee? work out given recovery?). | Built |
+| R-RT-5 | "**How will I feel later?**" — forward-looking prediction given today's inputs so far. | Built |
 | R-RT-6 | Real-time answers cite the specific events/data they reasoned from. | Built |
 
 ## 7. Retrospective analysis (pattern finding)
@@ -113,7 +113,7 @@ Operates over the recent timeline (last 24–48h) and answers questions in the m
 | R-NFR-3 | Capture latency must feel instant; analysis may take a few seconds. | Proposed |
 | R-NFR-4 | Data is durable and backed up; the event log is the system of record. | Proposed |
 | R-NFR-5 | LLM/API cost should be tracked and kept reasonable for a single user. | Proposed |
-| R-NFR-6 | iPhone is the primary capture surface. | Proposed |
+| R-NFR-6 | iPhone is the primary capture surface. | Designed |
 
 ## 10. Testing & quality
 
@@ -173,3 +173,5 @@ This document is kept current by an explicit process, not by hope. See
 | 2026-06-12 | Phase 5: resolved Q2 (1–5 separate mood/energy/focus). |
 | 2026-06-13 | Phase 5 approved → R-SUBJ-1/2/3 to Built (subjective check-ins). |
 | 2026-06-13 | Phase 6 approved → R-RT-3/6 to Built (real-time /ask + citations). |
+| 2026-06-13 | Phase 7 approved (PR #9 merged) → R-RT-1/2/4/5 to Built (all real-time questions). |
+| 2026-06-13 | Phases 8–10 deferred; building Phase 11 (web UI) first. R-NFR-6 → Designed (PWA). See ADR-012. |

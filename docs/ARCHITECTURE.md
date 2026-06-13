@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-13 (ADR-011: deploy on Deno Deploy + Supabase Postgres)
+> **Last updated:** 2026-06-13 (ADR-012: iPhone UI as a PWA, not native SwiftUI)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -51,7 +51,8 @@ or reversible-with-cost decision is captured as an **ADR** in the
 
 | Layer | Choice | Rationale | ADR |
 |---|---|---|---|
-| Capture | iOS **Shortcuts** (voice + manual input) | No Xcode/App Store; Lock Screen + Siri; owner can assemble without coding | [ADR-002](#adr-002) |
+| UI | **PWA** served by the backend ([`ui/app.ts`](../backend/ui/app.ts), at `/`) | Real iPhone app via "Add to Home Screen"; no native toolchain | [ADR-012](#adr-012) |
+| Capture (secondary) | iOS **Shortcuts** (voice + manual input) | No Xcode/App Store; Lock Screen + Siri one-tap + automations | [ADR-002](#adr-002) |
 | Transcription | Apple on-device dictation first; Whisper as upgrade | Free, fast, offline; LLM layer absorbs errors | [ADR-005](#adr-005) |
 | Database | **Supabase** (hosted Postgres) | Managed, durable, backed up; system of record | [ADR-003](#adr-003) |
 | Compute | **Deno Deploy** (single router service, [`main.ts`](../backend/main.ts)) | Runs our `Deno.serve` app directly; one deploy, no idle-pause | [ADR-011](#adr-011) |
@@ -225,7 +226,8 @@ context → decision → consequences.
 
 ### ADR-001
 **Title:** Defer the native iOS app; start with a low-code walking skeleton.
-**Status:** Accepted (2026-06-11)
+**Status:** Accepted (2026-06-11). **Client choice superseded by [ADR-012](#adr-012)** —
+the Phase 11 client is a PWA, not native SwiftUI; native is now an optional future.
 **Context:** Owner has limited coding experience and wants to build collaboratively
 (R-NFR-1). A native app with Whoop OAuth, widgets, and a backend is a large lift
 that risks stalling before the payoff.
@@ -236,7 +238,8 @@ watch) waits. Architecture must avoid choices that block a later native client.
 
 ### ADR-002
 **Title:** Use iOS Shortcuts as the Phase 1 capture surface.
-**Status:** Accepted (2026-06-11)
+**Status:** Accepted (2026-06-11). **Refined by [ADR-012](#adr-012)** — the PWA is now the
+primary UI; Shortcuts remain a secondary, no-UI capture path (one-tap, automations).
 **Context:** Need frictionless voice/manual capture without app development.
 **Decision:** Build capture as Shortcuts that take voice/text input and POST to a
 backend endpoint.
@@ -311,6 +314,26 @@ the owner verifies. No phase starts before the prior one is approved.
 **Consequences:** Slower nominal throughput but continuous verification and low
 risk of building the wrong thing. Requires keeping ROADMAP.md in sync with the
 two core docs.
+
+### ADR-012
+**Title:** Build the iPhone UI as a server-served PWA, not a native SwiftUI app.
+**Status:** Accepted (2026-06-13). **Supersedes the native-client plan in [ADR-001](#adr-001)**
+(native is now an optional future, not the planned Phase 11 client). Refines
+[ADR-002](#adr-002): the PWA is the primary UI; Shortcuts remain a secondary surface.
+**Context:** Phase 11 was "native SwiftUI." A native app can't be built/run/tested
+or signed in this environment, so it would be unverified code outside the CI/test
+discipline used for every other phase — and ADR-001 deferred native precisely until
+value is proven (it isn't yet, with no real data). A PWA is in our existing Deno/TS
+stack, served by the same service, verifiable, and works on iPhone via "Add to Home
+Screen" with no App Store / signing / Apple Developer account.
+**Decision:** A self-contained mobile web page ([`backend/ui/app.ts`](../backend/ui/app.ts))
+served at `/` and `/app` by [`main.ts`](../backend/main.ts). It calls the same-origin
+API with the `INGEST_TOKEN` held in `localStorage`. Voice uses the iOS keyboard's
+dictation into a text field → `POST /capture`. Built in slices, daily-use first.
+**Consequences:** A real, verifiable iPhone UI now, no native toolchain. Trade-off:
+no offline queue (R-CAP-11), Home-Screen widgets, or Apple Watch — those remain the
+case for a future native app if the PWA proves the value. Token in `localStorage` is
+acceptable for a single-user personal tool (same trust level as the Shortcuts).
 
 ### ADR-011
 **Title:** Host the backend as a single Deno service on Deno Deploy; Supabase provides Postgres.

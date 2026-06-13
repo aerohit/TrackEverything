@@ -13,6 +13,7 @@ import type { Sql } from "npm:postgres@^3.4.4";
 import { loadConfig } from "./src/config.ts";
 import { connect } from "./src/db.ts";
 import { AnthropicClaudeClient, type ClaudeClient } from "./src/claude.ts";
+import { APP_HTML } from "./ui/app.ts";
 import { makeEventsHandler } from "./functions/events/index.ts";
 import { makeCaptureHandler } from "./functions/capture/index.ts";
 import { makeTemplatesHandler } from "./functions/templates/index.ts";
@@ -39,7 +40,19 @@ export function buildRouter(deps: RouterDeps): Handler {
       ? make(claude)
       : () => Promise.resolve(json(503, { error: "ANTHROPIC_API_KEY not configured" }));
 
+  const appHandler: Handler = (req) =>
+    Promise.resolve(
+      req.method === "GET"
+        ? new Response(APP_HTML, {
+          status: 200,
+          headers: { "content-type": "text/html; charset=utf-8" },
+        })
+        : json(405, { error: "method not allowed" }),
+    );
+
   const routes: Record<string, Handler> = {
+    "/": appHandler,
+    "/app": appHandler,
     "/events": makeEventsHandler({ sql, token }),
     "/templates": makeTemplatesHandler({ sql, token }),
     "/quicklog": makeQuicklogHandler({ sql, token }),
@@ -52,7 +65,7 @@ export function buildRouter(deps: RouterDeps): Handler {
 
   return (req: Request): Promise<Response> => {
     const path = new URL(req.url).pathname.replace(/\/+$/, "") || "/";
-    if (path === "/" || path === "/health") {
+    if (path === "/health") {
       return Promise.resolve(json(200, { ok: true, service: "trackeverything" }));
     }
     const handler = routes[path];

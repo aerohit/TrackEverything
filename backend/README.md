@@ -11,6 +11,8 @@ See [../docs/ROADMAP.md](../docs/ROADMAP.md) for the full phase plan.
   port over directly in later phases).
 - **LLM:** Claude via the Anthropic SDK, behind a mockable `ClaudeClient` seam.
 - **DB:** Postgres (added properly in Phase 1; here we only ping it).
+- **UI:** a PWA served at `/` and `/app` — the iPhone app (Phase 11). See
+  [docs/web-ui.md](docs/web-ui.md).
 
 ## Prerequisites
 
@@ -96,7 +98,8 @@ run in CI.
 ```
 backend/
   deno.json                   # tasks, import map, fmt/lint config
-  main.ts                     # production entrypoint: one router service (deploy this)
+  main.ts                     # production entrypoint: router + serves the web UI (deploy this)
+  ui/app.ts                   # the iPhone web UI (PWA), served at / and /app (Phase 11)
   .env.example
   migrations/
     0001_event_log.sql        # events + items + templates (Phase 1)
@@ -109,6 +112,7 @@ backend/
     composite-supplements.md  # products, label scan, ingredient expansion (Phase 4b)
     check-ins.md              # POST /checkin mood/energy/focus ratings (Phase 5)
     real-time-analysis.md     # POST /ask: timeline -> grounded, citing answer (Phase 6)
+    web-ui.md                 # the PWA iPhone UI served at / and /app (Phase 11)
     deploy.md                 # Deno Deploy + Supabase deployment walkthrough
   src/
     config.ts                 # env -> Config (pure, unit-tested)
