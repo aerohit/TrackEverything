@@ -63,3 +63,39 @@ Deno.test({
     }
   },
 });
+
+Deno.test({
+  name: "GET /overview: day window follows the local timezone, not UTC",
+  ignore: !databaseUrl,
+  async fn() {
+    const sql = await connect(databaseUrl!);
+    try {
+      await applyMigrations(sql);
+      await sql`delete from events`;
+
+      // 23:30 UTC on the 2nd is 01:30 on the 3rd in UTC+2 — a different local day.
+      await insertEvent(sql, {
+        category: "drink",
+        occurredAt: "2026-03-02T23:30:00Z",
+        source: "manual",
+        fields: { caffeine_mg: 80 },
+      });
+      const handler = makeOverviewHandler({ sql, token: null });
+
+      const local = await (await handler(
+        new Request("http://x/overview?date=2026-03-03&tzOffsetMinutes=120"),
+      )).json();
+      assertEquals(local.date, "2026-03-03");
+      assertEquals(local.eventCount, 1); // local day 03-03 contains it
+
+      const prevLocal = await (await handler(
+        new Request("http://x/overview?date=2026-03-02&tzOffsetMinutes=120"),
+      )).json();
+      assertEquals(prevLocal.eventCount, 0); // local 03-02 does not
+
+      await sql`delete from events`;
+    } finally {
+      await sql.end();
+    }
+  },
+});

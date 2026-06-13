@@ -28,10 +28,11 @@ Shortcut) — the cookie survives reloads and app relaunches even where an iOS s
 ## Screens (the daily slice)
 
 - **Today** — a daily summary (caffeine, sleep, workout, mood/energy/focus averages, ingredient
-  totals) from `GET /overview`; loads on open and refreshes after a check-in or quick-log. A date
-  box loads any day (Phase 9).
+  totals) from `GET /overview`, for the **local** day (the UI sends its UTC offset). Loads on open
+  and refreshes after any log. A date box loads any day (Phase 9).
 - **Timeline** — a newest-first list of recent events from `GET /events?limit=50` (time, category,
-  fields, source). **Refresh** reloads it (Phase 11d, R-VIEW-4).
+  fields, source, and the note if one was added). It **auto-refreshes after every log**; **Refresh**
+  reloads it on demand (Phase 11d, R-VIEW-4).
 - **Check in** — tap a 1–5 button for mood / energy / focus (any subset), add an optional **note**,
   **Log check-in** → `POST /checkin`.
 - **Quick log** — buttons built from your `/templates` and `/products`; tap one to log it →

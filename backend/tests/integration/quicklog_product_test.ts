@@ -39,6 +39,7 @@ Deno.test({
       assertEquals(saved.source, "quicklog");
       assertEquals(saved.item_id, product.id);
       assertEquals(saved.fields.servings, 2);
+      assertEquals(saved.fields.item, name); // self-describing in the timeline
       assertEquals(new Date(saved.occurred_at).getTime(), now.getTime());
 
       await sql`delete from events where item_id = ${product.id}`;

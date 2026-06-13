@@ -60,7 +60,9 @@ export function makeQuicklogHandler(deps: QuicklogHandlerDeps) {
         occurredAt: occurredAt ?? now,
         occurredAtConfidence: "high",
         source: "quicklog",
-        fields: { ...product.default_fields, servings, ...(overrides ?? {}) },
+        // `item` defaults to the product name so the log is self-describing in a
+        // timeline; a product-defined `item` or a per-tap override still wins.
+        fields: { item: product.name, ...product.default_fields, servings, ...(overrides ?? {}) },
         itemId: product.id,
       };
       return jsonResponse(201, await insertEvent(deps.sql, event));
