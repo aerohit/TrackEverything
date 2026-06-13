@@ -33,9 +33,9 @@ Deno.test("router: unknown route -> 404", async () => {
   assertEquals(res.status, 404);
 });
 
-Deno.test("router: dispatches to a handler (GET /events -> 405, no DB touched)", async () => {
+Deno.test("router: dispatches to a handler (PUT /events -> 405, no DB touched)", async () => {
   const router = buildRouter({ sql: noSql, claude: new MockClaudeClient(), token: null });
-  assertEquals((await router(new Request("http://x/events"))).status, 405);
+  assertEquals((await router(new Request("http://x/events", { method: "PUT" }))).status, 405);
 });
 
 Deno.test("router: claude routes return 503 when no key is configured", async () => {

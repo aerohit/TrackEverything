@@ -63,4 +63,5 @@ curl -s "http://localhost:8000/overview?date=2026-06-13" \
 
 - **Local-timezone** day boundaries (currently UTC).
 - **Weekly / monthly** trends + correlations — Phase 10.
-- A full **event timeline** list view — needs a `GET /events` list endpoint.
+- ~~A full **event timeline** list view — needs a `GET /events` list endpoint.~~ Done (Phase 11d):
+  `GET /events` lists events newest-first; the PWA's **Timeline** card renders it.

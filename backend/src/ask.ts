@@ -55,6 +55,9 @@ export interface CitedEvent {
   ref: string;
   id: string;
   category: string;
+  /** ISO instant the event occurred — lets the client show the cited event, not just a count. */
+  occurredAt: string;
+  fields: Record<string, unknown>;
 }
 
 export interface AskResult {
@@ -106,8 +109,15 @@ export function resolveCitations(
   const unmatched: string[] = [];
   for (const ref of citations) {
     const event = byRef.get(ref);
-    if (event) citedEvents.push({ ref, id: event.id, category: event.category });
-    else unmatched.push(ref);
+    if (event) {
+      citedEvents.push({
+        ref,
+        id: event.id,
+        category: event.category,
+        occurredAt: new Date(event.occurred_at).toISOString(),
+        fields: event.fields ?? {},
+      });
+    } else unmatched.push(ref);
   }
   return { citedEvents, unmatched };
 }

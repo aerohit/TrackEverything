@@ -14,32 +14,74 @@ export const APP_HTML = `<!DOCTYPE html>
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Track" />
-<meta name="theme-color" content="#0b0b0c" />
+<meta name="theme-color" content="#0a0a12" />
 <title>TrackEverything</title>
 <style>
-  :root { color-scheme: dark; --bg:#0b0b0c; --card:#17181b; --line:#2a2c31; --fg:#f2f3f5; --mut:#9aa0a6; --accent:#4f8cff; --good:#2fbf71; --warn:#ff6b6b; }
+  :root {
+    color-scheme: dark;
+    --bg:#0a0a12; --fg:#eef0fa; --mut:#9296b0;
+    --line:rgba(255,255,255,.09); --line-2:rgba(255,255,255,.16);
+    --card:rgba(255,255,255,.045); --field:rgba(255,255,255,.05);
+    --accent:#7c5cff; --accent-2:#22d3ee;
+    --grad:linear-gradient(135deg,#7c5cff 0%,#4f8cff 55%,#22d3ee 100%);
+    --glow:0 0 18px rgba(110,120,255,.45);
+  }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.4 -apple-system,system-ui,sans-serif; padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom); }
-  header { display:flex; align-items:center; justify-content:space-between; padding:16px; position:sticky; top:0; background:var(--bg); border-bottom:1px solid var(--line); }
-  header h1 { font-size:18px; margin:0; }
+  body {
+    margin:0; color:var(--fg); font:16px/1.45 -apple-system,system-ui,sans-serif;
+    padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+    background:
+      radial-gradient(900px 480px at 12% -8%, rgba(124,92,255,.26), transparent 60%),
+      radial-gradient(820px 460px at 110% 4%, rgba(34,211,238,.18), transparent 55%),
+      var(--bg);
+    background-attachment:fixed;
+  }
+  header {
+    display:flex; align-items:center; justify-content:space-between; padding:15px 16px;
+    position:sticky; top:0; z-index:5; border-bottom:1px solid var(--line);
+    background:rgba(10,10,18,.72); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  }
+  header h1 {
+    font-size:18px; margin:0; font-weight:700; letter-spacing:.2px;
+    background:linear-gradient(90deg,#a797ff,#22d3ee); -webkit-background-clip:text;
+    background-clip:text; color:transparent;
+  }
   header button { background:none; border:none; color:var(--mut); font-size:20px; }
   main { padding:16px; display:flex; flex-direction:column; gap:16px; max-width:560px; margin:0 auto; }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; }
-  .card h2 { font-size:15px; margin:0 0 12px; color:var(--mut); text-transform:uppercase; letter-spacing:.04em; }
+  .card {
+    background:var(--card); border:1px solid var(--line); border-radius:18px; padding:16px;
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    box-shadow:0 1px 0 rgba(255,255,255,.04) inset, 0 10px 30px rgba(0,0,0,.25);
+  }
+  .card h2 {
+    font-size:12px; margin:0 0 12px; color:var(--mut); text-transform:uppercase;
+    letter-spacing:.12em; font-weight:600;
+  }
   .row { display:flex; align-items:center; gap:8px; margin:8px 0; }
   .row .lbl { width:64px; color:var(--mut); font-size:14px; }
   .scale { display:flex; gap:6px; flex:1; }
-  .scale button { flex:1; padding:12px 0; border:1px solid var(--line); background:#202227; color:var(--fg); border-radius:10px; font-size:16px; }
-  .scale button.sel { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+  .scale button {
+    flex:1; padding:12px 0; border:1px solid var(--line); background:var(--field);
+    color:var(--fg); border-radius:12px; font-size:16px; transition:transform .08s;
+  }
+  .scale button.sel { background:var(--grad); border-color:transparent; color:#fff; font-weight:600; box-shadow:var(--glow); }
+  .scale button:active { transform:scale(.94); }
   .btns { display:flex; flex-wrap:wrap; gap:8px; }
-  .btns button, .primary { padding:12px 14px; border:1px solid var(--line); background:#202227; color:var(--fg); border-radius:10px; font-size:15px; }
-  .primary { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; width:100%; margin-top:12px; }
-  .primary:active { opacity:.85; }
-  textarea, input[type=text], input[type=datetime-local], select { width:100%; background:#202227; border:1px solid var(--line); color:var(--fg); border-radius:10px; padding:12px; font:inherit; }
+  .btns button, .primary { padding:12px 14px; border:1px solid var(--line-2); background:var(--field); color:var(--fg); border-radius:12px; font-size:15px; }
+  .btns button:active { transform:scale(.97); }
+  .primary { background:var(--grad); border:none; color:#fff; font-weight:600; width:100%; margin-top:12px; box-shadow:var(--glow); }
+  .primary:active { transform:translateY(1px); box-shadow:0 0 10px rgba(110,120,255,.35); }
+  textarea, input[type=text], input[type=datetime-local], select {
+    width:100%; background:var(--field); border:1px solid var(--line); color:var(--fg);
+    border-radius:12px; padding:12px; font:inherit;
+  }
+  textarea:focus, input[type=text]:focus, input[type=datetime-local]:focus, select:focus {
+    outline:none; border-color:transparent; box-shadow:0 0 0 2px rgba(124,92,255,.6);
+  }
   textarea { min-height:84px; resize:vertical; }
   .mut { color:var(--mut); font-size:13px; }
-  .cand { border:1px solid var(--line); border-radius:10px; padding:10px; margin:8px 0; display:flex; gap:10px; align-items:flex-start; }
-  .cand > input[type=checkbox] { margin-top:14px; width:18px; height:18px; }
+  .cand { border:1px solid var(--line); border-radius:12px; padding:10px; margin:8px 0; display:flex; gap:10px; align-items:flex-start; background:rgba(255,255,255,.025); }
+  .cand > input[type=checkbox] { margin-top:14px; width:18px; height:18px; accent-color:var(--accent); }
   .cand .cfields { flex:1; display:flex; flex-direction:column; gap:6px; min-width:0; }
   .cand .lbl { width:96px; }
   .cand .row { margin:0; }
@@ -47,12 +89,23 @@ export const APP_HTML = `<!DOCTYPE html>
   .cand.off { opacity:.45; }
   .cand .rawtext { font-size:12px; margin-top:2px; }
   .answer { white-space:pre-wrap; margin-top:10px; }
-  #toast { position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:#26282d; border:1px solid var(--line); color:var(--fg); padding:10px 16px; border-radius:24px; opacity:0; transition:opacity .2s; pointer-events:none; max-width:90%; }
+  #toast { position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:rgba(30,30,46,.92); backdrop-filter:blur(10px); border:1px solid var(--line-2); color:var(--fg); padding:10px 16px; border-radius:24px; opacity:0; transition:opacity .2s; pointer-events:none; max-width:90%; box-shadow:0 8px 30px rgba(0,0,0,.4); }
   #toast.show { opacity:1; }
-  #tokenBanner { background:#2a1d1d; border-color:#5a2b2b; }
-  .pill { display:inline-block; font-size:12px; color:var(--mut); border:1px solid var(--line); border-radius:20px; padding:2px 8px; margin-left:6px; }
-  .ghost { background:#202227; border:1px solid var(--line); color:var(--fg); border-radius:10px; padding:8px 12px; font-size:14px; margin-top:8px; }
+  #tokenBanner { background:linear-gradient(135deg,rgba(124,92,255,.16),rgba(34,211,238,.1)); border-color:var(--line-2); }
+  .pill { display:inline-block; font-size:12px; color:#bfe9f2; background:rgba(34,211,238,.12); border:1px solid rgba(34,211,238,.3); border-radius:20px; padding:2px 8px; margin-left:6px; }
+  .ghost { background:var(--field); border:1px solid var(--line-2); color:var(--fg); border-radius:12px; padding:8px 12px; font-size:14px; margin-top:8px; }
   .row input.mkey, .row input.mval { flex:1; min-width:0; }
+  .subh { font-weight:600; margin:18px 0 8px; color:#c7c2ff; }
+  .subh:first-of-type { margin-top:4px; }
+  .ingrow { display:flex; gap:6px; margin:6px 0; }
+  .ingrow input { min-width:0; padding:8px 10px; }
+  .ingrow .iname { flex:3; }
+  .ingrow .iamt { flex:1; }
+  .ingrow .iunit { flex:1; }
+  input[type=file] { width:100%; color:var(--mut); font-size:14px; margin:4px 0; }
+  .tlrow { padding:8px 0; border-bottom:1px solid var(--line); font-size:14px; }
+  .tlrow:last-child { border-bottom:none; }
+  .tltime { color:var(--accent-2); margin-right:6px; }
 </style>
 </head>
 <body>
@@ -69,6 +122,12 @@ export const APP_HTML = `<!DOCTYPE html>
     <h2>Today</h2>
     <div class="row"><input type="text" id="ovDate" placeholder="YYYY-MM-DD (blank = today)" autocapitalize="off" autocorrect="off" /><button id="ovLoad">Load</button></div>
     <div id="overview" class="mut">Loading&hellip;</div>
+  </section>
+
+  <section class="card">
+    <h2>Timeline</h2>
+    <div id="timeline" class="mut">Loading&hellip;</div>
+    <button class="ghost" id="tlLoad" type="button">Refresh</button>
   </section>
 
   <section class="card">
@@ -118,7 +177,32 @@ export const APP_HTML = `<!DOCTYPE html>
     </div>
     <div class="row" style="margin-top:10px"><input type="text" id="feeling" placeholder="anxious, foggy&hellip;" /><button id="whyBtn">Why?</button></div>
     <div class="row"><input type="text" id="action" placeholder="have another coffee&hellip;" /><button id="shouldBtn">Should I?</button></div>
+    <div class="row"><span class="lbl">Window</span><select id="askWindow"><option value="24">last 24h</option><option value="48" selected>last 48h</option><option value="72">last 72h</option></select></div>
     <div class="answer mut" id="answer"></div>
+  </section>
+
+  <section class="card">
+    <h2>Manage</h2>
+
+    <div class="subh">New product (composite supplement)</div>
+    <div class="row"><span class="lbl">Name</span><input type="text" id="prodName" placeholder="e.g. sleep stack" autocapitalize="off" /></div>
+    <div class="row"><span class="lbl">Category</span><select id="prodCat"></select></div>
+    <p class="mut">Add ingredients by hand, or scan a label photo to fill them.</p>
+    <input type="file" id="prodImage" accept="image/*" capture="environment" />
+    <button class="ghost" id="prodScan" type="button">Scan label &rarr; ingredients</button>
+    <div id="prodIngredients"></div>
+    <button class="ghost" id="prodAddIng" type="button">+ ingredient</button>
+    <button class="primary" id="prodSave">Save product</button>
+
+    <div class="subh">New quick-log template</div>
+    <div class="row"><span class="lbl">Name</span><input type="text" id="tplName" placeholder="e.g. my coffee" autocapitalize="off" /></div>
+    <div class="row"><span class="lbl">Category</span><select id="tplCat"></select></div>
+    <div class="row"><span class="lbl">Fields</span><input type="text" id="tplFields" placeholder="caffeine_mg=120, item=coffee" autocapitalize="off" /></div>
+    <button class="primary" id="tplSave">Save template</button>
+
+    <div class="subh">Ingredient breakdown</div>
+    <div class="row"><input type="text" id="brkName" placeholder="product name" autocapitalize="off" /><input type="text" id="brkServings" inputmode="decimal" placeholder="servings" style="max-width:96px" /><button id="brkLoad">Show</button></div>
+    <div id="brkOut" class="mut"></div>
   </section>
 </main>
 <div id="toast"></div>
@@ -127,7 +211,20 @@ export const APP_HTML = `<!DOCTYPE html>
 (function () {
   "use strict";
   var TOKEN_KEY = "te_token";
-  var token = localStorage.getItem(TOKEN_KEY) || "";
+
+  function getCookie(name) {
+    var m = document.cookie.match(new RegExp("(?:^|; )" + name + "=([^;]*)"));
+    return m ? decodeURIComponent(m[1]) : "";
+  }
+  function setCookie(name, value) {
+    var secure = location.protocol === "https:" ? "; Secure" : "";
+    // ~400 days (the max browsers honour). SameSite=Lax is fine for same-origin use.
+    document.cookie = name + "=" + encodeURIComponent(value) +
+      "; path=/; max-age=34560000; SameSite=Lax" + secure;
+  }
+  // Prefer the cookie (survives reloads even when localStorage gets cleared, e.g. an
+  // iOS standalone PWA); fall back to a previously-saved localStorage value.
+  var token = getCookie(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY) || "";
 
   function $(sel) { return document.querySelector(sel); }
   function toast(msg, bad) {
@@ -153,8 +250,9 @@ export const APP_HTML = `<!DOCTYPE html>
   $("#gear").addEventListener("click", function () { showTokenBanner($("#tokenBanner").hidden); });
   $("#tokenSave").addEventListener("click", function () {
     token = $("#tokenInput").value.trim();
+    setCookie(TOKEN_KEY, token);
     localStorage.setItem(TOKEN_KEY, token);
-    showTokenBanner(false); toast("Saved"); loadQuick();
+    showTokenBanner(false); toast("Saved"); loadQuick(); loadOverview(); loadTimeline();
   });
   if (!token) showTokenBanner(true);
 
@@ -409,16 +507,141 @@ export const APP_HTML = `<!DOCTYPE html>
     });
   })();
 
+  // ---- manage: products, templates, label scan ---- (Phase 11c)
+  function fillCategories(sel, selected) {
+    CATEGORIES.forEach(function (name) {
+      var o = el("option"); o.value = name; o.textContent = name;
+      if (name === selected) o.selected = true;
+      sel.appendChild(o);
+    });
+  }
+  // Strip the "data:<type>;base64," prefix a FileReader data URL carries.
+  function fileToBase64(file) {
+    return new Promise(function (resolve, reject) {
+      var rd = new FileReader();
+      rd.onload = function () {
+        var s = String(rd.result);
+        var comma = s.indexOf(",");
+        resolve(comma >= 0 ? s.slice(comma + 1) : s);
+      };
+      rd.onerror = function () { reject(new Error("read failed")); };
+      rd.readAsDataURL(file);
+    });
+  }
+  (function initManage() {
+    fillCategories($("#prodCat"), "supplement");
+    fillCategories($("#tplCat"), "drink");
+
+    function addIngredientRow(ing) {
+      ing = ing || {};
+      var row = el("div", "ingrow");
+      var nm = el("input"); nm.type = "text"; nm.className = "iname"; nm.placeholder = "ingredient"; nm.autocapitalize = "off";
+      if (ing.name) nm.value = ing.name;
+      var amt = el("input"); amt.type = "text"; amt.className = "iamt"; amt.placeholder = "amt"; amt.inputMode = "decimal";
+      if (ing.amount != null) amt.value = String(ing.amount);
+      var unit = el("input"); unit.type = "text"; unit.className = "iunit"; unit.placeholder = "unit";
+      if (ing.unit) unit.value = ing.unit;
+      row.appendChild(nm); row.appendChild(amt); row.appendChild(unit);
+      $("#prodIngredients").appendChild(row);
+    }
+    addIngredientRow();
+    $("#prodAddIng").addEventListener("click", function () { addIngredientRow(); });
+
+    $("#prodScan").addEventListener("click", function () {
+      var f = $("#prodImage").files && $("#prodImage").files[0];
+      if (!f) { toast("Choose a label photo first", true); return; }
+      toast("Scanning label\\u2026");
+      fileToBase64(f).then(function (b64) {
+        return api("/ingredient-scan", "POST", { image: b64, mediaType: f.type || "image/jpeg" });
+      }).then(function (r) {
+        if (!r.ok || !r.data) { toast("Scan failed (" + r.status + ")", true); return; }
+        var ings = r.data.ingredients || [];
+        if (!ings.length) { toast("No ingredients found", true); return; }
+        $("#prodIngredients").innerHTML = "";
+        ings.forEach(function (ing) { addIngredientRow(ing); });
+        toast("Found " + ings.length + " \\u2014 review &amp; save");
+      }).catch(function () { toast("Could not read the image", true); });
+    });
+
+    $("#prodSave").addEventListener("click", function () {
+      var name = $("#prodName").value.trim();
+      if (!name) { toast("Product name required", true); return; }
+      var ingredients = [];
+      $("#prodIngredients").querySelectorAll(".ingrow").forEach(function (row) {
+        var nm = row.querySelector(".iname").value.trim();
+        if (!nm) return;
+        var amtRaw = row.querySelector(".iamt").value.trim();
+        var amt = amtRaw === "" ? null : Number(amtRaw);
+        if (amt !== null && isNaN(amt)) amt = null;
+        var unit = row.querySelector(".iunit").value.trim() || null;
+        ingredients.push({ name: nm, amount: amt, unit: unit });
+      });
+      var body = { name: name, category: $("#prodCat").value, ingredients: ingredients };
+      api("/products", "POST", body).then(function (r) {
+        if (r.ok) {
+          toast("Saved product");
+          $("#prodName").value = ""; $("#prodImage").value = "";
+          $("#prodIngredients").innerHTML = ""; addIngredientRow();
+          loadQuick();
+        } else { toast("Save failed (" + r.status + ")", true); }
+      });
+    });
+
+    $("#tplSave").addEventListener("click", function () {
+      var name = $("#tplName").value.trim();
+      if (!name) { toast("Template name required", true); return; }
+      var body = { name: name, category: $("#tplCat").value, defaultFields: parseFields($("#tplFields").value) };
+      api("/templates", "POST", body).then(function (r) {
+        if (r.ok) {
+          toast("Saved template");
+          $("#tplName").value = ""; $("#tplFields").value = "";
+          loadQuick();
+        } else { toast("Save failed (" + r.status + ")", true); }
+      });
+    });
+
+    $("#brkLoad").addEventListener("click", function () {
+      var name = $("#brkName").value.trim();
+      if (!name) { toast("Enter a product name", true); return; }
+      var s = $("#brkServings").value.trim() || "1";
+      $("#brkOut").textContent = "Loading\\u2026";
+      api("/products?name=" + encodeURIComponent(name) + "&servings=" + encodeURIComponent(s), "GET").then(function (r) {
+        if (r.status === 404) { $("#brkOut").textContent = "No product named \\u201c" + name + "\\u201d."; return; }
+        if (!r.ok || !r.data) { $("#brkOut").textContent = "Failed (" + r.status + ")"; return; }
+        var ex = r.data.expanded || [];
+        if (!ex.length) { $("#brkOut").textContent = "No ingredients."; return; }
+        $("#brkOut").innerHTML = ex.map(function (i) {
+          return i.canonical_name + (i.amount != null ? (" \\u2014 " + i.amount + (i.unit || "")) : "");
+        }).join("<br>");
+      });
+    });
+  })();
+
   // ---- ask ----
+  function renderAnswer(answer, cited) {
+    var html = "<div>" + escapeHtml(answer || "(no answer)").replace(/\\n/g, "<br>") + "</div>";
+    if (cited.length) {
+      html += "<div class='mut' style='margin-top:10px'>Based on " + cited.length + " event(s):</div>";
+      html += cited.map(function (e) {
+        var fs = fieldSummary(e.fields);
+        return "<div class='tlrow'><span class='tltime'>" + fmtDateTime(e.occurredAt) +
+          "</span><strong>" + escapeHtml(e.category) + "</strong>" +
+          (fs ? (" <span class='mut'>" + escapeHtml(fs) + "</span>") : "") + "</div>";
+      }).join("");
+    }
+    return html;
+  }
   function ask(question, param) {
-    var body = { question: question }; if (param) body.param = param;
+    var body = { question: question };
+    if (param) body.param = param;
+    var w = Number($("#askWindow").value);
+    if (w) body.windowHours = w;
     $("#answer").textContent = "Thinking\\u2026";
     $("#answer").classList.add("mut");
     api("/ask", "POST", body).then(function (r) {
       if (!r.ok || !r.data) { $("#answer").textContent = "Ask failed (" + r.status + ")"; return; }
-      var n = (r.data.citedEvents || []).length;
       $("#answer").classList.remove("mut");
-      $("#answer").textContent = (r.data.answer || "(no answer)") + (n ? ("\\n\\n\\u2014 based on " + n + " logged event(s)") : "");
+      $("#answer").innerHTML = renderAnswer(r.data.answer, r.data.citedEvents || []);
     });
   }
   document.querySelectorAll("[data-q]").forEach(function (b) {
@@ -461,6 +684,47 @@ export const APP_HTML = `<!DOCTYPE html>
   }
   $("#ovLoad").addEventListener("click", loadOverview);
   loadOverview();
+
+  // ---- timeline (R-VIEW-4) ----
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>]/g, function (c) {
+      return c === "&" ? "&amp;" : c === "<" ? "&lt;" : "&gt;";
+    });
+  }
+  function fieldSummary(fields) {
+    var bits = [];
+    for (var k in (fields || {})) bits.push(k + "=" + fields[k]);
+    return bits.join(", ");
+  }
+  function fmtDateTime(iso) {
+    try {
+      return new Date(iso).toLocaleString([], {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (e) { return iso; }
+  }
+  function loadTimeline() {
+    if (!token) { $("#timeline").textContent = "Set your token first."; return; }
+    $("#timeline").textContent = "Loading\\u2026";
+    api("/events?limit=50", "GET").then(function (r) {
+      if (!r.ok || !r.data) { $("#timeline").textContent = "Failed (" + r.status + ")"; return; }
+      var evs = r.data.events || [];
+      if (!evs.length) { $("#timeline").textContent = "No events yet."; return; }
+      $("#timeline").classList.remove("mut");
+      $("#timeline").innerHTML = evs.map(function (e) {
+        var fs = fieldSummary(e.fields);
+        return "<div class='tlrow'><span class='tltime'>" + fmtDateTime(e.occurred_at) +
+          "</span><strong>" + escapeHtml(e.category) + "</strong>" +
+          (fs ? (" <span class='mut'>" + escapeHtml(fs) + "</span>") : "") +
+          " <span class='pill'>" + escapeHtml(e.source) + "</span></div>";
+      }).join("");
+    });
+  }
+  $("#tlLoad").addEventListener("click", loadTimeline);
+  loadTimeline();
 })();
 </script>
 </body>

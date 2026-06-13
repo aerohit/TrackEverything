@@ -38,6 +38,22 @@ curl -sS -X POST http://localhost:8000/events \
 
 (Drop the `authorization` header if `INGEST_TOKEN` is unset.)
 
+## Listing events — `GET /events` (Phase 11d)
+
+The same endpoint lists events **newest-first** for the timeline view (R-VIEW-4):
+
+```
+GET /events?limit=50&from=<ISO>&to=<ISO>
+Authorization: Bearer <INGEST_TOKEN>
+```
+
+- `limit` — clamps to 1–200 (default 50).
+- `from` / `to` — optional ISO bounds; the window is half-open `[from, to)`. A malformed date →
+  `400`.
+
+Returns `200 { "events": [ <row>, ... ] }`, ordered by `occurred_at` descending. The PWA's
+**Timeline** card calls `GET /events?limit=50`.
+
 ## iOS Shortcut (manual entry)
 
 Build once on the phone; no app needed. A minimal "Log event" Shortcut:
