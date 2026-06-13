@@ -31,25 +31,26 @@ dependencies the first time. This is what CI runs and what gates each phase.
 
 Other tasks:
 
-| Command                           | What it does                                                               |
-| --------------------------------- | -------------------------------------------------------------------------- |
-| `deno task test`                  | Unit + integration (deterministic). **Use this.**                          |
-| `deno task test:unit`             | Unit tests only (fully offline).                                           |
-| `deno task test:live`             | Hits the **real** Claude API. Needs `ANTHROPIC_API_KEY`.                   |
-| `deno task fmt` / `fmt:check`     | Format / check formatting.                                                 |
-| `deno task lint`                  | Lint.                                                                      |
-| `deno task check`                 | Type-check.                                                                |
-| `deno task migrate`               | Apply DB migrations. Needs `DATABASE_URL`.                                 |
-| `deno task seed`                  | Migrate + insert a sample event and print it. Needs `DATABASE_URL`.        |
-| `deno task templates:seed`        | Add example quick-log templates ("my coffee", …). Needs `DATABASE_URL`.    |
-| `deno task serve:hello`           | Run the hello server locally (needs `ANTHROPIC_API_KEY`).                  |
-| `deno task serve:events`          | Run the `POST /events` capture server (needs `DATABASE_URL`).              |
-| `deno task serve:capture`         | Run the `POST /capture` extraction server (needs `ANTHROPIC_API_KEY`).     |
-| `deno task serve:templates`       | Run the `/templates` management server (needs `DATABASE_URL`).             |
-| `deno task serve:quicklog`        | Run the `POST /quicklog` one-tap server (needs `DATABASE_URL`).            |
-| `deno task serve:products`        | Run the `/products` composite-supplement server (needs `DATABASE_URL`).    |
-| `deno task serve:ingredient-scan` | Run the `POST /ingredient-scan` vision server (needs `ANTHROPIC_API_KEY`). |
-| `deno task serve:checkin`         | Run the `POST /checkin` subjective-rating server (needs `DATABASE_URL`).   |
+| Command                           | What it does                                                                                |
+| --------------------------------- | ------------------------------------------------------------------------------------------- |
+| `deno task test`                  | Unit + integration (deterministic). **Use this.**                                           |
+| `deno task test:unit`             | Unit tests only (fully offline).                                                            |
+| `deno task test:live`             | Hits the **real** Claude API. Needs `ANTHROPIC_API_KEY`.                                    |
+| `deno task fmt` / `fmt:check`     | Format / check formatting.                                                                  |
+| `deno task lint`                  | Lint.                                                                                       |
+| `deno task check`                 | Type-check.                                                                                 |
+| `deno task migrate`               | Apply DB migrations. Needs `DATABASE_URL`.                                                  |
+| `deno task seed`                  | Migrate + insert a sample event and print it. Needs `DATABASE_URL`.                         |
+| `deno task templates:seed`        | Add example quick-log templates ("my coffee", …). Needs `DATABASE_URL`.                     |
+| `deno task serve:hello`           | Run the hello server locally (needs `ANTHROPIC_API_KEY`).                                   |
+| `deno task serve:events`          | Run the `POST /events` capture server (needs `DATABASE_URL`).                               |
+| `deno task serve:capture`         | Run the `POST /capture` extraction server (needs `ANTHROPIC_API_KEY`).                      |
+| `deno task serve:templates`       | Run the `/templates` management server (needs `DATABASE_URL`).                              |
+| `deno task serve:quicklog`        | Run the `POST /quicklog` one-tap server (needs `DATABASE_URL`).                             |
+| `deno task serve:products`        | Run the `/products` composite-supplement server (needs `DATABASE_URL`).                     |
+| `deno task serve:ingredient-scan` | Run the `POST /ingredient-scan` vision server (needs `ANTHROPIC_API_KEY`).                  |
+| `deno task serve:checkin`         | Run the `POST /checkin` subjective-rating server (needs `DATABASE_URL`).                    |
+| `deno task serve:ask`             | Run the `POST /ask` real-time analysis server (needs `DATABASE_URL` + `ANTHROPIC_API_KEY`). |
 
 ## Configuration
 
@@ -85,6 +86,7 @@ backend/
     quick-log.md              # /templates + POST /quicklog one-tap flow (Phase 4)
     composite-supplements.md  # products, label scan, ingredient expansion (Phase 4b)
     check-ins.md              # POST /checkin mood/energy/focus ratings (Phase 5)
+    real-time-analysis.md     # POST /ask: timeline -> grounded, citing answer (Phase 6)
   src/
     config.ts                 # env -> Config (pure, unit-tested)
     claude.ts                 # ClaudeClient seam: hello + extractJson + extractJsonFromImage
@@ -95,6 +97,8 @@ backend/
     templates.ts              # template validation + expansion + CRUD (Phase 4)
     products.ts               # composite supplements: products + ingredients + expansion (Phase 4b)
     checkins.ts               # subjective check-in validation + event building (Phase 5)
+    context.ts                # assemble recent timeline into citable context (Phase 6)
+    ask.ts                    # real-time question templates + citation resolution (Phase 6)
     migrate.ts                # tiny forward-only migration runner
   functions/
     hello/index.ts            # request -> Claude -> JSON (Edge-Function-shaped)
@@ -105,6 +109,7 @@ backend/
     products/index.ts         # GET/POST /products composite supplements (Phase 4b)
     ingredient_scan/index.ts  # POST /ingredient-scan label photo -> ingredients (Phase 4b)
     checkin/index.ts          # POST /checkin subjective ratings (Phase 5)
+    ask/index.ts              # POST /ask real-time analysis (Phase 6)
   scripts/
     migrate.ts                # deno task migrate
     insert_sample_event.ts    # deno task seed (Phase 1 acceptance helper)
