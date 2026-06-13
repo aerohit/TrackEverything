@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-13 (Phase 7 implemented, in review)
+> **Status:** Living document. **Last updated:** 2026-06-13 (Phase 7 approved; Phases 8–10 deferred; Phase 11 reworked to a PWA, in review)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -162,7 +162,7 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
   - **Best validated with real data:** the answer quality only really shows over your own logged timeline (see the deploy suggestion).
   - **Status: APPROVED (2026-06-13)** — PR #8 merged; CI green. `R-RT-3`/`R-RT-6` → Built.
 
-### Phase 7 — Remaining real-time questions ◐
+### Phase 7 — Remaining real-time questions ☑
 - **Goal:** All five real-time questions over the same assembler.
 - **Build:** Prompt templates for "why am I X", "what can I do now", "should I do X", "how will I feel later".
 - **Tests:** Per-template fixture tests; integration for each route.
@@ -173,13 +173,18 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
   - Doc updated with the full question table: [`backend/docs/real-time-analysis.md`](../backend/docs/real-time-analysis.md).
   - **Local status:** deterministic suite green against real Postgres — **97 passed** (registry, parameterized prompt building, missing-param 400, and a parameterized `/ask` integration test).
   - ⚠️ **Unverified by me:** live answer quality for the new questions (needs your `ANTHROPIC_API_KEY`).
-  - **On approval:** flip `R-RT-1`/`R-RT-2`/`R-RT-4`/`R-RT-5` → Built and this phase → ☑.
+  - **Status: APPROVED (2026-06-13)** — PR #9 merged; CI green. `R-RT-1`/`R-RT-2`/`R-RT-4`/`R-RT-5` → Built. Completes Stage C.
 
 ---
 
 ## Stage D — Integrations
 
-### Phase 8 — Whoop adapter ☐
+> **Stages D & E (Phases 8–10) are deferred (2026-06-13).** We're building the iPhone
+> UI (Phase 11) first, so the app can be used daily and accumulate real data — which
+> the overviews/correlation phases (9–10) need to be worth building. These phases keep
+> their plan; only the ordering changed.
+
+### Phase 8 — Whoop adapter ☐ (deferred)
 - **Goal:** Whoop sleep/recovery/strain flows into the event log.
 - **Build:** Source-adapter interface; Whoop OAuth + pull job mapping payloads → events. (Resolves Q1: Whoop API vs HealthKit.)
 - **Tests:** Unit (Whoop payload → events mapping, from recorded fixtures); integration (sync job writes correct events); live suite hits real Whoop.
@@ -190,14 +195,14 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 
 ## Stage E — Overviews & insights
 
-### Phase 9 — Daily overview ☐
+### Phase 9 — Daily overview ☐ (deferred)
 - **Goal:** See today at a glance.
 - **Build:** Daily aggregation (caffeine total, last-caffeine time, sleep hours, workout load, subjective averages) + a simple daily dashboard view. Aggregation **expands composite supplements into ingredient amounts** so per-ingredient totals are available (R-PAT-5).
 - **Tests:** Unit (aggregation math on synthetic days, incl. product→ingredient expansion); integration (events → aggregates).
 - **You verify:** Today's overview matches what you logged, including ingredient totals from any supplements.
 - **Builds:** R-PAT-2, R-VIEW-1 (uses the R-PAT-5 ingredient expansion built in Phase 4b)
 
-### Phase 10 — Weekly/monthly + correlation engine ☐
+### Phase 10 — Weekly/monthly + correlation engine ☐ (deferred)
 - **Goal:** Find patterns and explain them.
 - **Build:** Weekly/monthly views; correlation + lagged (next-day) analysis; LLM interprets correlations into insights + suggested experiments.
 - **Tests:** Unit (correlation/lag math on synthetic data with a known planted relationship); fixture (LLM turns a given correlation set into a coherent insight); integration.
@@ -206,14 +211,22 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 
 ---
 
-## Stage F — Native app (deferred)
+## Stage F — iPhone UI
 
-### Phase 11 — SwiftUI app ☐
-- **Goal:** Polished capture once the loop is proven.
-- **Build:** Native app wrapping the same backend; rich confirmation cards, widgets/watch complication, offline+sync.
-- **Tests:** Unit (view models); UI/integration tests against the backend.
-- **You verify:** Day-to-day capture happens in the app instead of Shortcuts.
-- **Builds:** R-CAP-6, R-CAP-11 (offline queue + sync), R-NFR-6, [ADR-001](ARCHITECTURE.md#adr-001)
+### Phase 11 — Web UI (PWA) ◐
+- **Goal:** A real tappable iPhone app for daily capture + asking — without a native build.
+- **Decision:** A server-served **PWA** ("Add to Home Screen"), not native SwiftUI — see [ADR-012](ARCHITECTURE.md#adr-012) (supersedes the native-client plan in ADR-001). Native SwiftUI remains a possible future for offline/widgets/Watch.
+- **Build:** A self-contained mobile web page served by the backend at `/` and `/app`, calling the same-origin API with the `INGEST_TOKEN` (kept in `localStorage`).
+- **Tests:** Router serves the UI (200, `text/html`); embedded-script parse check; the endpoints the UI calls are already covered.
+- **You verify:** Open the deploy URL on your iPhone → Add to Home Screen → check in, quick-log, voice-capture+confirm, and Ask all work.
+- **Builds:** R-CAP-6, R-NFR-6, [ADR-012](ARCHITECTURE.md#adr-012). (R-CAP-11 offline-queue is **not** delivered by the PWA — still future/native.)
+- **Implementation notes (in progress) — daily slice:**
+  - UI in [`backend/ui/app.ts`](../backend/ui/app.ts) (inline HTML/CSS/JS, no build step); served via [`backend/main.ts`](../backend/main.ts).
+  - Screens: **Check-in** (mood/energy/focus tap-scale → `/checkin`), **Quick log** (buttons built from `/templates` + `/products` → `/quicklog`), **Capture** (text/keyboard-mic → `/capture` → review candidates → `/events`; realises the R-CAP-9 confirmation card as actual UI), **Ask** (the five `/ask` questions, incl. the two parameterized ones, with the cited-event count).
+  - **Local status:** lint/check green; embedded script parses; **87 unit tests** (incl. router serves `/app`). Smoke-tested the running server: `/app` 200 text/html, and `/templates`/`/quicklog`/`/checkin` taps all 201.
+  - ⚠️ **In-browser behaviour is device-verified** (like the Shortcuts) — I serve and parse it, but you confirm the live feel on your phone.
+  - **Next slices (not in this PR):** a timeline/history view (needs `GET /events`), inline editing of capture candidates, product label-scan screen, settings polish.
+  - **On approval:** flip `R-NFR-6` → Built and this slice → ☑ (phase stays open for further slices).
 
 ---
 
@@ -239,3 +252,6 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 | 2026-06-13 | Phase 6 implemented (`POST /ask` context assembler + "what's dragging me down?" with citations) → ◐ in review. |
 | 2026-06-13 | Phase 6 approved (PR #8 merged) → ☑; R-RT-3/6 → Built. |
 | 2026-06-13 | Phase 7 implemented (remaining four real-time questions, parameterized templates) → ◐ in review. |
+| 2026-06-13 | Deploy enablement merged (PR #10): single `main.ts` router for Deno Deploy + Supabase (ADR-011). |
+| 2026-06-13 | Phase 7 approved (PR #9 merged) → ☑; R-RT-1/2/4/5 → Built (Stage C complete). |
+| 2026-06-13 | Phases 8–10 deferred; reworked Phase 11 from native SwiftUI to a **Web UI (PWA)** (ADR-012), implemented the daily slice → ◐ in review. |
