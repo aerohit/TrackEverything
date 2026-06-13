@@ -1,0 +1,406 @@
+{
+  "info": {
+    "_postman_id": "b7e1a4f0-1a2b-4c3d-9e8f-7a6b5c4d3e2f",
+    "name": "TrackEverything API",
+    "description": "Every endpoint of the TrackEverything backend (the single `main.ts` router).\n\n## Setup\n1. Set the collection variable `baseUrl` (default is the production deploy; switch to `http://localhost:8000` for `deno task start`).\n2. Set `ingestToken` to your `INGEST_TOKEN`. The collection sends it as a Bearer token on every request (the `/health` and `/` requests use no auth).\n\n## Notes\n- `/capture`, `/ingredient-scan`, and `/ask` need `ANTHROPIC_API_KEY` on the server, else they return `503`.\n- Writes hit the configured database — point `baseUrl` at a non-production server if you're just exploring.\n\n**This collection is kept in sync with the API** — see `CLAUDE.md` (binding rule) and the `postman: collection covers every router endpoint` drift test that fails CI if a route is added/removed without updating this file.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{ingestToken}}", "type": "string" }]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://trackeverything.aerohit.deno.net",
+      "type": "string"
+    },
+    { "key": "ingestToken", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Health & App",
+      "item": [
+        {
+          "name": "Health check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Liveness probe. Returns `{ ok: true, service: \"trackeverything\" }`. No auth."
+          }
+        },
+        {
+          "name": "Web UI (PWA)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/", "host": ["{{baseUrl}}"], "path": [""] },
+            "description": "Serves the self-contained mobile web app (HTML) at `/` and `/app`."
+          }
+        },
+        {
+          "name": "Web UI (PWA) at /app",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/app", "host": ["{{baseUrl}}"], "path": ["app"] },
+            "description": "Same handler as `/` — the app is reachable at both paths."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "Create event (single)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "content-type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"drink\",\n  \"occurredAt\": \"2026-06-13T10:00:00.000Z\",\n  \"occurredAtConfidence\": \"high\",\n  \"source\": \"manual\",\n  \"fields\": { \"item\": \"coffee\", \"caffeine_mg\": 120 },\n  \"rawText\": \"a coffee\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["events"]
+            },
+            "description": "Manual capture of one structured event. `source` defaults to `manual` if omitted; `occurredAtConfidence` defaults to `high`. Returns the stored row (201)."
+          }
+        },
+        {
+          "name": "Create events (batch / confirm extraction)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "content-type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"events\": [\n    { \"category\": \"drink\", \"occurredAt\": \"2026-06-13T10:00:00.000Z\", \"occurredAtConfidence\": \"high\", \"source\": \"voice\", \"fields\": { \"item\": \"coffee\", \"caffeine_mg\": 120 }, \"rawText\": \"coffee\" },\n    { \"category\": \"supplement\", \"occurredAt\": \"2026-06-13T10:00:00.000Z\", \"occurredAtConfidence\": \"high\", \"source\": \"voice\", \"fields\": { \"item\": \"magnesium\", \"dose_mg\": 400 }, \"rawText\": \"my magnesium\" }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["events"]
+            },
+            "description": "Persist several events atomically — used to save confirmed/edited capture candidates. Returns `{ events: [...] }` (201)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Capture (voice/text -> candidates)",
+      "item": [
+        {
+          "name": "Extract candidates",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "content-type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transcript\": \"coffee and my magnesium at 10am\",\n  \"tzOffsetMinutes\": 0\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/capture",
+              "host": ["{{baseUrl}}"],
+              "path": ["capture"]
+            },
+            "description": "Claude turns a transcript into candidate events (NOT saved). `tzOffsetMinutes` is the client's east-positive UTC offset (`-new Date().getTimezoneOffset()`, e.g. UTC+2 -> 120) so mentioned clock times resolve in the user's local zone; defaults to 0 (UTC). Returns `{ candidates: [...] }`. Confirm via POST /events (batch). Needs ANTHROPIC_API_KEY."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Templates",
+      "item": [
+        {
+          "name": "List templates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/templates",
+              "host": ["{{baseUrl}}"],
+              "path": ["templates"]
+            },
+            "description": "Returns `{ templates: [...] }`."
+          }
+        },
+        {
+          "name": "Create template",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "content-type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"my coffee\",\n  \"category\": \"drink\",\n  \"defaultFields\": { \"item\": \"coffee\", \"caffeine_mg\": 120 }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/templates",
+              "host": ["{{baseUrl}}"],
+              "path": ["templates"]
+            },
+            "description": "Create a quick-log template that POST /quicklog expands. `itemId` (optional) links it to a product."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Quick log",
+      "item": [
+        {
+          "name": "Quick-log a template",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "content-type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"template\": \"my coffee\",\n  \"fields\": { \"caffeine_mg\": 95 }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/quicklog",
+              "host": ["{{baseUrl}}"],
+              "path": ["quicklog"]
+            },
+            "description": "One-tap log from a template. Optional `fields` overrides defaults; optional `occurredAt` backdates. Returns the stored event (201); unknown template -> 404."
+          }
+        },
+        {
+          "name": "Quick-log a product (composite supplement)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "content-type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product\": \"sleep stack\",\n  \"servings\": 2\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/quicklog",
+              "host": ["{{baseUrl}}"],
+              "path": ["quicklog"]
+            },
+            "description": "Log a composite supplement by product name. `servings` (default 1) multiplies its ingredient amounts. Returns the stored event (201); unknown product -> 404."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products (composite supplements)",
+      "item": [
+        {
+          "name": "List products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"]
+            },
+            "description": "Returns `{ products: [...] }`."
+          }
+        },
+        {
+          "name": "Get one product (expanded to ingredients)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products?name=sleep stack&servings=2",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [
+                { "key": "name", "value": "sleep stack" },
+                { "key": "servings", "value": "2" }
+              ]
+            },
+            "description": "Returns `{ product, expanded }` where `expanded` is the ingredient list scaled by `servings` (default 1). Unknown name -> 404."
+          }
+        },
+        {
+          "name": "Create product",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "content-type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"sleep stack\",\n  \"category\": \"supplement\",\n  \"ingredients\": [\n    { \"name\": \"magnesium glycinate\", \"amount\": 200, \"unit\": \"mg\" },\n    { \"name\": \"l-theanine\", \"amount\": 200, \"unit\": \"mg\" }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"]
+            },
+            "description": "Define a product and its ingredient list (each `amount`/`unit` may be null). `category` defaults to `supplement`. Returns the created product (201)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ingredient scan (label photo)",
+      "item": [
+        {
+          "name": "Scan a supplement label",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "content-type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"image\": \"<base64-encoded image bytes>\",\n  \"mediaType\": \"image/jpeg\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ingredient-scan",
+              "host": ["{{baseUrl}}"],
+              "path": ["ingredient-scan"]
+            },
+            "description": "Claude vision extracts an ingredient list from a label photo (NOT saved). `mediaType` is one of image/jpeg|png|webp|gif (default image/jpeg). Returns `{ ingredients: [...] }`; confirm/edit then POST /products. Needs ANTHROPIC_API_KEY."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Check-in (mood/energy/focus)",
+      "item": [
+        {
+          "name": "Log a check-in",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "content-type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mood\": 4,\n  \"energy\": 3,\n  \"focus\": 3,\n  \"note\": \"post-lunch dip\",\n  \"occurredAt\": \"2026-06-13T13:00:00.000Z\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/checkin",
+              "host": ["{{baseUrl}}"],
+              "path": ["checkin"]
+            },
+            "description": "Subjective ratings, 1-5 integers. At least one of mood/energy/focus required; `note` and `occurredAt` optional. Stores one event per provided dimension. Returns `{ events: [...] }` (201)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ask (real-time analysis)",
+      "item": [
+        {
+          "name": "What's dragging me down?",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "content-type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"whats_dragging_me_down\",\n  \"windowHours\": 48\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/ask", "host": ["{{baseUrl}}"], "path": ["ask"] },
+            "description": "`windowHours` (optional, default 48, max 72) sets the look-back window. Returns `{ answer, citedEvents, windowHours }`. Needs ANTHROPIC_API_KEY."
+          }
+        },
+        {
+          "name": "Why do I feel ___? (param required)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "content-type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"why_do_i_feel\",\n  \"param\": \"anxious\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/ask", "host": ["{{baseUrl}}"], "path": ["ask"] },
+            "description": "Requires `param` (the feeling). Missing param -> 400."
+          }
+        },
+        {
+          "name": "What can I do now?",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "content-type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"what_can_i_do_now\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/ask", "host": ["{{baseUrl}}"], "path": ["ask"] }
+          }
+        },
+        {
+          "name": "Should I ___? (param required)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "content-type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"should_i\",\n  \"param\": \"have another coffee\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/ask", "host": ["{{baseUrl}}"], "path": ["ask"] },
+            "description": "Requires `param` (the action). Missing param -> 400."
+          }
+        },
+        {
+          "name": "How will I feel later?",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "content-type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"how_will_i_feel_later\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/ask", "host": ["{{baseUrl}}"], "path": ["ask"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Overview (daily summary)",
+      "item": [
+        {
+          "name": "Today's overview",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/overview",
+              "host": ["{{baseUrl}}"],
+              "path": ["overview"]
+            },
+            "description": "Daily roll-up for today (UTC). Returns caffeine total + last time, sleep minutes, workout, subjective averages, by-category counts, and expanded ingredient totals."
+          }
+        },
+        {
+          "name": "Overview for a date",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/overview?date=2026-06-13",
+              "host": ["{{baseUrl}}"],
+              "path": ["overview"],
+              "query": [{ "key": "date", "value": "2026-06-13" }]
+            },
+            "description": "`date` is `YYYY-MM-DD` (UTC day). Malformed date -> 400."
+          }
+        }
+      ]
+    }
+  ]
+}
