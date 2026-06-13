@@ -53,6 +53,14 @@ export const APP_HTML = `<!DOCTYPE html>
   .pill { display:inline-block; font-size:12px; color:var(--mut); border:1px solid var(--line); border-radius:20px; padding:2px 8px; margin-left:6px; }
   .ghost { background:#202227; border:1px solid var(--line); color:var(--fg); border-radius:10px; padding:8px 12px; font-size:14px; margin-top:8px; }
   .row input.mkey, .row input.mval { flex:1; min-width:0; }
+  .subh { font-weight:600; margin:18px 0 8px; }
+  .subh:first-of-type { margin-top:4px; }
+  .ingrow { display:flex; gap:6px; margin:6px 0; }
+  .ingrow input { min-width:0; padding:8px 10px; }
+  .ingrow .iname { flex:3; }
+  .ingrow .iamt { flex:1; }
+  .ingrow .iunit { flex:1; }
+  input[type=file] { width:100%; color:var(--mut); font-size:14px; margin:4px 0; }
 </style>
 </head>
 <body>
@@ -119,6 +127,30 @@ export const APP_HTML = `<!DOCTYPE html>
     <div class="row" style="margin-top:10px"><input type="text" id="feeling" placeholder="anxious, foggy&hellip;" /><button id="whyBtn">Why?</button></div>
     <div class="row"><input type="text" id="action" placeholder="have another coffee&hellip;" /><button id="shouldBtn">Should I?</button></div>
     <div class="answer mut" id="answer"></div>
+  </section>
+
+  <section class="card">
+    <h2>Manage</h2>
+
+    <div class="subh">New product (composite supplement)</div>
+    <div class="row"><span class="lbl">Name</span><input type="text" id="prodName" placeholder="e.g. sleep stack" autocapitalize="off" /></div>
+    <div class="row"><span class="lbl">Category</span><select id="prodCat"></select></div>
+    <p class="mut">Add ingredients by hand, or scan a label photo to fill them.</p>
+    <input type="file" id="prodImage" accept="image/*" capture="environment" />
+    <button class="ghost" id="prodScan" type="button">Scan label &rarr; ingredients</button>
+    <div id="prodIngredients"></div>
+    <button class="ghost" id="prodAddIng" type="button">+ ingredient</button>
+    <button class="primary" id="prodSave">Save product</button>
+
+    <div class="subh">New quick-log template</div>
+    <div class="row"><span class="lbl">Name</span><input type="text" id="tplName" placeholder="e.g. my coffee" autocapitalize="off" /></div>
+    <div class="row"><span class="lbl">Category</span><select id="tplCat"></select></div>
+    <div class="row"><span class="lbl">Fields</span><input type="text" id="tplFields" placeholder="caffeine_mg=120, item=coffee" autocapitalize="off" /></div>
+    <button class="primary" id="tplSave">Save template</button>
+
+    <div class="subh">Ingredient breakdown</div>
+    <div class="row"><input type="text" id="brkName" placeholder="product name" autocapitalize="off" /><input type="text" id="brkServings" inputmode="decimal" placeholder="servings" style="max-width:96px" /><button id="brkLoad">Show</button></div>
+    <div id="brkOut" class="mut"></div>
   </section>
 </main>
 <div id="toast"></div>
@@ -405,6 +437,116 @@ export const APP_HTML = `<!DOCTYPE html>
           $("#manFields").innerHTML = ""; addFieldRow(); $("#manTime").value = "";
           loadOverview();
         } else { toast("Save failed (" + r.status + ")", true); }
+      });
+    });
+  })();
+
+  // ---- manage: products, templates, label scan ---- (Phase 11c)
+  function fillCategories(sel, selected) {
+    CATEGORIES.forEach(function (name) {
+      var o = el("option"); o.value = name; o.textContent = name;
+      if (name === selected) o.selected = true;
+      sel.appendChild(o);
+    });
+  }
+  // Strip the "data:<type>;base64," prefix a FileReader data URL carries.
+  function fileToBase64(file) {
+    return new Promise(function (resolve, reject) {
+      var rd = new FileReader();
+      rd.onload = function () {
+        var s = String(rd.result);
+        var comma = s.indexOf(",");
+        resolve(comma >= 0 ? s.slice(comma + 1) : s);
+      };
+      rd.onerror = function () { reject(new Error("read failed")); };
+      rd.readAsDataURL(file);
+    });
+  }
+  (function initManage() {
+    fillCategories($("#prodCat"), "supplement");
+    fillCategories($("#tplCat"), "drink");
+
+    function addIngredientRow(ing) {
+      ing = ing || {};
+      var row = el("div", "ingrow");
+      var nm = el("input"); nm.type = "text"; nm.className = "iname"; nm.placeholder = "ingredient"; nm.autocapitalize = "off";
+      if (ing.name) nm.value = ing.name;
+      var amt = el("input"); amt.type = "text"; amt.className = "iamt"; amt.placeholder = "amt"; amt.inputMode = "decimal";
+      if (ing.amount != null) amt.value = String(ing.amount);
+      var unit = el("input"); unit.type = "text"; unit.className = "iunit"; unit.placeholder = "unit";
+      if (ing.unit) unit.value = ing.unit;
+      row.appendChild(nm); row.appendChild(amt); row.appendChild(unit);
+      $("#prodIngredients").appendChild(row);
+    }
+    addIngredientRow();
+    $("#prodAddIng").addEventListener("click", function () { addIngredientRow(); });
+
+    $("#prodScan").addEventListener("click", function () {
+      var f = $("#prodImage").files && $("#prodImage").files[0];
+      if (!f) { toast("Choose a label photo first", true); return; }
+      toast("Scanning label\\u2026");
+      fileToBase64(f).then(function (b64) {
+        return api("/ingredient-scan", "POST", { image: b64, mediaType: f.type || "image/jpeg" });
+      }).then(function (r) {
+        if (!r.ok || !r.data) { toast("Scan failed (" + r.status + ")", true); return; }
+        var ings = r.data.ingredients || [];
+        if (!ings.length) { toast("No ingredients found", true); return; }
+        $("#prodIngredients").innerHTML = "";
+        ings.forEach(function (ing) { addIngredientRow(ing); });
+        toast("Found " + ings.length + " \\u2014 review &amp; save");
+      }).catch(function () { toast("Could not read the image", true); });
+    });
+
+    $("#prodSave").addEventListener("click", function () {
+      var name = $("#prodName").value.trim();
+      if (!name) { toast("Product name required", true); return; }
+      var ingredients = [];
+      $("#prodIngredients").querySelectorAll(".ingrow").forEach(function (row) {
+        var nm = row.querySelector(".iname").value.trim();
+        if (!nm) return;
+        var amtRaw = row.querySelector(".iamt").value.trim();
+        var amt = amtRaw === "" ? null : Number(amtRaw);
+        if (amt !== null && isNaN(amt)) amt = null;
+        var unit = row.querySelector(".iunit").value.trim() || null;
+        ingredients.push({ name: nm, amount: amt, unit: unit });
+      });
+      var body = { name: name, category: $("#prodCat").value, ingredients: ingredients };
+      api("/products", "POST", body).then(function (r) {
+        if (r.ok) {
+          toast("Saved product");
+          $("#prodName").value = ""; $("#prodImage").value = "";
+          $("#prodIngredients").innerHTML = ""; addIngredientRow();
+          loadQuick();
+        } else { toast("Save failed (" + r.status + ")", true); }
+      });
+    });
+
+    $("#tplSave").addEventListener("click", function () {
+      var name = $("#tplName").value.trim();
+      if (!name) { toast("Template name required", true); return; }
+      var body = { name: name, category: $("#tplCat").value, defaultFields: parseFields($("#tplFields").value) };
+      api("/templates", "POST", body).then(function (r) {
+        if (r.ok) {
+          toast("Saved template");
+          $("#tplName").value = ""; $("#tplFields").value = "";
+          loadQuick();
+        } else { toast("Save failed (" + r.status + ")", true); }
+      });
+    });
+
+    $("#brkLoad").addEventListener("click", function () {
+      var name = $("#brkName").value.trim();
+      if (!name) { toast("Enter a product name", true); return; }
+      var s = $("#brkServings").value.trim() || "1";
+      $("#brkOut").textContent = "Loading\\u2026";
+      api("/products?name=" + encodeURIComponent(name) + "&servings=" + encodeURIComponent(s), "GET").then(function (r) {
+        if (r.status === 404) { $("#brkOut").textContent = "No product named \\u201c" + name + "\\u201d."; return; }
+        if (!r.ok || !r.data) { $("#brkOut").textContent = "Failed (" + r.status + ")"; return; }
+        var ex = r.data.expanded || [];
+        if (!ex.length) { $("#brkOut").textContent = "No ingredients."; return; }
+        $("#brkOut").innerHTML = ex.map(function (i) {
+          return i.canonical_name + (i.amount != null ? (" \\u2014 " + i.amount + (i.unit || "")) : "");
+        }).join("<br>");
       });
     });
   })();

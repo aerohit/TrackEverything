@@ -38,6 +38,15 @@ action re-opens the token box.
   time is sent as `occurredAtConfidence: high`.)
 - **Ask** — the five real-time questions → `POST /ask`; the answer shows with a count of the events
   it was based on. Two questions take a word: "Why?" (a feeling) and "Should I?" (an action).
+- **Manage** (Phase 11c) — set-up surfaces you reach rarely:
+  - **New product** — name + category + ingredient rows → `POST /products`. **Scan label →
+    ingredients** sends a photo to `POST /ingredient-scan` (Claude vision) and fills the rows for
+    you to confirm/edit (the R-CAP-15 image path in the UI).
+  - **New template** — name + category + a `key=value` fields string → `POST /templates`.
+  - **Ingredient breakdown** — a product name + servings → `GET /products?name&servings`, showing
+    the expanded per-ingredient amounts (R-PAT-5).
+
+  Saving a product or template refreshes the **Quick log** buttons immediately.
 
 ## Add to Home Screen
 
@@ -57,7 +66,6 @@ DATABASE_URL=... INGEST_TOKEN=... ANTHROPIC_API_KEY=... deno task start
 ## Not in this slice (future)
 
 - A **timeline/history** view (needs a `GET /events` list endpoint) — Phase 11d.
-- A **label-scan** screen for composite supplements (`/ingredient-scan` → `/products`) — Phase 11c.
 - Offline queue / widgets / Apple Watch — those need a native app (R-CAP-11), still future.
 
 ## Why not native SwiftUI

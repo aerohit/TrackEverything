@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-13 (Phase 11a approved; Phase 11b in review; Phase 8 deferred)
+> **Status:** Living document. **Last updated:** 2026-06-13 (Phase 11a approved; Phase 11b/11c in review; Phase 8 deferred)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -280,7 +280,7 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
   - **Tests:** embedded-script parse check + an 11b feature-lock test. Suite green — **108 passed**.
   - ⚠️ **Device-verified** like prior UI slices: served + parsed here; you confirm on the phone.
 
-### Phase 11c — Manage: products, templates, label scan ☐
+### Phase 11c — Manage: products, templates, label scan ◐
 - **Goal:** Define supplements (incl. from a label photo) and quick-log templates from the app.
 - **Build:** A **Manage** screen: (1) **label-scan** — pick/take a photo, `POST /ingredient-scan`
   (vision) → confirm/edit the extracted ingredient list → `POST /products` (realizes the
@@ -292,6 +292,19 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 - **You verify:** Photograph a label → confirm ingredients → save product → see it in Quick log;
   create a template and tap it.
 - **Builds:** R-CAP-13/14/15 (UI), R-CAP-5 (UI template creation), R-PAT-5 (expansion preview).
+- **Implementation notes (in progress):**
+  - A **Manage** card in [`backend/ui/app.ts`](../backend/ui/app.ts), all over existing endpoints:
+    - **New product** — name + category `<select>` + editable ingredient rows (name/amount/unit)
+      → `POST /products`. A **Scan label** file picker reads the photo as base64 and `POST`s it to
+      `/ingredient-scan`; the returned ingredients fill the rows for confirm/edit before saving
+      (the R-CAP-15 image path, now in the UI).
+    - **New template** — name + category + `key=value` fields → `POST /templates`.
+    - **Ingredient breakdown** — name + servings → `GET /products?name&servings`, listing the
+      expanded per-ingredient amounts. Saving a product/template refreshes the Quick-log buttons.
+  - **Tests:** embedded-script parse check + an 11c feature-lock test (scan→product, create
+    product/template, breakdown). Suite green — **109 passed**.
+  - ⚠️ **Device-verified** (esp. the live label scan: needs `ANTHROPIC_API_KEY` + a real photo;
+    iOS may hand over HEIC — if the scan 400s, the label was an unsupported type).
 
 ### Phase 11d — Timeline / history view ☐
 - **Goal:** See and scroll the actual event log, and see which events an answer cited.
@@ -338,3 +351,4 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 | 2026-06-13 | Planned UI completion slices 11a–11d (editable confirmation, manual/detailed logging, manage/label-scan, timeline). Added R-VIEW-4. Building 11a. |
 | 2026-06-13 | Phase 11a approved (PR #13 merged) → ☑. Shipped `/capture` timezone fix (PR #14) and a Postman collection + drift test (PR #15). |
 | 2026-06-13 | Phase 11b implemented (manual single-event form, check-in note, quick-log servings/fields override) → ◐ in review. |
+| 2026-06-13 | Phase 11c implemented (Manage card: label-scan→product, create product/template, ingredient-breakdown preview) → ◐ in review. |

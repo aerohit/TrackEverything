@@ -48,6 +48,24 @@ Deno.test("ui: manual logging, check-in note & quick-log overrides (11b)", () =>
   );
 });
 
+Deno.test("ui: manage — products, templates, label scan (11c)", () => {
+  const js = scriptBody();
+  const html = APP_HTML;
+  // Label scan -> product.
+  assert(html.includes('id="prodImage"') && html.includes('type="file"'), "label photo picker");
+  assert(js.includes("/ingredient-scan"), "should call the vision scan endpoint");
+  assert(js.includes("fileToBase64"), "should base64-encode the chosen image");
+  // Create product / template.
+  assert(html.includes('id="prodSave"') && html.includes('id="tplSave"'), "save buttons");
+  assert(js.includes('api("/products", "POST"'), "should create a product");
+  assert(js.includes('api("/templates", "POST"'), "should create a template");
+  // Ingredient-expansion preview.
+  assert(html.includes('id="brkLoad"'), "breakdown button");
+  assert(js.includes("/products?name="), "should fetch the expanded breakdown");
+  // New products/templates show up as quick-log buttons.
+  assert(js.includes("loadQuick()"), "saving should refresh quick-log buttons");
+});
+
 Deno.test("ui: the editable category list matches the backend vocabulary", async () => {
   const { CATEGORIES } = await import("../../src/vocab.ts");
   const js = scriptBody();
