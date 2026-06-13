@@ -81,10 +81,10 @@ Operates over the recent timeline (last 24–48h) and answers questions in the m
 |---|---|---|
 | R-RT-1 | "**Why** am I feeling X right now?" — diagnose current anxiety/low mood against recent inputs. | Proposed |
 | R-RT-2 | "**What can I do right now** to fix it?" — actionable suggestions (breathwork, food, walk, stop caffeine). | Proposed |
-| R-RT-3 | "**What's dragging me down?**" — attribute current low energy/focus/mood to recent inputs. | Proposed |
+| R-RT-3 | "**What's dragging me down?**" — attribute current low energy/focus/mood to recent inputs. | Built |
 | R-RT-4 | "**Should I do X right now?**" — decision support (another coffee? work out given recovery?). | Proposed |
 | R-RT-5 | "**How will I feel later?**" — forward-looking prediction given today's inputs so far. | Proposed |
-| R-RT-6 | Real-time answers cite the specific events/data they reasoned from. | Proposed |
+| R-RT-6 | Real-time answers cite the specific events/data they reasoned from. | Built |
 
 ## 7. Retrospective analysis (pattern finding)
 
@@ -172,3 +172,4 @@ This document is kept current by an explicit process, not by hope. See
 | 2026-06-12 | Phase 4b approved → R-CAP-13/14/15 + R-PAT-5 to Built (composite supplements). |
 | 2026-06-12 | Phase 5: resolved Q2 (1–5 separate mood/energy/focus). |
 | 2026-06-13 | Phase 5 approved → R-SUBJ-1/2/3 to Built (subjective check-ins). |
+| 2026-06-13 | Phase 6 approved → R-RT-3/6 to Built (real-time /ask + citations). |

@@ -1,10 +1,41 @@
-import { assertEquals } from "@std/assert";
+import { assert, assertEquals } from "@std/assert";
 import { MockClaudeClient } from "../../src/claude.ts";
-import { answerQuestion, buildAskPrompt, parseAnswer, resolveCitations } from "../../src/ask.ts";
+import {
+  answerQuestion,
+  ASK_TEMPLATES,
+  buildAskPrompt,
+  parseAnswer,
+  resolveCitations,
+} from "../../src/ask.ts";
 import type { ContextRef } from "../../src/context.ts";
 import { makeEvent } from "../helpers/events.ts";
 
 const now = new Date("2026-06-12T12:00:00Z");
+
+Deno.test("ASK_TEMPLATES: all five real-time questions are registered", () => {
+  assertEquals(Object.keys(ASK_TEMPLATES).sort(), [
+    "how_will_i_feel_later",
+    "should_i",
+    "what_can_i_do_now",
+    "whats_dragging_me_down",
+    "why_do_i_feel",
+  ]);
+});
+
+Deno.test("buildAskPrompt: injects a parameter into a parameterized question", () => {
+  const { user } = buildAskPrompt("why_do_i_feel", "ctx", "anxious");
+  assert(user.includes("anxious"));
+});
+
+Deno.test("buildAskPrompt: throws when a required parameter is missing", () => {
+  let threw = false;
+  try {
+    buildAskPrompt("should_i", "ctx");
+  } catch {
+    threw = true;
+  }
+  assertEquals(threw, true);
+});
 
 Deno.test("parseAnswer: extracts answer + citations, tolerates junk", () => {
   assertEquals(parseAnswer({ answer: "x", citations: ["E1", "E2"] }), {

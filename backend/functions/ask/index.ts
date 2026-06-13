@@ -41,10 +41,18 @@ export function makeAskHandler(deps: AskHandlerDeps) {
     if (!isPlainObject(body)) return jsonResponse(400, { error: "body must be a JSON object" });
 
     const templateId = typeof body.question === "string" ? body.question : "whats_dragging_me_down";
-    if (!(templateId in ASK_TEMPLATES)) {
+    const template = ASK_TEMPLATES[templateId];
+    if (!template) {
       return jsonResponse(400, {
         error: `unknown question "${templateId}"`,
         available: Object.keys(ASK_TEMPLATES),
+      });
+    }
+
+    const param = typeof body.param === "string" ? body.param : undefined;
+    if (template.paramRequired && (param === undefined || param.trim() === "")) {
+      return jsonResponse(400, {
+        error: `question "${templateId}" requires a "${template.paramName}" parameter`,
       });
     }
 
@@ -53,7 +61,13 @@ export function makeAskHandler(deps: AskHandlerDeps) {
     const since = new Date(now.getTime() - windowHours * 60 * 60 * 1000);
     const events = await getRecentEvents(deps.sql, since);
 
-    const result = await answerQuestion(deps.claude, { templateId, events, now, windowHours });
+    const result = await answerQuestion(deps.claude, {
+      templateId,
+      param,
+      events,
+      now,
+      windowHours,
+    });
     return jsonResponse(200, result);
   };
 }

@@ -59,3 +59,44 @@ Deno.test({
     }
   },
 });
+
+Deno.test({
+  name: "POST /ask: a parameterized question ('why do I feel X') runs through the DB path",
+  ignore: !databaseUrl,
+  async fn() {
+    const sql = await connect(databaseUrl!);
+    try {
+      await applyMigrations(sql);
+      await sql`delete from events`;
+      const e = await insertEvent(sql, {
+        category: "drink",
+        occurredAt: new Date(now.getTime() - 1 * 3600_000),
+        source: "manual",
+        fields: { item: "coffee", caffeine_mg: 200 },
+      });
+
+      const claude = new MockClaudeClient(undefined, {
+        answer: "Late strong caffeine could explain the jitters.",
+        citations: ["E1"],
+      });
+      const handler = makeAskHandler({ sql, claude, token: null, now: () => now });
+
+      const res = await handler(
+        new Request("http://localhost/ask", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ question: "why_do_i_feel", param: "anxious" }),
+        }),
+      );
+
+      assertEquals(res.status, 200);
+      const result = await res.json();
+      assert(result.answer.length > 0);
+      assertEquals(result.citedEvents.map((c: { id: string }) => c.id), [e.id]);
+
+      await sql`delete from events where id = ${e.id}`;
+    } finally {
+      await sql.end();
+    }
+  },
+});
