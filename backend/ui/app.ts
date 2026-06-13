@@ -203,7 +203,10 @@ export const APP_HTML = `<!DOCTYPE html>
     var text = $("#captureText").value.trim();
     if (!text) { toast("Say or type something first", true); return; }
     $("#candidates").innerHTML = "<span class='mut'>Extracting&hellip;</span>";
-    api("/capture", "POST", { transcript: text }).then(function (r) {
+    // East-positive UTC offset (UTC+2 -> +120) so the backend reads clock times
+    // like "6pm" in this device's local timezone, not UTC.
+    var tzOffsetMinutes = -new Date().getTimezoneOffset();
+    api("/capture", "POST", { transcript: text, tzOffsetMinutes: tzOffsetMinutes }).then(function (r) {
       var cands = (r.data && r.data.candidates) || [];
       if (!r.ok) { $("#candidates").innerHTML = "<span class='mut'>Extract failed (" + r.status + ")</span>"; return; }
       if (cands.length === 0) { $("#candidates").innerHTML = "<span class='mut'>Nothing recognised. Try rephrasing.</span>"; return; }

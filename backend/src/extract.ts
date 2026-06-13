@@ -28,22 +28,49 @@ export interface ExtractionInput {
   transcript: string;
   now: Date;
   knownItems?: KnownItem[];
+  /**
+   * The client's UTC offset in minutes, east-positive (the negation of JS's
+   * `Date.prototype.getTimezoneOffset`, so UTC+2 → +120). Clock times the user
+   * mentions are interpreted in this zone (R-CAP-8). Defaults to 0 (UTC).
+   */
+  tzOffsetMinutes?: number;
+}
+
+/** Does an ISO string carry its own timezone (a trailing `Z` or `±hh:mm`)? */
+function hasExplicitZone(iso: string): boolean {
+  return /([zZ]|[+\-]\d{2}:?\d{2})$/.test(iso.trim());
+}
+
+/**
+ * Parse a clock time the user named. If it already carries a timezone we trust
+ * it; otherwise it's a **local wall-clock** ("6pm" → "2026-06-13T18:00:00") and
+ * we apply the user's offset so the stored instant is correct. We own this math
+ * (rather than asking the model to do offset arithmetic) so it's deterministic.
+ */
+function parseAbsolute(iso: string, tzOffsetMinutes: number): Date {
+  const s = iso.trim();
+  if (hasExplicitZone(s)) return new Date(s);
+  // Read the wall-clock as if it were UTC, then shift back by the offset:
+  // local 18:00 at UTC+2 is the instant 16:00Z.
+  return new Date(new Date(s + "Z").getTime() - tzOffsetMinutes * 60_000);
 }
 
 /**
  * Resolve a time hint to a concrete instant + confidence (pure; fixed-now
  * testable). Explicit/clock times are "high"; anything we had to infer or
- * default is "inferred".
+ * default is "inferred". `tzOffsetMinutes` (east-positive) places bare
+ * wall-clock times in the user's local zone.
  */
 export function resolveOccurredAt(
   hint: TimeHint,
   now: Date,
+  tzOffsetMinutes = 0,
 ): { occurredAt: Date; confidence: OccurredAtConfidence } {
   switch (hint.type) {
     case "now":
       return { occurredAt: now, confidence: "high" };
     case "absolute":
-      return { occurredAt: new Date(hint.iso), confidence: "high" };
+      return { occurredAt: parseAbsolute(hint.iso, tzOffsetMinutes), confidence: "high" };
     case "relative_minutes":
       return {
         occurredAt: new Date(now.getTime() - hint.minutesAgo * 60_000),
@@ -62,14 +89,14 @@ interface RawCandidate {
 }
 
 /** Map the model's JSON ({events:[...]}) into candidate NewEvents. */
-export function parseCandidates(raw: unknown, now: Date): NewEvent[] {
+export function parseCandidates(raw: unknown, now: Date, tzOffsetMinutes = 0): NewEvent[] {
   const events = isRecord(raw) ? raw.events : undefined;
   if (!Array.isArray(events)) return [];
-  return events.map((entry) => toCandidate(isRecord(entry) ? entry : {}, now));
+  return events.map((entry) => toCandidate(isRecord(entry) ? entry : {}, now, tzOffsetMinutes));
 }
 
-function toCandidate(c: RawCandidate, now: Date): NewEvent {
-  const { occurredAt, confidence } = resolveOccurredAt(asTimeHint(c.time), now);
+function toCandidate(c: RawCandidate, now: Date, tzOffsetMinutes: number): NewEvent {
+  const { occurredAt, confidence } = resolveOccurredAt(asTimeHint(c.time), now, tzOffsetMinutes);
   return {
     category: typeof c.category === "string" ? c.category : "",
     occurredAt,
@@ -101,11 +128,12 @@ export async function extractEvents(
   claude: ClaudeClient,
   input: ExtractionInput,
 ): Promise<NewEvent[]> {
+  const tz = input.tzOffsetMinutes ?? 0;
   const raw = await claude.extractJson({
     system: buildSystemPrompt(input.knownItems ?? []),
-    user: buildUserPrompt(input.transcript, input.now),
+    user: buildUserPrompt(input.transcript, input.now, tz),
   });
-  return parseCandidates(raw, input.now);
+  return parseCandidates(raw, input.now, tz);
 }
 
 export function buildSystemPrompt(knownItems: KnownItem[]): string {
@@ -131,14 +159,29 @@ events (e.g. "coffee and my magnesium" is two). For each event emit:
 - "rawPhrase": the exact words from the transcript for this event.
 - "time": when it happened, as one of:
     {"type":"now"} — just now / no past reference,
-    {"type":"absolute","iso":"<ISO-8601>"} — an explicit clock time/date; compute
-      the full ISO timestamp from the provided current time,
+    {"type":"absolute","iso":"YYYY-MM-DDTHH:MM:SS"} — an explicit clock time/date the
+      user named ("6pm", "this morning", "yesterday at 8"). Express it as the user's
+      LOCAL wall-clock time with NO timezone suffix (no trailing "Z" or "+hh:mm") — just
+      the time as they would read it off a clock. Use the provided current local date to
+      fill in the day,
     {"type":"relative_minutes","minutesAgo":<number>} — phrasing like "an hour ago",
     {"type":"unknown"} — no time information at all.${itemsBlock}`;
 }
 
-export function buildUserPrompt(transcript: string, now: Date): string {
-  return `Current time (ISO-8601): ${now.toISOString()}
+/** Format an east-positive minute offset as `+HH:MM` / `-HH:MM`. */
+function formatOffset(tzOffsetMinutes: number): string {
+  const sign = tzOffsetMinutes < 0 ? "-" : "+";
+  const abs = Math.abs(tzOffsetMinutes);
+  const p = (n: number) => (n < 10 ? "0" : "") + n;
+  return `${sign}${p(Math.floor(abs / 60))}:${p(abs % 60)}`;
+}
+
+export function buildUserPrompt(transcript: string, now: Date, tzOffsetMinutes = 0): string {
+  const localNow = new Date(now.getTime() + tzOffsetMinutes * 60_000).toISOString().slice(0, 19);
+  return `Current local date & time: ${localNow} (the user's timezone, UTC${
+    formatOffset(tzOffsetMinutes)
+  }). Interpret every clock time the user mentions in THIS local timezone and report it
+as a local wall-clock time (see the "absolute" format above).
 
 Transcript:
 ${transcript}`;
