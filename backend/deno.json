@@ -18,7 +18,8 @@
     "serve:products": "deno run --allow-env --allow-net functions/products/index.ts",
     "serve:ingredient-scan": "deno run --allow-env --allow-net functions/ingredient_scan/index.ts",
     "serve:checkin": "deno run --allow-env --allow-net functions/checkin/index.ts",
-    "serve:ask": "deno run --allow-env --allow-net functions/ask/index.ts"
+    "serve:ask": "deno run --allow-env --allow-net functions/ask/index.ts",
+    "start": "deno run --allow-env --allow-net main.ts"
   },
   "imports": {
     "@std/assert": "jsr:@std/assert@^1.0.8"

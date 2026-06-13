@@ -9,3 +9,5 @@ backend/.env.local
 
 # OS junk
 .DS_Store
+
+Scratch.md

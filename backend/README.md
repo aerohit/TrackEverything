@@ -31,26 +31,27 @@ dependencies the first time. This is what CI runs and what gates each phase.
 
 Other tasks:
 
-| Command                           | What it does                                                                                |
-| --------------------------------- | ------------------------------------------------------------------------------------------- |
-| `deno task test`                  | Unit + integration (deterministic). **Use this.**                                           |
-| `deno task test:unit`             | Unit tests only (fully offline).                                                            |
-| `deno task test:live`             | Hits the **real** Claude API. Needs `ANTHROPIC_API_KEY`.                                    |
-| `deno task fmt` / `fmt:check`     | Format / check formatting.                                                                  |
-| `deno task lint`                  | Lint.                                                                                       |
-| `deno task check`                 | Type-check.                                                                                 |
-| `deno task migrate`               | Apply DB migrations. Needs `DATABASE_URL`.                                                  |
-| `deno task seed`                  | Migrate + insert a sample event and print it. Needs `DATABASE_URL`.                         |
-| `deno task templates:seed`        | Add example quick-log templates ("my coffee", …). Needs `DATABASE_URL`.                     |
-| `deno task serve:hello`           | Run the hello server locally (needs `ANTHROPIC_API_KEY`).                                   |
-| `deno task serve:events`          | Run the `POST /events` capture server (needs `DATABASE_URL`).                               |
-| `deno task serve:capture`         | Run the `POST /capture` extraction server (needs `ANTHROPIC_API_KEY`).                      |
-| `deno task serve:templates`       | Run the `/templates` management server (needs `DATABASE_URL`).                              |
-| `deno task serve:quicklog`        | Run the `POST /quicklog` one-tap server (needs `DATABASE_URL`).                             |
-| `deno task serve:products`        | Run the `/products` composite-supplement server (needs `DATABASE_URL`).                     |
-| `deno task serve:ingredient-scan` | Run the `POST /ingredient-scan` vision server (needs `ANTHROPIC_API_KEY`).                  |
-| `deno task serve:checkin`         | Run the `POST /checkin` subjective-rating server (needs `DATABASE_URL`).                    |
-| `deno task serve:ask`             | Run the `POST /ask` real-time analysis server (needs `DATABASE_URL` + `ANTHROPIC_API_KEY`). |
+| Command                           | What it does                                                                                  |
+| --------------------------------- | --------------------------------------------------------------------------------------------- |
+| `deno task test`                  | Unit + integration (deterministic). **Use this.**                                             |
+| `deno task test:unit`             | Unit tests only (fully offline).                                                              |
+| `deno task test:live`             | Hits the **real** Claude API. Needs `ANTHROPIC_API_KEY`.                                      |
+| `deno task fmt` / `fmt:check`     | Format / check formatting.                                                                    |
+| `deno task lint`                  | Lint.                                                                                         |
+| `deno task check`                 | Type-check.                                                                                   |
+| `deno task migrate`               | Apply DB migrations. Needs `DATABASE_URL`.                                                    |
+| `deno task seed`                  | Migrate + insert a sample event and print it. Needs `DATABASE_URL`.                           |
+| `deno task templates:seed`        | Add example quick-log templates ("my coffee", …). Needs `DATABASE_URL`.                       |
+| `deno task serve:hello`           | Run the hello server locally (needs `ANTHROPIC_API_KEY`).                                     |
+| `deno task serve:events`          | Run the `POST /events` capture server (needs `DATABASE_URL`).                                 |
+| `deno task serve:capture`         | Run the `POST /capture` extraction server (needs `ANTHROPIC_API_KEY`).                        |
+| `deno task serve:templates`       | Run the `/templates` management server (needs `DATABASE_URL`).                                |
+| `deno task serve:quicklog`        | Run the `POST /quicklog` one-tap server (needs `DATABASE_URL`).                               |
+| `deno task serve:products`        | Run the `/products` composite-supplement server (needs `DATABASE_URL`).                       |
+| `deno task serve:ingredient-scan` | Run the `POST /ingredient-scan` vision server (needs `ANTHROPIC_API_KEY`).                    |
+| `deno task serve:checkin`         | Run the `POST /checkin` subjective-rating server (needs `DATABASE_URL`).                      |
+| `deno task serve:ask`             | Run the `POST /ask` real-time analysis server (needs `DATABASE_URL` + `ANTHROPIC_API_KEY`).   |
+| `deno task start`                 | Run the combined router (`main.ts`) — all endpoints on one server. The production entrypoint. |
 
 ## Configuration
 
@@ -62,6 +63,26 @@ Copy `.env.example` to `.env` and fill in what you need. Nothing in `.env` is re
 - `CLAUDE_MODEL` — defaults to `claude-opus-4-8`.
 - `INGEST_TOKEN` — shared secret the `POST /events` endpoint requires. Unset = unauthenticated (dev
   only).
+
+## Environments & credentials
+
+Three environments, separated only by the value of `DATABASE_URL` — the two values never live in the
+same place:
+
+| Environment    | `DATABASE_URL` points at             | Credentials live in         | Secret?                   |
+| -------------- | ------------------------------------ | --------------------------- | ------------------------- |
+| CI             | ephemeral Postgres service container | hardcoded in `ci.yml`       | no                        |
+| Local dev/test | a local throwaway Postgres           | `backend/.env` (gitignored) | no (trust-auth localhost) |
+| Production     | the Supabase project                 | **Deno Deploy env only**    | **yes**                   |
+
+Rules of thumb:
+
+- The production `DATABASE_URL` / `ANTHROPIC_API_KEY` / `INGEST_TOKEN` live **only in Deno Deploy's
+  env settings** — never committed, never in `backend/.env`.
+- **Never point `deno task test` at production** — the suite is destructive. Likewise
+  `seed`/`templates:seed` write rows; `migrate` is the only prod-safe script.
+
+Full deployment walkthrough: [docs/deploy.md](docs/deploy.md).
 
 ## CI
 
@@ -75,6 +96,7 @@ run in CI.
 ```
 backend/
   deno.json                   # tasks, import map, fmt/lint config
+  main.ts                     # production entrypoint: one router service (deploy this)
   .env.example
   migrations/
     0001_event_log.sql        # events + items + templates (Phase 1)
@@ -87,6 +109,7 @@ backend/
     composite-supplements.md  # products, label scan, ingredient expansion (Phase 4b)
     check-ins.md              # POST /checkin mood/energy/focus ratings (Phase 5)
     real-time-analysis.md     # POST /ask: timeline -> grounded, citing answer (Phase 6)
+    deploy.md                 # Deno Deploy + Supabase deployment walkthrough
   src/
     config.ts                 # env -> Config (pure, unit-tested)
     claude.ts                 # ClaudeClient seam: hello + extractJson + extractJsonFromImage
