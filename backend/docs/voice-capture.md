@@ -16,8 +16,12 @@ POST /capture
 Content-Type: application/json
 Authorization: Bearer <INGEST_TOKEN>
 
-{ "transcript": "I had a coffee and took my magnesium at 10am" }
+{ "transcript": "I had a coffee and took my magnesium at 10am", "tzOffsetMinutes": 120 }
 ```
+
+`tzOffsetMinutes` (optional) is the client's UTC offset in minutes, **east-positive** — i.e.
+`-new Date().getTimezoneOffset()` in the browser (UTC+2 → `120`). It defaults to `0` (UTC) when
+omitted.
 
 Returns `200 { "candidates": [ NewEvent, ... ] }`. Each candidate has a resolved `occurredAt` +
 `occurredAtConfidence` (explicit clock times → `high`; inferred or defaulted → `inferred`),
@@ -25,9 +29,12 @@ Returns `200 { "candidates": [ NewEvent, ... ] }`. Each candidate has a resolved
 candidates (R-CAP-10). Errors: `400` (missing transcript / bad JSON), `401` (bad token), `405`
 (non-POST).
 
-How time is handled: the prompt is given the current time; the model emits a small time hint per
-event (`now` / `absolute` ISO / `relative_minutes` / `unknown`) and
-[`src/extract.ts`](../src/extract.ts) resolves it deterministically against "now".
+How time is handled (R-CAP-8): the prompt is given the **current local time** and the user's offset,
+and the model emits a small time hint per event (`now` / `absolute` / `relative_minutes` /
+`unknown`). A clock time the user names ("6pm") is reported by the model as a **local wall-clock**
+with no zone; [`src/extract.ts`](../src/extract.ts) then deterministically applies `tzOffsetMinutes`
+so the stored instant is correct. Mentioned times are always interpreted in the user's local
+timezone, never UTC. (A hint that already carries an explicit `Z`/offset is trusted as-is.)
 
 ## 2. Confirm — `POST /events` (batch)
 

@@ -42,9 +42,14 @@ export function makeCaptureHandler(deps: CaptureHandlerDeps) {
     }
 
     const now = deps.now?.() ?? new Date();
+    const tzOffsetMinutes = typeof body.tzOffsetMinutes === "number" &&
+        Number.isFinite(body.tzOffsetMinutes)
+      ? body.tzOffsetMinutes
+      : 0;
     const candidates = await extractEvents(deps.claude, {
       transcript: body.transcript,
       now,
+      tzOffsetMinutes,
       knownItems: deps.knownItems,
     });
     return jsonResponse(200, { candidates });
