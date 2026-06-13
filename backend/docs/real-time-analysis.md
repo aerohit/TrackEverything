@@ -1,9 +1,8 @@
 # Real-time analysis — `POST /ask`
 
-Phase 6. Ask a question about your recent state; Claude reasons over your last 24–48h timeline and
-answers, **citing the specific events it used** (R-RT-3, R-RT-6). The whole window fits in context,
-so there's no statistics step here — that's the retrospective phases. Phase 6 ships one question;
-Phase 7 adds the rest.
+Phases 6–7. Ask a question about your recent state; Claude reasons over your last 24–48h timeline
+and answers, **citing the specific events it used** (R-RT-1..6). The whole window fits in context,
+so there's no statistics step here — that's the retrospective phases.
 
 ```
 POST /ask ─▶ fetch recent events ─▶ assemble citable timeline ([E#]) ─▶ Claude ─▶ {answer, citedEvents}
@@ -19,8 +18,22 @@ Authorization: Bearer <INGEST_TOKEN>
 ```
 
 - `question` — a template id (default `whats_dragging_me_down`). Unknown ids get a `400` listing the
-  available ones.
+  available ones:
+
+  | id                       | asks                                           | `param`                  |
+  | ------------------------ | ---------------------------------------------- | ------------------------ |
+  | `whats_dragging_me_down` | what's pulling energy/mood/focus down (R-RT-3) | —                        |
+  | `why_do_i_feel`          | why I feel a given way right now (R-RT-1)      | **`feeling`** (required) |
+  | `what_can_i_do_now`      | concrete actions for the next hour (R-RT-2)    | —                        |
+  | `should_i`               | a yes/no recommendation on an action (R-RT-4)  | **`action`** (required)  |
+  | `how_will_i_feel_later`  | a forward-looking prediction (R-RT-5)          | —                        |
+
+- `param` — free text for the questions that need it (the feeling, or the action). A `400` is
+  returned if a required `param` is missing.
 - `windowHours` — optional, default 48, capped at 72.
+
+Examples: `{"question":"why_do_i_feel","param":"anxious"}`,
+`{"question":"should_i","param":"have another coffee"}`.
 
 Returns `200`:
 

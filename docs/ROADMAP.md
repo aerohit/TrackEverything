@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-13 (Phase 6 implemented, in review)
+> **Status:** Living document. **Last updated:** 2026-06-13 (Phase 7 implemented, in review)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -147,7 +147,7 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 
 ## Stage C — Real-time analysis
 
-### Phase 6 — Context assembler + first question ◐
+### Phase 6 — Context assembler + first question ☑
 - **Goal:** Ask one real-time question and get a grounded answer.
 - **Build:** Context assembler (last 24–48h timeline + baselines); `POST /ask` with the "what's dragging me down?" template; answer cites events.
 - **Tests:** Unit (window selection, timeline formatting, baseline merge); fixture (given a fixed timeline, answer references the expected events).
@@ -160,14 +160,20 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
   - **Local status:** deterministic suite green against real Postgres — **92 passed** (incl. window selection, a fixture asserting the model's citations resolve to the expected events, and a DB-backed `/ask` integration test with Claude mocked).
   - ⚠️ **Unverified by me:** the live reasoning (needs your `ANTHROPIC_API_KEY`) — does the real model produce a grounded, correctly-citing answer. Run `deno task test:live`.
   - **Best validated with real data:** the answer quality only really shows over your own logged timeline (see the deploy suggestion).
-  - **On approval:** flip `R-RT-3`/`R-RT-6` → Built and this phase → ☑.
+  - **Status: APPROVED (2026-06-13)** — PR #8 merged; CI green. `R-RT-3`/`R-RT-6` → Built.
 
-### Phase 7 — Remaining real-time questions ☐
+### Phase 7 — Remaining real-time questions ◐
 - **Goal:** All five real-time questions over the same assembler.
 - **Build:** Prompt templates for "why am I X", "what can I do now", "should I do X", "how will I feel later".
 - **Tests:** Per-template fixture tests; integration for each route.
 - **You verify:** Each question returns a useful, grounded answer.
 - **Builds:** R-RT-1, R-RT-2, R-RT-4, R-RT-5
+- **Implementation notes (in progress):**
+  - Added four templates to the registry in [`backend/src/ask.ts`](../backend/src/ask.ts): `why_do_i_feel` (R-RT-1), `what_can_i_do_now` (R-RT-2), `should_i` (R-RT-4), `how_will_i_feel_later` (R-RT-5). Two take a free-text `param` (the feeling / the action); the handler returns `400` if a required `param` is missing. Same assembler + citation path as Phase 6 — no new endpoint.
+  - Doc updated with the full question table: [`backend/docs/real-time-analysis.md`](../backend/docs/real-time-analysis.md).
+  - **Local status:** deterministic suite green against real Postgres — **97 passed** (registry, parameterized prompt building, missing-param 400, and a parameterized `/ask` integration test).
+  - ⚠️ **Unverified by me:** live answer quality for the new questions (needs your `ANTHROPIC_API_KEY`).
+  - **On approval:** flip `R-RT-1`/`R-RT-2`/`R-RT-4`/`R-RT-5` → Built and this phase → ☑.
 
 ---
 
@@ -231,3 +237,5 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 | 2026-06-12 | Phase 5 implemented (`POST /checkin` mood/energy/focus, validation, tests) → ◐ in review. |
 | 2026-06-13 | Phase 5 approved (PR #7 merged) → ☑; R-SUBJ-1/2/3 → Built. |
 | 2026-06-13 | Phase 6 implemented (`POST /ask` context assembler + "what's dragging me down?" with citations) → ◐ in review. |
+| 2026-06-13 | Phase 6 approved (PR #8 merged) → ☑; R-RT-3/6 → Built. |
+| 2026-06-13 | Phase 7 implemented (remaining four real-time questions, parameterized templates) → ◐ in review. |

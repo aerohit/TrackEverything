@@ -43,3 +43,10 @@ Deno.test("ask handler: 400 (DB untouched) on an unknown question", async () => 
   const body = await res.json();
   assertEquals(Array.isArray(body.available), true);
 });
+
+Deno.test("ask handler: 400 (DB untouched) when a required param is missing", async () => {
+  const res = await makeAskHandler(deps)(post(JSON.stringify({ question: "why_do_i_feel" })));
+  assertEquals(res.status, 400);
+  const body = await res.json();
+  assertEquals(body.error.includes("feeling"), true);
+});
