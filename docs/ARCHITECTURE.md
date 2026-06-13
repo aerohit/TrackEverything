@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-13 (Phase 6: real-time `/ask` implemented — §7 points to the code)
+> **Last updated:** 2026-06-13 (ADR-011: deploy on Deno Deploy + Supabase Postgres)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -53,7 +53,8 @@ or reversible-with-cost decision is captured as an **ADR** in the
 |---|---|---|---|
 | Capture | iOS **Shortcuts** (voice + manual input) | No Xcode/App Store; Lock Screen + Siri; owner can assemble without coding | [ADR-002](#adr-002) |
 | Transcription | Apple on-device dictation first; Whisper as upgrade | Free, fast, offline; LLM layer absorbs errors | [ADR-005](#adr-005) |
-| Backend + DB | **Supabase** (hosted Postgres + Edge Functions) | Managed; SQL schema + functions we write, owner deploys; auth/sync included | [ADR-003](#adr-003) |
+| Database | **Supabase** (hosted Postgres) | Managed, durable, backed up; system of record | [ADR-003](#adr-003) |
+| Compute | **Deno Deploy** (single router service, [`main.ts`](../backend/main.ts)) | Runs our `Deno.serve` app directly; one deploy, no idle-pause | [ADR-011](#adr-011) |
 | Extraction & analysis | **Claude API** from an Edge Function | Cloud LLM acceptable (R-NFR-2); does both extraction and analysis | [ADR-004](#adr-004) |
 | Overviews | Lightweight web dashboard (later in Phase 1) | Simplest way to render daily/weekly/monthly without an app | — |
 | Native app | Deferred to Phase 3 | Heavy lift; only after value is proven | [ADR-001](#adr-001) |
@@ -244,7 +245,9 @@ backend endpoint.
 
 ### ADR-003
 **Title:** Supabase (hosted Postgres) as backend and system of record.
-**Status:** Accepted (2026-06-11)
+**Status:** Accepted (2026-06-11). **Compute host superseded by [ADR-011](#adr-011)**
+— Supabase remains the hosted Postgres / system of record, but the functions run on
+Deno Deploy rather than Supabase Edge Functions.
 **Context:** Want durable storage, auth, and serverless functions with no infra to
 run (R-NFR-1, R-NFR-4).
 **Decision:** Postgres holds the event log and aggregates; Edge Functions host the
@@ -308,6 +311,24 @@ the owner verifies. No phase starts before the prior one is approved.
 **Consequences:** Slower nominal throughput but continuous verification and low
 risk of building the wrong thing. Requires keeping ROADMAP.md in sync with the
 two core docs.
+
+### ADR-011
+**Title:** Host the backend as a single Deno service on Deno Deploy; Supabase provides Postgres.
+**Status:** Accepted (2026-06-13). **Supersedes the compute-host choice in [ADR-003](#adr-003)**
+(Supabase remains the hosted Postgres / system of record).
+**Context:** The eight functions share code under `backend/src` and are injectable
+handler factories. Supabase Edge Functions want a `supabase/functions/*` layout
+(restructure, per-function deploy, `verify_jwt`). Deno Deploy runs our `Deno.serve`
+app directly with no restructure, one deploy, one URL, and no idle-pause.
+**Decision:** Add a single router entrypoint ([`backend/main.ts`](../backend/main.ts))
+that dispatches by path to the existing handlers; deploy it to Deno Deploy. Supabase
+hosts Postgres, reached via its connection pooler (driver set to `prepare: false`).
+Production secrets live in Deno Deploy's env; migrations are run from a laptop against
+`DATABASE_URL`. See [`backend/docs/deploy.md`](../backend/docs/deploy.md).
+**Consequences:** Minimal change; handlers untouched and host-agnostic, so moving to
+Edge Functions later remains open. Two vendors (Deno Deploy + Supabase) instead of
+one. No auto-migrate on deploy — a manual `deno task migrate` step after schema
+changes.
 
 ### ADR-010
 **Title:** Model composite supplements as products with an ingredient list; analyze at both levels.

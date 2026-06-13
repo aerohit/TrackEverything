@@ -5,10 +5,15 @@
  */
 import type { Sql } from "npm:postgres@^3.4.4";
 
-/** Open a pooled connection (max 1) to the given Postgres URL. */
+/**
+ * Open a connection to the given Postgres URL. `prepare: false` keeps us
+ * compatible with Supabase's connection pooler (Supavisor / transaction mode),
+ * which doesn't support prepared statements; it's harmless on a direct
+ * connection. Transactions (`sql.begin`) still work in either mode.
+ */
 export async function connect(databaseUrl: string): Promise<Sql> {
   const { default: postgres } = await import("npm:postgres@^3.4.4");
-  return postgres(databaseUrl, { max: 1 });
+  return postgres(databaseUrl, { max: 1, prepare: false });
 }
 
 /** Open a connection, run `select 1`, and report whether it succeeded. */

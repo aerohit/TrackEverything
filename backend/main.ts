@@ -1,0 +1,90 @@
+/**
+ * Production entrypoint: ONE Deno service that routes by path to the same
+ * injectable handler factories used by the standalone functions and the tests.
+ * Deploy this single file (Deno Deploy, or any Deno host); Supabase provides
+ * Postgres. See docs/deploy.md and ADR-011.
+ *
+ *   GET  /                 → health
+ *   POST /events           GET|POST /templates   POST /quicklog
+ *   GET|POST /products     POST /checkin
+ *   POST /capture          POST /ingredient-scan  POST /ask   (need ANTHROPIC_API_KEY)
+ */
+import type { Sql } from "npm:postgres@^3.4.4";
+import { loadConfig } from "./src/config.ts";
+import { connect } from "./src/db.ts";
+import { AnthropicClaudeClient, type ClaudeClient } from "./src/claude.ts";
+import { makeEventsHandler } from "./functions/events/index.ts";
+import { makeCaptureHandler } from "./functions/capture/index.ts";
+import { makeTemplatesHandler } from "./functions/templates/index.ts";
+import { makeQuicklogHandler } from "./functions/quicklog/index.ts";
+import { makeProductsHandler } from "./functions/products/index.ts";
+import { makeIngredientScanHandler } from "./functions/ingredient_scan/index.ts";
+import { makeCheckinHandler } from "./functions/checkin/index.ts";
+import { makeAskHandler } from "./functions/ask/index.ts";
+
+type Handler = (req: Request) => Promise<Response>;
+
+export interface RouterDeps {
+  sql: Sql;
+  claude: ClaudeClient | null;
+  token: string | null;
+}
+
+/** Build the path router. Pure wrt deps so it's unit-testable without a DB. */
+export function buildRouter(deps: RouterDeps): Handler {
+  const { sql, claude, token } = deps;
+
+  const claudeRoute = (make: (c: ClaudeClient) => Handler): Handler =>
+    claude
+      ? make(claude)
+      : () => Promise.resolve(json(503, { error: "ANTHROPIC_API_KEY not configured" }));
+
+  const routes: Record<string, Handler> = {
+    "/events": makeEventsHandler({ sql, token }),
+    "/templates": makeTemplatesHandler({ sql, token }),
+    "/quicklog": makeQuicklogHandler({ sql, token }),
+    "/products": makeProductsHandler({ sql, token }),
+    "/checkin": makeCheckinHandler({ sql, token }),
+    "/capture": claudeRoute((c) => makeCaptureHandler({ claude: c, token })),
+    "/ingredient-scan": claudeRoute((c) => makeIngredientScanHandler({ claude: c, token })),
+    "/ask": claudeRoute((c) => makeAskHandler({ sql, claude: c, token })),
+  };
+
+  return (req: Request): Promise<Response> => {
+    const path = new URL(req.url).pathname.replace(/\/+$/, "") || "/";
+    if (path === "/" || path === "/health") {
+      return Promise.resolve(json(200, { ok: true, service: "trackeverything" }));
+    }
+    const handler = routes[path];
+    if (!handler) return Promise.resolve(json(404, { error: `no route for ${path}` }));
+    return handler(req);
+  };
+}
+
+function json(status: number, body: unknown): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
+}
+
+if (import.meta.main) {
+  const cfg = loadConfig();
+  if (!cfg.databaseUrl) {
+    console.error("DATABASE_URL is required.");
+    Deno.exit(1);
+  }
+  if (!cfg.ingestToken) {
+    console.warn("INGEST_TOKEN is not set — endpoints will accept unauthenticated requests.");
+  }
+  const sql = await connect(cfg.databaseUrl);
+  const claude = cfg.anthropicApiKey
+    ? new AnthropicClaudeClient(cfg.anthropicApiKey, cfg.claudeModel)
+    : null;
+  if (!claude) {
+    console.warn(
+      "ANTHROPIC_API_KEY is not set — /capture, /ingredient-scan, /ask will return 503.",
+    );
+  }
+  Deno.serve(buildRouter({ sql, claude, token: cfg.ingestToken }));
+}
