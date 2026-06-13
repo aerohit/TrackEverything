@@ -1,7 +1,7 @@
 # TrackEverything — Requirements
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-12
+> **Last updated:** 2026-06-13
 > **Owner:** aerohit
 > **Companion doc:** [ARCHITECTURE.md](ARCHITECTURE.md)
 
@@ -68,9 +68,9 @@ The product succeeds only if **capture is nearly frictionless** and the
 
 | ID | Requirement | Status |
 |---|---|---|
-| R-SUBJ-1 | Capture subjective **mood, energy, focus** on a simple scale (e.g. 1–5). These are the outcome variables for analysis. | Proposed |
-| R-SUBJ-2 | **Scheduled prompts** nudge for a quick check-in at configured times of day. | Proposed |
-| R-SUBJ-3 | **On-demand** check-in: log a state any time, especially when something shifts (anxious, foggy, great). | Proposed |
+| R-SUBJ-1 | Capture subjective **mood, energy, focus** on a simple scale (e.g. 1–5). These are the outcome variables for analysis. | Built |
+| R-SUBJ-2 | **Scheduled prompts** nudge for a quick check-in at configured times of day. | Built |
+| R-SUBJ-3 | **On-demand** check-in: log a state any time, especially when something shifts (anxious, foggy, great). | Built |
 | R-SUBJ-4 | (Optional) Offer to attach a quick rating right after logging an event, to strengthen cause→effect links. | Proposed |
 
 ## 6. Real-time analysis
@@ -171,3 +171,4 @@ This document is kept current by an explicit process, not by hope. See
 | 2026-06-12 | Phase 4 approved → R-CAP-5/6 to Built (quick-log templates). |
 | 2026-06-12 | Phase 4b approved → R-CAP-13/14/15 + R-PAT-5 to Built (composite supplements). |
 | 2026-06-12 | Phase 5: resolved Q2 (1–5 separate mood/energy/focus). |
+| 2026-06-13 | Phase 5 approved → R-SUBJ-1/2/3 to Built (subjective check-ins). |

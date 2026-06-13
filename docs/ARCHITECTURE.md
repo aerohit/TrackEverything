@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-12 (Phase 4b: composite supplements implemented — §4 points to the code)
+> **Last updated:** 2026-06-13 (Phase 6: real-time `/ask` implemented — §7 points to the code)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -138,6 +138,12 @@ the same normalize-then-confirm shape as the voice pipeline, with the image as
 the source instead of a transcript.
 
 ## 7. Real-time analysis
+
+> **Implemented (Phase 6, first question):** [`backend/functions/ask/index.ts`](../backend/functions/ask/index.ts)
+> (`POST /ask`), [`backend/src/context.ts`](../backend/src/context.ts) (timeline
+> assembler with `[E#]` citation refs), [`backend/src/ask.ts`](../backend/src/ask.ts)
+> (templates + citation resolution). Phase 7 adds the remaining questions over the
+> same path.
 
 - A **context assembler** pulls the last 24–48h of events into a compact,
   chronological timeline (plus the user's baselines).

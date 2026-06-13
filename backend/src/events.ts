@@ -128,6 +128,13 @@ export async function getEvent(sql: Sql, id: string): Promise<EventRow | null> {
   return rows[0] ?? null;
 }
 
+/** Read events that occurred at or after `since`, oldest first (real-time analysis). */
+export async function getRecentEvents(sql: Sql, since: Date): Promise<EventRow[]> {
+  return await sql<EventRow[]>`
+    select * from events where occurred_at >= ${since} order by occurred_at asc
+  `;
+}
+
 function isValidDate(value: unknown): boolean {
   if (value instanceof Date) return !Number.isNaN(value.getTime());
   if (typeof value === "string") return !Number.isNaN(new Date(value).getTime());

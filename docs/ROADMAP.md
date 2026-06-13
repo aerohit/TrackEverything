@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-12 (Phase 5 implemented, in review)
+> **Status:** Living document. **Last updated:** 2026-06-13 (Phase 6 implemented, in review)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -129,7 +129,7 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
   - ⚠️ **Unverified by me:** the live **vision** extraction from a real label photo (needs your `ANTHROPIC_API_KEY` + a label image). Run `deno task test:live` with `TEST_LABEL_IMAGE` set before approving.
   - **Status: APPROVED (2026-06-12)** — PR #6 merged; CI green. `R-CAP-13`/`R-CAP-14`/`R-CAP-15`/`R-PAT-5` → Built.
 
-### Phase 5 — Subjective check-ins ◐
+### Phase 5 — Subjective check-ins ☑
 - **Goal:** Capture mood/energy/focus, nudged and on-demand.
 - **Build:** mood/energy/focus as events with `rating`; on-demand Shortcut; scheduled prompt (iOS automation/notification).
 - **Tests:** Unit (rating bounds/validation); integration (check-in stored as event).
@@ -141,18 +141,26 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
   - **Scope note:** R-SUBJ-2 (scheduled prompt) is realized client-side (iOS Automation triggers the check-in Shortcut). R-SUBJ-4 (rate right after an event) is a native-app UX refinement, deferred.
   - Resolves part of **Q2**: scale is **1–5, separate** mood/energy/focus.
   - **Local status:** deterministic suite green against real Postgres — **80 passed**; smoke-tested the running server (mood+energy+focus → 3 events; out-of-range rating → 400).
-  - **On approval:** flip `R-SUBJ-1`/`R-SUBJ-2`/`R-SUBJ-3` → Built and this phase → ☑.
+  - **Status: APPROVED (2026-06-12)** — PR #7 merged; CI green. `R-SUBJ-1`/`R-SUBJ-2`/`R-SUBJ-3` → Built.
 
 ---
 
 ## Stage C — Real-time analysis
 
-### Phase 6 — Context assembler + first question ☐
+### Phase 6 — Context assembler + first question ◐
 - **Goal:** Ask one real-time question and get a grounded answer.
 - **Build:** Context assembler (last 24–48h timeline + baselines); `POST /ask` with the "what's dragging me down?" template; answer cites events.
 - **Tests:** Unit (window selection, timeline formatting, baseline merge); fixture (given a fixed timeline, answer references the expected events).
 - **You verify:** Ask the question against real data; the answer is sensible and cites specifics.
 - **Builds:** R-RT-3, R-RT-6
+- **Implementation notes (in progress):**
+  - [`backend/src/context.ts`](../backend/src/context.ts): `selectWindow` + `assembleContext` — formats the last 24–48h as `[E#] <time> <category> <fields>` with a citation index; optional baselines.
+  - [`backend/src/ask.ts`](../backend/src/ask.ts): question-template registry (one for now), prompt, `parseAnswer`, and `resolveCitations` ([E#] → event id, with `unmatchedCitations`). `answerQuestion` orchestrates assemble → Claude → resolve.
+  - `POST /ask` ([`backend/functions/ask/index.ts`](../backend/functions/ask/index.ts)) fetches recent events (`getRecentEvents`, window default 48h / cap 72h) and returns `{answer, citedEvents, windowHours}`. Doc: [`backend/docs/real-time-analysis.md`](../backend/docs/real-time-analysis.md).
+  - **Local status:** deterministic suite green against real Postgres — **92 passed** (incl. window selection, a fixture asserting the model's citations resolve to the expected events, and a DB-backed `/ask` integration test with Claude mocked).
+  - ⚠️ **Unverified by me:** the live reasoning (needs your `ANTHROPIC_API_KEY`) — does the real model produce a grounded, correctly-citing answer. Run `deno task test:live`.
+  - **Best validated with real data:** the answer quality only really shows over your own logged timeline (see the deploy suggestion).
+  - **On approval:** flip `R-RT-3`/`R-RT-6` → Built and this phase → ☑.
 
 ### Phase 7 — Remaining real-time questions ☐
 - **Goal:** All five real-time questions over the same assembler.
@@ -221,3 +229,5 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 | 2026-06-12 | Phase 4b implemented (products + ingredients, label-scan vision, product quicklog, expansion, tests) → ◐ in review. |
 | 2026-06-12 | Phase 4b approved (PR #6 merged) → ☑; R-CAP-13/14/15 + R-PAT-5 → Built. |
 | 2026-06-12 | Phase 5 implemented (`POST /checkin` mood/energy/focus, validation, tests) → ◐ in review. |
+| 2026-06-13 | Phase 5 approved (PR #7 merged) → ☑; R-SUBJ-1/2/3 → Built. |
+| 2026-06-13 | Phase 6 implemented (`POST /ask` context assembler + "what's dragging me down?" with citations) → ◐ in review. |
