@@ -50,11 +50,22 @@ Deno.test({
       assertEquals(s.date, "2026-06-12");
       assertEquals(s.caffeineMg, 120);
       assertEquals(s.subjective.mood.avg, 4);
+      assertEquals(s.subjective.mood.points.length, 1); // for the chart
       const mag = s.ingredients.find((i: { canonical_name: string }) =>
         i.canonical_name === "magnesium glycinate"
       );
       assert(mag, "expected magnesium in the ingredient rollup");
       assertEquals(mag.amount, 400); // 200 * 2 servings
+
+      // The product is returned by name with its ingredient list (for the click-to-open popup).
+      assertEquals(s.products.length, 1);
+      assertEquals(s.products[0].name, product.name);
+      assert(
+        s.products[0].ingredients.some((g: { canonical_name: string }) =>
+          g.canonical_name === "magnesium glycinate"
+        ),
+        "product should carry its ingredient list",
+      );
 
       await sql`delete from events`;
       await sql`delete from items where id = ${product.id}`;

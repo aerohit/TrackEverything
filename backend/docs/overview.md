@@ -26,12 +26,34 @@ Returns `200`:
   "date": "2026-06-13",
   "eventCount": 7,
   "byCategory": { "drink": 2, "sleep": 1, "mood": 2, "supplement": 1, "workout": 1 },
-  "subjective": { "mood": { "avg": 3, "n": 2 } },
+  "subjective": {
+    "mood": {
+      "avg": 3,
+      "n": 2,
+      "points": [
+        { "at": "2026-06-13T09:00:00.000Z", "rating": 4 },
+        { "at": "2026-06-13T15:00:00.000Z", "rating": 2 }
+      ]
+    }
+  },
   "caffeineMg": 210,
   "lastCaffeineAt": "2026-06-13T14:00:00.000Z",
   "sleepMinutes": 420,
   "workout": { "count": 1, "durationMin": 45 },
-  "ingredients": [{ "canonical_name": "magnesium glycinate", "amount": 400, "unit": "mg" }]
+  "ingredients": [{ "canonical_name": "magnesium glycinate", "amount": 400, "unit": "mg" }],
+  "products": [
+    {
+      "name": "sleep stack",
+      "ingredients": [
+        {
+          "name": "Magnesium Glycinate",
+          "amount": 200,
+          "unit": "mg",
+          "canonical_name": "magnesium glycinate"
+        }
+      ]
+    }
+  ]
 }
 ```
 
@@ -43,19 +65,24 @@ Returns `200`:
   was logged. (Caffeine that's an _ingredient_ of a product shows in `ingredients`, not here.)
 - **sleepMinutes** — sum of `fields.duration_min` for `sleep` events.
 - **workout** — count + total `duration_min`.
-- **subjective** — average + count of `fields.rating` for mood / energy / focus.
+- **subjective** — per dimension (mood / energy / focus): `avg`, `n`, and `points` (each rating with
+  its time, oldest first) so the client can **plot** the day's check-ins.
 - **ingredients** — every logged product expanded (`servings × per-ingredient amount`,
-  [`expandToIngredients`](../src/products.ts)) and summed by canonical name + unit.
+  [`expandToIngredients`](../src/products.ts)) and summed by canonical name + unit (kept for
+  ingredient-level analysis, R-PAT-5).
+- **products** — the day's composite supplements **by name**, each with its ingredient list. The UI
+  shows the names (clickable to reveal ingredients) rather than the summed `ingredients` rollup.
 - **byCategory** — event counts per category.
 
 Logic lives in [`src/aggregate.ts`](../src/aggregate.ts) (pure, unit-tested); the handler
-([`functions/overview/index.ts`](../functions/overview/index.ts)) does the day windowing and fetches
-ingredient lists for the day's products.
+([`functions/overview/index.ts`](../functions/overview/index.ts)) does the day windowing, fetches
+ingredient lists + names for the day's products, and adds `products`.
 
 ## In the app
 
-The web UI's **Today** card calls this on load (and after a check-in / quick-log) and renders the
-summary. Run locally with `deno task serve:overview` (or `deno task start` for the whole app).
+The web UI's **Overview** tab calls this on open (and after any log) and renders the summary, a
+mood/energy/focus line chart from `subjective.*.points`, and the supplement names (tap one for an
+ingredients pop-up). Run locally with `deno task serve:overview` (or `deno task start`).
 
 ## Curl
 

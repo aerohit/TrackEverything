@@ -115,6 +115,19 @@ Deno.test("ui: four tabbed screens with a bottom nav", () => {
   );
 });
 
+Deno.test("ui: overview chart + clickable supplement popup", () => {
+  const js = scriptBody();
+  // Mood/energy/focus plotted as an SVG line chart.
+  assert(js.includes("renderSubjChart"), "should render a subjective chart");
+  assert(js.includes("polyline") && js.includes("points"), "chart draws series from points");
+  // Supplements shown by name, clickable, opening an ingredients modal.
+  assert(js.includes("s.products") && js.includes("prodlink"), "overview lists product names");
+  assert(js.includes("openIngredientsModal"), "clicking a product opens its ingredients");
+  assert(js.includes('el("div", "modal-ov")'), "ingredients shown in a modal pop-up");
+  // The summed ingredient rollup is no longer shown on the overview.
+  assert(!js.includes('"Ingredients:"'), "overview should not show the raw ingredient rollup");
+});
+
 Deno.test("ui: the editable category list matches the backend vocabulary", async () => {
   const { CATEGORIES } = await import("../../src/vocab.ts");
   const js = scriptBody();

@@ -199,6 +199,17 @@ export async function getIngredientsForItems(
   `;
 }
 
+/** Look up item id → name for a set of ids (so the overview can name logged products). */
+export async function getItemsByIds(
+  sql: Sql,
+  itemIds: string[],
+): Promise<Array<{ id: string; name: string }>> {
+  if (itemIds.length === 0) return [];
+  return await sql<{ id: string; name: string }[]>`
+    select id, name from items where id = any(${itemIds})
+  `;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }

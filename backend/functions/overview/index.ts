@@ -10,7 +10,7 @@ import type { Sql } from "npm:postgres@^3.4.4";
 import { connect } from "../../src/db.ts";
 import { loadConfig } from "../../src/config.ts";
 import { getEventsBetween } from "../../src/events.ts";
-import { getIngredientsForItems, type IngredientRow } from "../../src/products.ts";
+import { getIngredientsForItems, getItemsByIds, type IngredientRow } from "../../src/products.ts";
 import { aggregateDay } from "../../src/aggregate.ts";
 
 export interface OverviewHandlerDeps {
@@ -54,7 +54,25 @@ export function makeOverviewHandler(deps: OverviewHandlerDeps) {
       else byItem.set(r.item_id, [r]);
     }
 
-    return jsonResponse(200, aggregateDay(date, events, byItem));
+    // The day's composite supplements, by name + their ingredient list — the UI
+    // shows the names (clickable to reveal ingredients) instead of a summed rollup.
+    const nameById = new Map((await getItemsByIds(deps.sql, [...byItem.keys()])).map((i) => [
+      i.id,
+      i.name,
+    ]));
+    const products = [...byItem.entries()]
+      .map(([id, ings]) => ({
+        name: nameById.get(id) ?? "supplement",
+        ingredients: ings.map((g) => ({
+          name: g.name,
+          amount: g.amount,
+          unit: g.unit,
+          canonical_name: g.canonical_name,
+        })),
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    return jsonResponse(200, { ...aggregateDay(date, events, byItem), products });
   };
 }
 

@@ -39,9 +39,11 @@ hidden client-side (no routing/build step — it's one page that toggles `.scree
 
 The cards within each tab:
 
-- **Today** (Overview) — a daily summary (caffeine, sleep, workout, mood/energy/focus averages,
-  ingredient totals) from `GET /overview`, for the **local** day (the UI sends its UTC offset). A
-  date box loads any day (Phase 9).
+- **Today** (Overview) — a daily summary (caffeine, sleep, workout, mood/energy/focus averages) from
+  `GET /overview`, for the **local** day (the UI sends its UTC offset), plus a **line chart** of the
+  day's mood / energy / focus check-ins (plotted separately from `subjective.*.points`) and the
+  day's **composite supplements by name** — tap a name for an **ingredients pop-up**. A date box
+  loads any day (Phase 9).
 - **Timeline** (Overview) — a newest-first list of recent events from `GET /events?limit=50` (time,
   category, fields, source, and the note if one was added). It **auto-refreshes after every log**;
   **Refresh** reloads it on demand (Phase 11d, R-VIEW-4).

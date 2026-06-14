@@ -120,6 +120,11 @@ export const APP_HTML = `<!DOCTYPE html>
   .card.soon { border-style:dashed; }
   .card.soon h2 { display:flex; align-items:center; gap:8px; }
   .soon-tag { font-size:10px; letter-spacing:.08em; color:#bfe9f2; background:rgba(34,211,238,.12); border:1px solid rgba(34,211,238,.3); border-radius:20px; padding:1px 8px; }
+  .prodlink { color:var(--accent-2); text-decoration:none; border-bottom:1px dotted rgba(34,211,238,.5); }
+  .modal-ov { position:fixed; inset:0; z-index:50; background:rgba(0,0,0,.55); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; padding:24px; }
+  .modal { background:#15151d; border:1px solid var(--line-2); border-radius:16px; padding:16px; width:100%; max-width:360px; max-height:80vh; overflow:auto; box-shadow:0 20px 60px rgba(0,0,0,.5); }
+  .modal-h { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .modal-x { background:none; border:none; color:var(--mut); font-size:24px; line-height:1; padding:0 4px; }
 </style>
 </head>
 <body>
@@ -700,13 +705,95 @@ export const APP_HTML = `<!DOCTYPE html>
     ["mood", "energy", "focus"].forEach(function (d) {
       if (s.subjective && s.subjective[d]) L.push(cap(d) + ": " + s.subjective[d].avg + " (avg of " + s.subjective[d].n + ")");
     });
-    if (s.ingredients && s.ingredients.length) {
-      L.push("<span class='mut'>Ingredients:</span>");
-      s.ingredients.forEach(function (i) { L.push("&nbsp;&nbsp;" + i.canonical_name + (i.amount != null ? (" " + i.amount + (i.unit || "")) : "")); });
+    // Composite supplements: show product names only; click a name for its ingredients.
+    if (s.products && s.products.length) {
+      L.push("<span class='mut'>Supplements:</span>");
+      s.products.forEach(function (p, i) {
+        L.push("&nbsp;&nbsp;<a href='#' class='prodlink' data-pi='" + i + "'>" + escapeHtml(p.name) + "</a>");
+      });
     }
     if (L.length === 1) L.push("<span class='mut'>Nothing logged.</span>");
     $("#overview").classList.remove("mut");
-    $("#overview").innerHTML = L.join("<br>");
+    $("#overview").innerHTML = L.join("<br>") + renderSubjChart(s.subjective || {});
+    $("#overview").querySelectorAll(".prodlink").forEach(function (a) {
+      a.addEventListener("click", function (ev) {
+        ev.preventDefault();
+        openIngredientsModal(s.products[Number(a.getAttribute("data-pi"))]);
+      });
+    });
+  }
+
+  // A small multi-line SVG chart of the day's mood / energy / focus check-ins.
+  function renderSubjChart(subj) {
+    var dims = [
+      { k: "mood", c: "#a797ff" },
+      { k: "energy", c: "#22d3ee" },
+      { k: "focus", c: "#ffb454" },
+    ];
+    var live = dims.filter(function (d) {
+      return subj[d.k] && subj[d.k].points && subj[d.k].points.length;
+    });
+    if (!live.length) return "";
+    var W = 300, H = 150, padL = 22, padR = 8, padT = 10, padB = 18;
+    var x0 = padL, x1 = W - padR, yb = H - padB, yt = padT;
+    function xOf(at) {
+      var d = new Date(at);
+      var m = d.getHours() * 60 + d.getMinutes();
+      return x0 + (m / 1440) * (x1 - x0);
+    }
+    function yOf(r) { return yb + ((r - 1) / 4) * (yt - yb); }
+    var p = [];
+    for (var r = 1; r <= 5; r++) {
+      var yy = yOf(r);
+      p.push("<line x1='" + x0 + "' y1='" + yy + "' x2='" + x1 + "' y2='" + yy + "' stroke='rgba(255,255,255,.07)'/>");
+      p.push("<text x='" + (x0 - 5) + "' y='" + (yy + 3) + "' text-anchor='end' font-size='9' fill='#9296b0'>" + r + "</text>");
+    }
+    [0, 6, 12, 18, 24].forEach(function (h) {
+      var xx = x0 + (h / 24) * (x1 - x0);
+      p.push("<text x='" + xx + "' y='" + (H - 5) + "' text-anchor='middle' font-size='8' fill='#6b6f86'>" + h + "h</text>");
+    });
+    live.forEach(function (d) {
+      var pts = subj[d.k].points;
+      var coords = pts.map(function (pt) { return xOf(pt.at).toFixed(1) + "," + yOf(pt.rating).toFixed(1); });
+      if (pts.length > 1) {
+        p.push("<polyline points='" + coords.join(" ") + "' fill='none' stroke='" + d.c + "' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/>");
+      }
+      pts.forEach(function (pt) {
+        p.push("<circle cx='" + xOf(pt.at).toFixed(1) + "' cy='" + yOf(pt.rating).toFixed(1) + "' r='3' fill='" + d.c + "'/>");
+      });
+    });
+    var legend = live.map(function (d) {
+      return "<span style='color:" + d.c + "'>&#9679;</span> " + d.k;
+    }).join("&nbsp;&nbsp;");
+    return "<svg viewBox='0 0 " + W + " " + H + "' width='100%' style='margin-top:12px;display:block'>" + p.join("") + "</svg>" +
+      "<div class='mut' style='font-size:11px;text-align:center;margin-top:2px'>" + legend + "</div>";
+  }
+
+  // Pop-up listing a product's ingredients (R-CAP-14 / R-PAT-5).
+  function openIngredientsModal(product) {
+    if (!product) return;
+    var ov = el("div", "modal-ov");
+    var box = el("div", "modal");
+    var head = el("div", "modal-h");
+    head.innerHTML = "<strong>" + escapeHtml(product.name) + "</strong>" +
+      "<button class='modal-x' type='button' aria-label='Close'>&times;</button>";
+    var body = el("div");
+    var ings = product.ingredients || [];
+    if (!ings.length) {
+      body.innerHTML = "<span class='mut'>No ingredients listed.</span>";
+    } else {
+      body.innerHTML = ings.map(function (g) {
+        var amt = g.amount != null ? (" \\u2014 " + g.amount + (g.unit || "")) : "";
+        return "<div class='tlrow'>" + escapeHtml(g.name || g.canonical_name || "") + amt + "</div>";
+      }).join("");
+    }
+    box.appendChild(head);
+    box.appendChild(body);
+    ov.appendChild(box);
+    function close() { ov.remove(); }
+    ov.addEventListener("click", function (ev) { if (ev.target === ov) close(); });
+    head.querySelector(".modal-x").addEventListener("click", close);
+    document.body.appendChild(ov);
   }
   function loadOverview() {
     if (!token) { $("#overview").textContent = "Set your token first."; return; }
