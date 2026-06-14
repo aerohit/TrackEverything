@@ -369,3 +369,4 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 | 2026-06-13 | Phase 11d implemented (`GET /events` list endpoint + Timeline card, cited-event detail + windowHours in Ask, cookie-backed token) → ◐ in review. |
 | 2026-06-14 | Post-UI-test fixes (browser-driven): Timeline auto-refreshes after every log; `/overview` day window is the user's **local** day (`tzOffsetMinutes`); Timeline shows the note (`raw_text`); product quick-logs carry `item` = product name. |
 | 2026-06-14 | Split the PWA into **four tabbed screens** (bottom nav): Home (check-in/capture/quick-log/manual), Overview (Today + Timeline + a **Weekly** placeholder for Phase 10 reports), Ask, Manage. UI-only, no API change. |
+| 2026-06-14 | Overview enrichments: mood/energy/focus **line chart** (`/overview` now returns subjective `points`); composite supplements shown **by name** with a click-to-open **ingredients pop-up** (`/overview` returns a `products` list). |

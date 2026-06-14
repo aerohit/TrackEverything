@@ -77,7 +77,14 @@ Deno.test("aggregateDay: caffeine, sleep, workout, subjective, ingredient expans
   assertEquals(s.lastCaffeineAt, "2026-06-12T14:00:00.000Z");
   assertEquals(s.sleepMinutes, 420);
   assertEquals(s.workout, { count: 1, durationMin: 45 });
-  assertEquals(s.subjective.mood, { avg: 3, n: 2 });
+  assertEquals(s.subjective.mood, {
+    avg: 3,
+    n: 2,
+    points: [
+      { at: "2026-06-12T09:00:00.000Z", rating: 4 },
+      { at: "2026-06-12T15:00:00.000Z", rating: 2 },
+    ],
+  });
   const mag = s.ingredients.find((i) => i.canonical_name === "magnesium glycinate");
   const the = s.ingredients.find((i) => i.canonical_name === "l-theanine");
   assertEquals(mag && mag.amount, 400); // 200 * 2 servings
