@@ -25,16 +25,28 @@ Open the URL, tap the **⚙ gear**, paste your `INGEST_TOKEN`, **Save**. It's st
 Shortcut) — the cookie survives reloads and app relaunches even where an iOS standalone PWA clears
 `localStorage`. A `401` from any action re-opens the token box.
 
-## Screens (the daily slice)
+## Screens
 
-- **Today** — a daily summary (caffeine, sleep, workout, mood/energy/focus averages, ingredient
-  totals) from `GET /overview`, for the **local** day (the UI sends its UTC offset). Loads on open
-  and refreshes after any log. A date box loads any day (Phase 9).
-- **Timeline** — a newest-first list of recent events from `GET /events?limit=50` (time, category,
-  fields, source, and the note if one was added). It **auto-refreshes after every log**; **Refresh**
-  reloads it on demand (Phase 11d, R-VIEW-4).
-- **Check in** — tap a 1–5 button for mood / energy / focus (any subset), add an optional **note**,
-  **Log check-in** → `POST /checkin`.
+The app is organised into **four tabs** (a bottom nav bar); the active screen shows, the others are
+hidden client-side (no routing/build step — it's one page that toggles `.screen` sections):
+
+- **Home** — the capture loop you use all day: **Check in**, **Capture**, **Quick log**, **Log
+  manually**.
+- **Overview** — read-only views: **Today**, the **Timeline**, and a **Weekly** placeholder for the
+  reports coming in Phase 10. Refreshes when you open the tab.
+- **Ask** — the real-time questions.
+- **Manage** — set-up you reach rarely: products, label scan, templates, ingredient breakdown.
+
+The cards within each tab:
+
+- **Today** (Overview) — a daily summary (caffeine, sleep, workout, mood/energy/focus averages,
+  ingredient totals) from `GET /overview`, for the **local** day (the UI sends its UTC offset). A
+  date box loads any day (Phase 9).
+- **Timeline** (Overview) — a newest-first list of recent events from `GET /events?limit=50` (time,
+  category, fields, source, and the note if one was added). It **auto-refreshes after every log**;
+  **Refresh** reloads it on demand (Phase 11d, R-VIEW-4).
+- **Check in** (Home) — tap a 1–5 button for mood / energy / focus (any subset), add an optional
+  **note**, **Log check-in** → `POST /checkin`.
 - **Quick log** — buttons built from your `/templates` and `/products`; tap one to log it →
   `POST /quicklog`. **Options…** reveals a **servings** (scales a product's dose) and a **fields**
   override (`caffeine_mg=95, item=decaf`) applied to subsequent taps (Phase 11b).

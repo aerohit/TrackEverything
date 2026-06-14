@@ -47,7 +47,17 @@ export const APP_HTML = `<!DOCTYPE html>
     background-clip:text; color:transparent;
   }
   header button { background:none; border:none; color:var(--mut); font-size:20px; }
-  main { padding:16px; display:flex; flex-direction:column; gap:16px; max-width:560px; margin:0 auto; }
+  main { padding:16px 16px 96px; display:flex; flex-direction:column; gap:16px; max-width:560px; margin:0 auto; }
+  .screen { display:flex; flex-direction:column; gap:16px; }
+  .screen[hidden] { display:none; }
+  #tabbar { position:fixed; left:0; right:0; bottom:0; z-index:20; display:flex; gap:2px;
+    background:rgba(10,10,18,.82); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    border-top:1px solid var(--line); padding:6px 8px calc(6px + env(safe-area-inset-bottom)); }
+  #tabbar .tab { flex:1; background:none; border:none; color:var(--mut); cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:3px; font-size:11px; padding:6px 0; border-radius:10px; }
+  #tabbar .tab svg { width:22px; height:22px; display:block; }
+  #tabbar .tab.sel { color:#a797ff; }
+  #tabbar .tab:active { transform:scale(.94); }
   .card {
     background:var(--card); border:1px solid var(--line); border-radius:18px; padding:16px;
     backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
@@ -107,6 +117,9 @@ export const APP_HTML = `<!DOCTYPE html>
   .tlrow:last-child { border-bottom:none; }
   .tltime { color:var(--accent-2); margin-right:6px; }
   .tlnote { color:var(--mut); font-size:12px; margin-top:3px; font-style:italic; }
+  .card.soon { border-style:dashed; }
+  .card.soon h2 { display:flex; align-items:center; gap:8px; }
+  .soon-tag { font-size:10px; letter-spacing:.08em; color:#bfe9f2; background:rgba(34,211,238,.12); border:1px solid rgba(34,211,238,.3); border-radius:20px; padding:1px 8px; }
 </style>
 </head>
 <body>
@@ -119,93 +132,114 @@ export const APP_HTML = `<!DOCTYPE html>
     <button class="primary" id="tokenSave">Save</button>
   </section>
 
-  <section class="card">
-    <h2>Today</h2>
-    <div class="row"><input type="text" id="ovDate" placeholder="YYYY-MM-DD (blank = today)" autocapitalize="off" autocorrect="off" /><button id="ovLoad">Load</button></div>
-    <div id="overview" class="mut">Loading&hellip;</div>
-  </section>
+  <div class="screen" data-screen="home">
+    <section class="card">
+      <h2>Check in</h2>
+      <div class="row"><span class="lbl">Mood</span><div class="scale" data-dim="mood"></div></div>
+      <div class="row"><span class="lbl">Energy</span><div class="scale" data-dim="energy"></div></div>
+      <div class="row"><span class="lbl">Focus</span><div class="scale" data-dim="focus"></div></div>
+      <input type="text" id="checkinNote" placeholder="Note (optional) — what's going on?" />
+      <button class="primary" id="checkinBtn">Log check-in</button>
+    </section>
 
-  <section class="card">
-    <h2>Timeline</h2>
-    <div id="timeline" class="mut">Loading&hellip;</div>
-    <button class="ghost" id="tlLoad" type="button">Refresh</button>
-  </section>
+    <section class="card">
+      <h2>Capture (voice or text)</h2>
+      <p class="mut">Tap the mic on your keyboard and speak, or type. Extract, then edit each record (category, values, time) before saving. Set an earlier time to backdate.</p>
+      <textarea id="captureText" placeholder="e.g. coffee and my magnesium at 10am, slept badly"></textarea>
+      <button class="primary" id="extractBtn">Extract</button>
+      <div id="candidates"></div>
+    </section>
 
-  <section class="card">
-    <h2>Check in</h2>
-    <div class="row"><span class="lbl">Mood</span><div class="scale" data-dim="mood"></div></div>
-    <div class="row"><span class="lbl">Energy</span><div class="scale" data-dim="energy"></div></div>
-    <div class="row"><span class="lbl">Focus</span><div class="scale" data-dim="focus"></div></div>
-    <input type="text" id="checkinNote" placeholder="Note (optional) — what's going on?" />
-    <button class="primary" id="checkinBtn">Log check-in</button>
-  </section>
+    <section class="card">
+      <h2>Quick log</h2>
+      <div class="btns" id="quickBtns"><span class="mut">Loading&hellip;</span></div>
+      <button class="ghost" id="quickOptToggle" type="button">Options&hellip;</button>
+      <div id="quickOpts" hidden>
+        <div class="row"><span class="lbl">Servings</span><input type="text" id="quickServings" inputmode="decimal" placeholder="1" /></div>
+        <div class="row"><span class="lbl">Fields</span><input type="text" id="quickFields" placeholder="caffeine_mg=95, item=decaf" autocapitalize="off" /></div>
+        <p class="mut">Applied to taps below until cleared. Servings scales a product's dose.</p>
+      </div>
+    </section>
 
-  <section class="card">
-    <h2>Quick log</h2>
-    <div class="btns" id="quickBtns"><span class="mut">Loading&hellip;</span></div>
-    <button class="ghost" id="quickOptToggle" type="button">Options&hellip;</button>
-    <div id="quickOpts" hidden>
-      <div class="row"><span class="lbl">Servings</span><input type="text" id="quickServings" inputmode="decimal" placeholder="1" /></div>
-      <div class="row"><span class="lbl">Fields</span><input type="text" id="quickFields" placeholder="caffeine_mg=95, item=decaf" autocapitalize="off" /></div>
-      <p class="mut">Applied to taps below until cleared. Servings scales a product's dose.</p>
-    </div>
-  </section>
+    <section class="card">
+      <h2>Log manually</h2>
+      <p class="mut">A structured event by hand. Blank time = now; an earlier time backdates it.</p>
+      <div class="row"><span class="lbl">Category</span><select id="manCat"></select></div>
+      <div id="manFields"></div>
+      <button class="ghost" id="manAddField" type="button">+ field</button>
+      <div class="row"><span class="lbl">Time</span><input type="datetime-local" id="manTime" /></div>
+      <button class="primary" id="manSave">Log event</button>
+    </section>
+  </div>
 
-  <section class="card">
-    <h2>Log manually</h2>
-    <p class="mut">A structured event by hand. Blank time = now; an earlier time backdates it.</p>
-    <div class="row"><span class="lbl">Category</span><select id="manCat"></select></div>
-    <div id="manFields"></div>
-    <button class="ghost" id="manAddField" type="button">+ field</button>
-    <div class="row"><span class="lbl">Time</span><input type="datetime-local" id="manTime" /></div>
-    <button class="primary" id="manSave">Log event</button>
-  </section>
+  <div class="screen" data-screen="overview" hidden>
+    <section class="card">
+      <h2>Today</h2>
+      <div class="row"><input type="text" id="ovDate" placeholder="YYYY-MM-DD (blank = today)" autocapitalize="off" autocorrect="off" /><button id="ovLoad">Load</button></div>
+      <div id="overview" class="mut">Loading&hellip;</div>
+    </section>
 
-  <section class="card">
-    <h2>Capture (voice or text)</h2>
-    <p class="mut">Tap the mic on your keyboard and speak, or type. Extract, then edit each record (category, values, time) before saving. Set an earlier time to backdate.</p>
-    <textarea id="captureText" placeholder="e.g. coffee and my magnesium at 10am, slept badly"></textarea>
-    <button class="primary" id="extractBtn">Extract</button>
-    <div id="candidates"></div>
-  </section>
+    <section class="card">
+      <h2>Timeline</h2>
+      <div id="timeline" class="mut">Loading&hellip;</div>
+      <button class="ghost" id="tlLoad" type="button">Refresh</button>
+    </section>
 
-  <section class="card">
-    <h2>Ask</h2>
-    <div class="btns">
-      <button data-q="whats_dragging_me_down">What's dragging me down?</button>
-      <button data-q="what_can_i_do_now">What can I do now?</button>
-      <button data-q="how_will_i_feel_later">How will I feel later?</button>
-    </div>
-    <div class="row" style="margin-top:10px"><input type="text" id="feeling" placeholder="anxious, foggy&hellip;" /><button id="whyBtn">Why?</button></div>
-    <div class="row"><input type="text" id="action" placeholder="have another coffee&hellip;" /><button id="shouldBtn">Should I?</button></div>
-    <div class="row"><span class="lbl">Window</span><select id="askWindow"><option value="24">last 24h</option><option value="48" selected>last 48h</option><option value="72">last 72h</option></select></div>
-    <div class="answer mut" id="answer"></div>
-  </section>
+    <section class="card soon">
+      <h2>Weekly &middot; <span class="soon-tag">soon</span></h2>
+      <p class="mut">Weekly trends across your inputs and mood / energy / focus — totals, averages,
+        and the patterns that connect them. Coming with Phase&nbsp;10.</p>
+    </section>
+  </div>
 
-  <section class="card">
-    <h2>Manage</h2>
+  <div class="screen" data-screen="ask" hidden>
+    <section class="card">
+      <h2>Ask</h2>
+      <div class="btns">
+        <button data-q="whats_dragging_me_down">What's dragging me down?</button>
+        <button data-q="what_can_i_do_now">What can I do now?</button>
+        <button data-q="how_will_i_feel_later">How will I feel later?</button>
+      </div>
+      <div class="row" style="margin-top:10px"><input type="text" id="feeling" placeholder="anxious, foggy&hellip;" /><button id="whyBtn">Why?</button></div>
+      <div class="row"><input type="text" id="action" placeholder="have another coffee&hellip;" /><button id="shouldBtn">Should I?</button></div>
+      <div class="row"><span class="lbl">Window</span><select id="askWindow"><option value="24">last 24h</option><option value="48" selected>last 48h</option><option value="72">last 72h</option></select></div>
+      <div class="answer mut" id="answer"></div>
+    </section>
+  </div>
 
-    <div class="subh">New product (composite supplement)</div>
-    <div class="row"><span class="lbl">Name</span><input type="text" id="prodName" placeholder="e.g. sleep stack" autocapitalize="off" /></div>
-    <div class="row"><span class="lbl">Category</span><select id="prodCat"></select></div>
-    <p class="mut">Add ingredients by hand, or scan a label photo to fill them.</p>
-    <input type="file" id="prodImage" accept="image/*" capture="environment" />
-    <button class="ghost" id="prodScan" type="button">Scan label &rarr; ingredients</button>
-    <div id="prodIngredients"></div>
-    <button class="ghost" id="prodAddIng" type="button">+ ingredient</button>
-    <button class="primary" id="prodSave">Save product</button>
+  <div class="screen" data-screen="manage" hidden>
+    <section class="card">
+      <h2>Manage</h2>
 
-    <div class="subh">New quick-log template</div>
-    <div class="row"><span class="lbl">Name</span><input type="text" id="tplName" placeholder="e.g. my coffee" autocapitalize="off" /></div>
-    <div class="row"><span class="lbl">Category</span><select id="tplCat"></select></div>
-    <div class="row"><span class="lbl">Fields</span><input type="text" id="tplFields" placeholder="caffeine_mg=120, item=coffee" autocapitalize="off" /></div>
-    <button class="primary" id="tplSave">Save template</button>
+      <div class="subh">New product (composite supplement)</div>
+      <div class="row"><span class="lbl">Name</span><input type="text" id="prodName" placeholder="e.g. sleep stack" autocapitalize="off" /></div>
+      <div class="row"><span class="lbl">Category</span><select id="prodCat"></select></div>
+      <p class="mut">Add ingredients by hand, or scan a label photo to fill them.</p>
+      <input type="file" id="prodImage" accept="image/*" capture="environment" />
+      <button class="ghost" id="prodScan" type="button">Scan label &rarr; ingredients</button>
+      <div id="prodIngredients"></div>
+      <button class="ghost" id="prodAddIng" type="button">+ ingredient</button>
+      <button class="primary" id="prodSave">Save product</button>
 
-    <div class="subh">Ingredient breakdown</div>
-    <div class="row"><input type="text" id="brkName" placeholder="product name" autocapitalize="off" /><input type="text" id="brkServings" inputmode="decimal" placeholder="servings" style="max-width:96px" /><button id="brkLoad">Show</button></div>
-    <div id="brkOut" class="mut"></div>
-  </section>
+      <div class="subh">New quick-log template</div>
+      <div class="row"><span class="lbl">Name</span><input type="text" id="tplName" placeholder="e.g. my coffee" autocapitalize="off" /></div>
+      <div class="row"><span class="lbl">Category</span><select id="tplCat"></select></div>
+      <div class="row"><span class="lbl">Fields</span><input type="text" id="tplFields" placeholder="caffeine_mg=120, item=coffee" autocapitalize="off" /></div>
+      <button class="primary" id="tplSave">Save template</button>
+
+      <div class="subh">Ingredient breakdown</div>
+      <div class="row"><input type="text" id="brkName" placeholder="product name" autocapitalize="off" /><input type="text" id="brkServings" inputmode="decimal" placeholder="servings" style="max-width:96px" /><button id="brkLoad">Show</button></div>
+      <div id="brkOut" class="mut"></div>
+    </section>
+  </div>
 </main>
+
+<nav id="tabbar">
+  <button class="tab sel" data-screen="home" aria-label="Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 5l8 6.5"/><path d="M6 10v9h12v-9"/><path d="M10 19v-5h4v5"/></svg>Home</button>
+  <button class="tab" data-screen="overview" aria-label="Overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18"/><path d="M6 20v-6"/><path d="M12 20V6"/><path d="M18 20v-9"/></svg>Overview</button>
+  <button class="tab" data-screen="ask" aria-label="Ask"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-12.3 7.6L4 20l.9-4.7A8.5 8.5 0 1 1 21 11.5z"/></svg>Ask</button>
+  <button class="tab" data-screen="manage" aria-label="Manage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9"/><path d="M17 7h3"/><circle cx="15" cy="7" r="2"/><path d="M4 17h3"/><path d="M11 17h9"/><circle cx="9" cy="17" r="2"/></svg>Manage</button>
+</nav>
 <div id="toast"></div>
 
 <script>
@@ -731,6 +765,23 @@ export const APP_HTML = `<!DOCTYPE html>
   }
   $("#tlLoad").addEventListener("click", loadTimeline);
   loadTimeline();
+
+  // ---- screen navigation (bottom tab bar) ----
+  function showScreen(name) {
+    document.querySelectorAll(".screen").forEach(function (s) {
+      s.hidden = s.getAttribute("data-screen") !== name;
+    });
+    document.querySelectorAll("#tabbar .tab").forEach(function (t) {
+      t.classList.toggle("sel", t.getAttribute("data-screen") === name);
+    });
+    window.scrollTo(0, 0);
+    // Refresh the read-only views whenever the Overview tab is opened.
+    if (name === "overview") { loadOverview(); loadTimeline(); }
+  }
+  document.querySelectorAll("#tabbar .tab").forEach(function (t) {
+    t.addEventListener("click", function () { showScreen(t.getAttribute("data-screen")); });
+  });
+  showScreen("home");
 })();
 </script>
 </body>
