@@ -1,8 +1,8 @@
 # TrackEverything — Requirements
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this
-> stays current. **Last updated:** 2026-06-14 (R-VIEW-5: dish-level "Meal —
-> item" food rows on the timeline, clickable for ingredients) **Owner:** aerohit
+> stays current. **Last updated:** 2026-06-15 (R-VIEW-6: light/dark appearance
+> with a system-following toggle; clean indigo theme) **Owner:** aerohit
 > **Companion doc:** [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each requirement has a stable ID (`R-<area>-<n>`) so it can be referenced from
@@ -107,6 +107,7 @@ moment.
 | R-VIEW-3 | **Monthly** overview with trends and surfaced patterns.                                                                                                                        | Proposed |
 | R-VIEW-4 | **Event timeline / history** list view: scroll recent events in time order (backed by a `GET /events` list endpoint).                                                          | Proposed |
 | R-VIEW-5 | Timeline **food** rows show a dish-level summary (**"Meal — item"**, e.g. "Lunch — Salad"), not the raw ingredient list; the dish name is clickable to reveal its ingredients. | Built    |
+| R-VIEW-6 | The UI supports **light and dark appearance**: follows the system setting by default with a manual toggle (System / Light / Dark), persisted on the device.                    | Built    |
 
 ## 9. Non-functional requirements
 
@@ -203,3 +204,4 @@ This document is kept current by an explicit process, not by hope. See
 | 2026-06-14 | Overview IA (R-VIEW-1, ADR-014): split **perceptions** (mood/energy/focus) from **actions/inputs**. Perceptions now render only in a dedicated chart card; the Timeline lists actions only (filters out mood/energy/focus); the Today summary drops the perception averages.                                                 |
 | 2026-06-14 | Added R-VIEW-5 (Built): Timeline food rows show a dish-level "Meal — item" summary (e.g. "Lunch — Salad") instead of the raw ingredient list; the dish name is clickable to open an ingredients pop-up. The food-scan prompt now also returns a dish-level `item` name used as the label.                                    |
 | 2026-06-14 | R-VIEW-5 polish: meals and event categories now show an emoji icon (🍳/🥗/🍽/🍎 meals, 💊 supplement, 💪 workout, 😴 sleep, etc.) on the timeline, the food meal picker, and the Today supplements list. UI-only; no API change.                                                                                              |
+| 2026-06-15 | Added R-VIEW-6 (Built): UI restyled to a clean light/dark theme with a single indigo accent (replacing the dark-only "Aurora" gradient look); follows the system appearance by default with a System/Light/Dark header toggle persisted as `te_theme`. UI-only; no API change.                                               |
