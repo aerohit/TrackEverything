@@ -117,6 +117,9 @@ export const APP_HTML = `<!DOCTYPE html>
   .tlrow:last-child { border-bottom:none; }
   .tltime { color:var(--accent-2); margin-right:6px; }
   .tlnote { color:var(--mut); font-size:12px; margin-top:3px; font-style:italic; }
+  .card.soon { border-style:dashed; }
+  .card.soon h2 { display:flex; align-items:center; gap:8px; }
+  .soon-tag { font-size:10px; letter-spacing:.08em; color:#bfe9f2; background:rgba(34,211,238,.12); border:1px solid rgba(34,211,238,.3); border-radius:20px; padding:1px 8px; }
 </style>
 </head>
 <body>
@@ -180,6 +183,12 @@ export const APP_HTML = `<!DOCTYPE html>
       <h2>Timeline</h2>
       <div id="timeline" class="mut">Loading&hellip;</div>
       <button class="ghost" id="tlLoad" type="button">Refresh</button>
+    </section>
+
+    <section class="card soon">
+      <h2>Weekly &middot; <span class="soon-tag">soon</span></h2>
+      <p class="mut">Weekly trends across your inputs and mood / energy / focus — totals, averages,
+        and the patterns that connect them. Coming with Phase&nbsp;10.</p>
     </section>
   </div>
 

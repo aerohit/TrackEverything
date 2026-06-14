@@ -32,8 +32,8 @@ hidden client-side (no routing/build step — it's one page that toggles `.scree
 
 - **Home** — the capture loop you use all day: **Check in**, **Capture**, **Quick log**, **Log
   manually**.
-- **Overview** — read-only views: **Today** and the **Timeline** (and future reports). Refreshes
-  when you open the tab.
+- **Overview** — read-only views: **Today**, the **Timeline**, and a **Weekly** placeholder for the
+  reports coming in Phase 10. Refreshes when you open the tab.
 - **Ask** — the real-time questions.
 - **Manage** — set-up you reach rarely: products, label scan, templates, ingredient breakdown.
 

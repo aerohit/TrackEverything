@@ -107,6 +107,12 @@ Deno.test("ui: four tabbed screens with a bottom nav", () => {
   assert(home.includes("Check in") && home.includes("Capture"), "home is check-in/capture");
   assert(!home.includes(">Today<") && !home.includes(">Manage<"), "home excludes overview/manage");
   assert(js.includes("showScreen"), "should switch screens");
+  // Overview has a placeholder for future reports.
+  const overview = html.split('data-screen="overview"')[1].split('data-screen="ask"')[0];
+  assert(
+    overview.includes("Weekly"),
+    "overview should have a Weekly placeholder for future reports",
+  );
 });
 
 Deno.test("ui: the editable category list matches the backend vocabulary", async () => {
