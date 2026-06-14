@@ -156,6 +156,19 @@ Deno.test("ui: perceptions in their own chart card, actions-only timeline (ADR-0
   );
 });
 
+Deno.test("ui: timeline food rows show 'Meal — item' with a clickable ingredients pop-up", () => {
+  const js = scriptBody();
+  // Food rows are special-cased to a dish name, not the raw ingredient/field dump.
+  assert(js.includes('e.category === "food"'), "timeline special-cases food rows");
+  assert(js.includes("foodlink"), "the food name is a clickable link");
+  // Clicking opens the ingredients modal with a meal/calorie subtitle.
+  assert(
+    js.includes("openIngredientsModal") && js.includes("subtitle"),
+    "opens ingredients + subtitle",
+  );
+  assert(js.includes("f.ingredients"), "the pop-up lists the food's ingredients");
+});
+
 Deno.test("ui: the editable category list matches the backend vocabulary", async () => {
   const { CATEGORIES } = await import("../../src/vocab.ts");
   const js = scriptBody();

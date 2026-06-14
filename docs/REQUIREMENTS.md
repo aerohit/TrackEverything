@@ -1,7 +1,7 @@
 # TrackEverything — Requirements
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-14 (Phase 12: photo food logging — R-CAP-16, LLM-estimated calories/macros)
+> **Last updated:** 2026-06-14 (R-VIEW-5: dish-level "Meal — item" food rows on the timeline, clickable for ingredients)
 > **Owner:** aerohit
 > **Companion doc:** [ARCHITECTURE.md](ARCHITECTURE.md)
 
@@ -105,6 +105,7 @@ Operates over the recent timeline (last 24–48h) and answers questions in the m
 | R-VIEW-2 | **Weekly** overview with trends. | Proposed |
 | R-VIEW-3 | **Monthly** overview with trends and surfaced patterns. | Proposed |
 | R-VIEW-4 | **Event timeline / history** list view: scroll recent events in time order (backed by a `GET /events` list endpoint). | Proposed |
+| R-VIEW-5 | Timeline **food** rows show a dish-level summary (**"Meal — item"**, e.g. "Lunch — Salad"), not the raw ingredient list; the dish name is clickable to reveal its ingredients. | Built |
 
 ## 9. Non-functional requirements
 
@@ -192,3 +193,4 @@ This document is kept current by an explicit process, not by hope. See
 | 2026-06-14 | Added R-CAP-16 (photo food logging: recognize → itemize → estimate calories+macros → edit amount or enter calories). LLM-estimated nutrition (ADR-013); nutrition-database integration deferred to a later phase. Daily calorie/macro totals added to `/overview` (R-PAT-2). New `photo` source. Phase 12. |
 | 2026-06-14 | Reliability (R-NFR-3): fixed a `DEPLOYMENT_TIMED_OUT` crash-loop — an uncaught `PostgresError` (statement timeout on a stale pooled connection) was crashing the isolate. Added a global `unhandledrejection` guard + DB `connect_timeout`/`idle_timeout`/`max_lifetime`. Documented region-pinning and preview-env scoping. |
 | 2026-06-14 | Overview IA (R-VIEW-1, ADR-014): split **perceptions** (mood/energy/focus) from **actions/inputs**. Perceptions now render only in a dedicated chart card; the Timeline lists actions only (filters out mood/energy/focus); the Today summary drops the perception averages. |
+| 2026-06-14 | Added R-VIEW-5 (Built): Timeline food rows show a dish-level "Meal — item" summary (e.g. "Lunch — Salad") instead of the raw ingredient list; the dish name is clickable to open an ingredients pop-up. The food-scan prompt now also returns a dish-level `item` name used as the label. |

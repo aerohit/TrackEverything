@@ -936,16 +936,18 @@ export const APP_HTML = `<!DOCTYPE html>
     head.innerHTML = "<strong>" + escapeHtml(product.name) + "</strong>" +
       "<button class='modal-x' type='button' aria-label='Close'>&times;</button>";
     var body = el("div");
+    var sub = product.subtitle
+      ? "<div class='mut' style='font-size:13px;margin-bottom:8px'>" + escapeHtml(product.subtitle) + "</div>"
+      : "";
     var ings = product.ingredients || [];
-    if (!ings.length) {
-      body.innerHTML = "<span class='mut'>No ingredients listed.</span>";
-    } else {
-      body.innerHTML = ings.map(function (g) {
+    var rows = !ings.length
+      ? "<span class='mut'>No ingredients listed.</span>"
+      : ings.map(function (g) {
         if (typeof g === "string") return "<div class='tlrow'>" + escapeHtml(g) + "</div>";
         var amt = g.amount != null ? (" \\u2014 " + g.amount + (g.unit || "")) : "";
         return "<div class='tlrow'>" + escapeHtml(g.name || g.canonical_name || "") + amt + "</div>";
       }).join("");
-    }
+    body.innerHTML = sub + rows;
     box.appendChild(head);
     box.appendChild(body);
     ov.appendChild(box);
@@ -1003,14 +1005,41 @@ export const APP_HTML = `<!DOCTYPE html>
       });
       if (!evs.length) { $("#timeline").textContent = "No actions logged yet."; return; }
       $("#timeline").classList.remove("mut");
-      $("#timeline").innerHTML = evs.map(function (e) {
-        var fs = fieldSummary(e.fields);
+      $("#timeline").innerHTML = evs.map(function (e, i) {
+        var time = "<span class='tltime'>" + fmtDateTime(e.occurred_at) + "</span>";
+        var pill = " <span class='pill'>" + escapeHtml(e.source) + "</span>";
         var note = e.raw_text ? ("<div class='tlnote'>\\u201c" + escapeHtml(e.raw_text) + "\\u201d</div>") : "";
-        return "<div class='tlrow'><span class='tltime'>" + fmtDateTime(e.occurred_at) +
-          "</span><strong>" + escapeHtml(e.category) + "</strong>" +
-          (fs ? (" <span class='mut'>" + escapeHtml(fs) + "</span>") : "") +
-          " <span class='pill'>" + escapeHtml(e.source) + "</span>" + note + "</div>";
+        // Food shows a simple "Meal — name" with the name clickable for ingredients
+        // (ADR-014 / the dish-name-only timeline); other categories show their fields.
+        if (e.category === "food") {
+          var f = e.fields || {};
+          var meal = f.meal ? ("<span class='mut'>" + escapeHtml(cap(f.meal)) + " \\u2014 </span>") : "";
+          var nm = escapeHtml(f.item || "food");
+          return "<div class='tlrow'>" + time + meal +
+            "<a href='#' class='foodlink' data-i='" + i + "'>" + nm + "</a>" + pill + note + "</div>";
+        }
+        var fs = fieldSummary(e.fields);
+        return "<div class='tlrow'>" + time + "<strong>" + escapeHtml(e.category) + "</strong>" +
+          (fs ? (" <span class='mut'>" + escapeHtml(fs) + "</span>") : "") + pill + note + "</div>";
       }).join("");
+      // Wire the food names to an ingredients pop-up (with a meal/calorie subtitle).
+      $("#timeline").querySelectorAll(".foodlink").forEach(function (a) {
+        a.addEventListener("click", function (ev) {
+          ev.preventDefault();
+          var f = (evs[Number(a.getAttribute("data-i"))] || {}).fields || {};
+          var sub = [];
+          if (f.meal) sub.push(cap(f.meal));
+          if (f.calories) sub.push(f.calories + " kcal");
+          if (f.protein_g != null || f.carbs_g != null || f.fat_g != null) {
+            sub.push("P " + (f.protein_g || 0) + " / C " + (f.carbs_g || 0) + " / F " + (f.fat_g || 0) + " g");
+          }
+          openIngredientsModal({
+            name: f.item || "food",
+            ingredients: f.ingredients || [],
+            subtitle: sub.join(" \\u00b7 "),
+          });
+        });
+      });
     });
   }
   $("#tlLoad").addEventListener("click", loadTimeline);
