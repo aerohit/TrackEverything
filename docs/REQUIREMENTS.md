@@ -186,3 +186,4 @@ This document is kept current by an explicit process, not by hope. See
 | 2026-06-13 | Phase 11d: `GET /events` list endpoint + Timeline view (R-VIEW-4), cited-event detail + window control in Ask (R-RT-6), cookie-backed token. |
 | 2026-06-14 | UI-test fixes: daily overview uses the user's **local** day (R-PAT-2/R-VIEW-1, `tzOffsetMinutes`); Timeline auto-refreshes + shows the note; product quick-logs are self-describing (`item`=name). |
 | 2026-06-14 | PWA reorganised into four tabbed screens (Home / Overview / Ask / Manage) — navigation/IA only, no requirement change. |
+| 2026-06-14 | Cold-start mitigation (R-NFR-3): warm the DB connection at isolate startup; `GET /health?warm=1` DB ping + an hourly/post-deploy warm-up workflow (prevents the Supabase 7-day pause). |
