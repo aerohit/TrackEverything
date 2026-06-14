@@ -851,7 +851,13 @@ export const APP_HTML = `<!DOCTYPE html>
     }
     if (L.length === 1) L.push("<span class='mut'>Nothing logged.</span>");
     $("#overview").classList.remove("mut");
-    $("#overview").innerHTML = L.join("<br>") + renderSubjChart(s.subjective || {});
+    var chart = renderSubjChart(s.subjective || {});
+    // When the day has activity but no mood/energy/focus check-ins, the chart is
+    // empty — say so, so it doesn't look broken (vs. a totally empty day).
+    if (!chart && s.eventCount) {
+      chart = "<div class='mut' style='margin-top:12px;font-size:12px'>No mood / energy / focus check-ins on this day yet \\u2014 add one to see the chart.</div>";
+    }
+    $("#overview").innerHTML = L.join("<br>") + chart;
     $("#overview").querySelectorAll(".prodlink").forEach(function (a) {
       a.addEventListener("click", function (ev) {
         ev.preventDefault();
