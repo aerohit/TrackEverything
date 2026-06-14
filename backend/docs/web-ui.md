@@ -39,14 +39,18 @@ hidden client-side (no routing/build step — it's one page that toggles `.scree
 
 The cards within each tab:
 
-- **Today** (Overview) — a daily summary (caffeine, sleep, workout, **calories + P/C/F macros**,
-  mood/energy/focus averages) from `GET /overview`, for the **local** day (the UI sends its UTC
-  offset), plus a **line chart** of the day's mood / energy / focus check-ins (plotted separately
-  from `subjective.*.points`) and the day's **composite supplements by name** — tap a name for an
-  **ingredients pop-up**. A date box loads any day (Phase 9).
-- **Timeline** (Overview) — a newest-first list of recent events from `GET /events?limit=50` (time,
-  category, fields, source, and the note if one was added). It **auto-refreshes after every log**;
-  **Refresh** reloads it on demand (Phase 11d, R-VIEW-4).
+- **Today** (Overview) — a daily summary of **actions/inputs** (caffeine, sleep, workout,
+  **calories + P/C/F macros**, composite supplements by name — tap a name for an ingredients pop-up)
+  from `GET /overview`, for the **local** day (the UI sends its UTC offset). A date box loads any
+  day (Phase 9). Perceptions (mood/energy/focus) are **not** here — they're the chart's job (see
+  [ADR-014](../../docs/ARCHITECTURE.md#adr-014)).
+- **Mood · energy · focus** (Overview) — a dedicated card with the day's averages and a **line
+  chart** of the check-ins (from `subjective.*.points`), or a hint when there were none. This is the
+  _only_ place perceptions appear (ADR-014).
+- **Timeline** (Overview) — a newest-first list of recent **actions/inputs** from `GET /events`
+  (time, category, fields, source, and the note if one was added); the perception categories
+  (mood/energy/focus) are filtered out (ADR-014). It **auto-refreshes after every log**; **Refresh**
+  reloads it (Phase 11d, R-VIEW-4).
 - **Check in** (Home) — tap a 1–5 button for mood / energy / focus (any subset), add an optional
   **note**, **Log check-in** → `POST /checkin`.
 - **Photo food** — pick a **meal** (pre-filled by time), take/choose a meal photo, **Scan food** →

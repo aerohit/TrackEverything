@@ -143,6 +143,19 @@ Deno.test("ui: photo food card — scan, itemized edit, calories on overview (Ph
   assert(js.includes("s.calories") && js.includes("s.macros"), "overview shows calories + macros");
 });
 
+Deno.test("ui: perceptions in their own chart card, actions-only timeline (ADR-014)", () => {
+  const js = scriptBody();
+  const html = APP_HTML;
+  // The chart lives in its own Overview card now.
+  assert(html.includes('id="subjChart"'), "chart should have its own section/card");
+  assert(js.includes("renderChartCard"), "chart card is rendered separately");
+  // The timeline filters out the perception categories (mood/energy/focus).
+  assert(
+    js.includes('e.category !== "mood"') && js.includes('e.category !== "focus"'),
+    "timeline should exclude mood/energy/focus",
+  );
+});
+
 Deno.test("ui: the editable category list matches the backend vocabulary", async () => {
   const { CATEGORIES } = await import("../../src/vocab.ts");
   const js = scriptBody();

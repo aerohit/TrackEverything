@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-14 (ADR-013: LLM-estimated food nutrition; nutrition DB deferred)
+> **Last updated:** 2026-06-14 (ADR-014: perceptions in the chart, actions-only timeline)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -314,6 +314,26 @@ the owner verifies. No phase starts before the prior one is approved.
 **Consequences:** Slower nominal throughput but continuous verification and low
 risk of building the wrong thing. Requires keeping ROADMAP.md in sync with the
 two core docs.
+
+### ADR-014
+**Title:** Separate "perceptions" (mood/energy/focus) from "actions" in the Overview — perceptions render only in the chart; the timeline lists only actions/inputs.
+**Status:** Accepted (2026-06-14).
+**Context:** mood/energy/focus are the **outcome** variables we ultimately correlate
+*against* inputs/actions (food, drink, supplement, sleep, workout, breathwork,
+stressor, hydration, note). Listing both in one timeline conflated "what I did" with
+"how I felt" and made the timeline noisy; the subjective values are far more legible
+as a trend than as log rows.
+**Decision:** On the Overview tab, mood/energy/focus ("perceptions") appear **only** in
+a dedicated **chart** card (plotted over the day, with the averages as a caption). The
+**Timeline** card lists **only actions/inputs** — it filters out the `mood`/`energy`/
+`focus` categories. The Today summary no longer prints perception averages (the chart
+owns them). No schema change: all remain ordinary events in the log; this is a
+presentation/IA split, keyed off category.
+**Consequences:** Clear inputs-vs-outcomes separation that also frames the Phase 10
+correlation work (actions → perceptions). The timeline filter is **client-side** for now
+(it filters the fetched window, which is widened to compensate); if check-in volume ever
+crowds actions out of that window, move the filter server-side via a category-exclude
+param on `GET /events`.
 
 ### ADR-013
 **Title:** Estimate food nutrition with the LLM now; defer a nutrition-database integration.

@@ -27,6 +27,11 @@ truth). Keeps aggregation reliable by fixing names and units (REQUIREMENTS Q4).
 Mood/energy/focus check-ins (R-SUBJ-1) are ordinary events in these categories with a `rating` field
 — no special table.
 
+Conceptually the categories split into **perceptions** — `mood`, `energy`, `focus` (the _outcome_
+variables) — and **actions/inputs** — everything else (food, drink, supplement, sleep, workout,
+breathwork, stressor, hydration, note). The Overview UI keeps them apart: perceptions only in the
+chart, actions only in the timeline (see [ADR-014](../../docs/ARCHITECTURE.md#adr-014)).
+
 ## Sources
 
 `voice`, `manual`, `quicklog`, `whoop`, `photo` (a meal photo scanned via `/food-scan`, Phase 12).
