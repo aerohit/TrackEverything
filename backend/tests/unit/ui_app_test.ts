@@ -95,6 +95,20 @@ Deno.test("ui: post-test fixes — timeline auto-refresh, local-day, note displa
   assert(js.includes("e.raw_text"), "timeline should render the note");
 });
 
+Deno.test("ui: four tabbed screens with a bottom nav", () => {
+  const js = scriptBody();
+  const html = APP_HTML;
+  for (const name of ["home", "overview", "ask", "manage"]) {
+    assert(html.includes('data-screen="' + name + '"'), "missing screen " + name);
+  }
+  assert(html.includes('id="tabbar"'), "should have a bottom tab bar");
+  // Home is capture-focused; the read views and management live on other tabs.
+  const home = html.split('data-screen="home"')[1].split('data-screen="overview"')[0];
+  assert(home.includes("Check in") && home.includes("Capture"), "home is check-in/capture");
+  assert(!home.includes(">Today<") && !home.includes(">Manage<"), "home excludes overview/manage");
+  assert(js.includes("showScreen"), "should switch screens");
+});
+
 Deno.test("ui: the editable category list matches the backend vocabulary", async () => {
   const { CATEGORIES } = await import("../../src/vocab.ts");
   const js = scriptBody();

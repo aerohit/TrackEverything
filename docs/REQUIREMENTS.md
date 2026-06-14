@@ -185,3 +185,4 @@ This document is kept current by an explicit process, not by hope. See
 | 2026-06-13 | Phase 11c: Manage UI — label-scan→product (R-CAP-15 image path), create product/template (R-CAP-13/14, R-CAP-5), ingredient-breakdown preview (R-PAT-5) — no new endpoints. |
 | 2026-06-13 | Phase 11d: `GET /events` list endpoint + Timeline view (R-VIEW-4), cited-event detail + window control in Ask (R-RT-6), cookie-backed token. |
 | 2026-06-14 | UI-test fixes: daily overview uses the user's **local** day (R-PAT-2/R-VIEW-1, `tzOffsetMinutes`); Timeline auto-refreshes + shows the note; product quick-logs are self-describing (`item`=name). |
+| 2026-06-14 | PWA reorganised into four tabbed screens (Home / Overview / Ask / Manage) — navigation/IA only, no requirement change. |
