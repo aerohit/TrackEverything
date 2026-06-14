@@ -81,6 +81,20 @@ Deno.test("ui: timeline, cited-event detail, window control & cookie token (11d)
   assert(js.includes("max-age="), "cookie should be persistent");
 });
 
+Deno.test("ui: post-test fixes — timeline auto-refresh, local-day, note display", () => {
+  const js = scriptBody();
+  // Timeline refreshes alongside the overview after every write.
+  const pairs = js.match(/loadOverview\(\); loadTimeline\(\)/g) || [];
+  assert(pairs.length >= 3, "timeline should refresh after writes (check-in, quick-log, manual)");
+  // Overview asks for the user's local day via tzOffsetMinutes.
+  assert(
+    js.includes("tzOffsetMinutes=") && js.includes("/overview"),
+    "overview sends local offset",
+  );
+  // The timeline shows a note (raw_text) when present.
+  assert(js.includes("e.raw_text"), "timeline should render the note");
+});
+
 Deno.test("ui: the editable category list matches the backend vocabulary", async () => {
   const { CATEGORIES } = await import("../../src/vocab.ts");
   const js = scriptBody();

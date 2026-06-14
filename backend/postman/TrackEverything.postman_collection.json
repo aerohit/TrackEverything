@@ -407,11 +407,18 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/overview",
+              "raw": "{{baseUrl}}/overview?tzOffsetMinutes=0",
               "host": ["{{baseUrl}}"],
-              "path": ["overview"]
+              "path": ["overview"],
+              "query": [
+                {
+                  "key": "tzOffsetMinutes",
+                  "value": "0",
+                  "description": "east-positive local UTC offset; day boundaries are local midnight (default 0 = UTC)"
+                }
+              ]
             },
-            "description": "Daily roll-up for today (UTC). Returns caffeine total + last time, sleep minutes, workout, subjective averages, by-category counts, and expanded ingredient totals."
+            "description": "Daily roll-up for the local day (set `tzOffsetMinutes` = `-new Date().getTimezoneOffset()`). Returns caffeine total + last time, sleep minutes, workout, subjective averages, by-category counts, and expanded ingredient totals."
           }
         },
         {
@@ -420,12 +427,19 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/overview?date=2026-06-13",
+              "raw": "{{baseUrl}}/overview?date=2026-06-13&tzOffsetMinutes=0",
               "host": ["{{baseUrl}}"],
               "path": ["overview"],
-              "query": [{ "key": "date", "value": "2026-06-13" }]
+              "query": [
+                { "key": "date", "value": "2026-06-13" },
+                {
+                  "key": "tzOffsetMinutes",
+                  "value": "0",
+                  "description": "day window is local midnight for this offset"
+                }
+              ]
             },
-            "description": "`date` is `YYYY-MM-DD` (UTC day). Malformed date -> 400."
+            "description": "`date` is `YYYY-MM-DD`; the day window is local midnight for the given `tzOffsetMinutes`. Malformed date -> 400."
           }
         }
       ]

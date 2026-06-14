@@ -106,6 +106,7 @@ export const APP_HTML = `<!DOCTYPE html>
   .tlrow { padding:8px 0; border-bottom:1px solid var(--line); font-size:14px; }
   .tlrow:last-child { border-bottom:none; }
   .tltime { color:var(--accent-2); margin-right:6px; }
+  .tlnote { color:var(--mut); font-size:12px; margin-top:3px; font-style:italic; }
 </style>
 </head>
 <body>
@@ -283,7 +284,7 @@ export const APP_HTML = `<!DOCTYPE html>
         picked = { mood: null, energy: null, focus: null };
         document.querySelectorAll(".scale button").forEach(function (x) { x.classList.remove("sel"); });
         $("#checkinNote").value = "";
-        loadOverview();
+        loadOverview(); loadTimeline();
       } else { toast("Check-in failed (" + r.status + ")", true); }
     });
   });
@@ -302,7 +303,7 @@ export const APP_HTML = `<!DOCTYPE html>
     var body = Object.assign({}, payload, quickOptions());
     api("/quicklog", "POST", body).then(function (r) {
       toast(r.ok ? ("Logged " + label) : ("Failed (" + r.status + ")"), !r.ok);
-      if (r.ok) loadOverview();
+      if (r.ok) { loadOverview(); loadTimeline(); }
     });
   }
   $("#quickOptToggle").addEventListener("click", function () {
@@ -441,7 +442,7 @@ export const APP_HTML = `<!DOCTYPE html>
       });
       if (chosen.length === 0) { toast("Nothing selected", true); return; }
       api("/events", "POST", { events: chosen }).then(function (r) {
-        if (r.ok) { toast("Saved " + chosen.length); box.innerHTML = ""; $("#captureText").value = ""; loadOverview(); }
+        if (r.ok) { toast("Saved " + chosen.length); box.innerHTML = ""; $("#captureText").value = ""; loadOverview(); loadTimeline(); }
         else { toast("Save failed (" + r.status + ")", true); }
       });
     });
@@ -501,7 +502,7 @@ export const APP_HTML = `<!DOCTYPE html>
         if (r.ok) {
           toast("Logged");
           $("#manFields").innerHTML = ""; addFieldRow(); $("#manTime").value = "";
-          loadOverview();
+          loadOverview(); loadTimeline();
         } else { toast("Save failed (" + r.status + ")", true); }
       });
     });
@@ -677,7 +678,11 @@ export const APP_HTML = `<!DOCTYPE html>
     if (!token) { $("#overview").textContent = "Set your token first."; return; }
     var d = $("#ovDate").value.trim();
     $("#overview").textContent = "Loading\\u2026";
-    api("/overview" + (d ? ("?date=" + encodeURIComponent(d)) : ""), "GET").then(function (r) {
+    // Send the local UTC offset so "today" and the day window are the user's local
+    // day, not the UTC one (blank date = local today on the server).
+    var tz = -new Date().getTimezoneOffset();
+    var qs = "?tzOffsetMinutes=" + tz + (d ? ("&date=" + encodeURIComponent(d)) : "");
+    api("/overview" + qs, "GET").then(function (r) {
       if (!r.ok || !r.data) { $("#overview").textContent = "Failed (" + r.status + ")"; return; }
       renderOverview(r.data);
     });
@@ -716,10 +721,11 @@ export const APP_HTML = `<!DOCTYPE html>
       $("#timeline").classList.remove("mut");
       $("#timeline").innerHTML = evs.map(function (e) {
         var fs = fieldSummary(e.fields);
+        var note = e.raw_text ? ("<div class='tlnote'>\\u201c" + escapeHtml(e.raw_text) + "\\u201d</div>") : "";
         return "<div class='tlrow'><span class='tltime'>" + fmtDateTime(e.occurred_at) +
           "</span><strong>" + escapeHtml(e.category) + "</strong>" +
           (fs ? (" <span class='mut'>" + escapeHtml(fs) + "</span>") : "") +
-          " <span class='pill'>" + escapeHtml(e.source) + "</span></div>";
+          " <span class='pill'>" + escapeHtml(e.source) + "</span>" + note + "</div>";
       }).join("");
     });
   }

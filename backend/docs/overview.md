@@ -7,12 +7,17 @@ totals are real — e.g. "magnesium 400 mg" from a 2-serving stack.
 ## Request
 
 ```
-GET /overview?date=2026-06-13
+GET /overview?date=2026-06-13&tzOffsetMinutes=120
 Authorization: Bearer <INGEST_TOKEN>
 ```
 
-- `date` — optional `YYYY-MM-DD`; defaults to **today (UTC)**. Day boundaries are
-  `[date 00:00Z, +24h)`. (Local-timezone days are a later refinement.)
+- `tzOffsetMinutes` — optional, the client's **east-positive** UTC offset
+  (`-new Date().getTimezoneOffset()`, e.g. UTC+2 → `120`); defaults to `0` (UTC).
+- `date` — optional `YYYY-MM-DD`; defaults to the user's **local today** (computed with
+  `tzOffsetMinutes`). Day boundaries are **local** midnight: `[date 00:00 local,
+  +24h)`, i.e.
+  `date 00:00 − tzOffsetMinutes` in UTC. So an event logged at 12:30am local lands on that local
+  day, not the UTC one.
 
 Returns `200`:
 
@@ -61,7 +66,6 @@ curl -s "http://localhost:8000/overview?date=2026-06-13" \
 
 ## Not yet (future)
 
-- **Local-timezone** day boundaries (currently UTC).
 - **Weekly / monthly** trends + correlations — Phase 10.
 - ~~A full **event timeline** list view — needs a `GET /events` list endpoint.~~ Done (Phase 11d):
   `GET /events` lists events newest-first; the PWA's **Timeline** card renders it.

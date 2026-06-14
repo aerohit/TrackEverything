@@ -1,7 +1,10 @@
 /**
- * Phase 9: `GET /overview?date=YYYY-MM-DD` — a daily summary of what you logged
- * (R-VIEW-1). Fetches the day's events (UTC day boundaries), pulls ingredient
- * lists for any logged products, and aggregates (R-PAT-2). Defaults to today.
+ * Phase 9: `GET /overview?date=YYYY-MM-DD&tzOffsetMinutes=N` — a daily summary of
+ * what you logged (R-VIEW-1). The day's boundaries are the user's **local**
+ * midnight (so an event logged at 12:30am local lands on that local day, not the
+ * UTC one): pass `tzOffsetMinutes` (east-positive, `-getTimezoneOffset()`); it
+ * defaults to 0 (UTC). `date` defaults to the user's local today. Pulls
+ * ingredient lists for logged products and aggregates (R-PAT-2).
  */
 import type { Sql } from "npm:postgres@^3.4.4";
 import { connect } from "../../src/db.ts";
@@ -25,12 +28,17 @@ export function makeOverviewHandler(deps: OverviewHandlerDeps) {
       if (provided !== deps.token) return jsonResponse(401, { error: "unauthorized" });
     }
 
-    const today = (deps.now?.() ?? new Date()).toISOString().slice(0, 10);
-    const date = new URL(req.url).searchParams.get("date") ?? today;
+    const params = new URL(req.url).searchParams;
+    const tz = parseTz(params.get("tzOffsetMinutes"));
+    const now = deps.now?.() ?? new Date();
+    // The local "today": shift the instant by the offset, then read the date.
+    const localToday = new Date(now.getTime() + tz * 60_000).toISOString().slice(0, 10);
+    const date = params.get("date") ?? localToday;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return jsonResponse(400, { error: "date must be YYYY-MM-DD" });
     }
-    const from = new Date(date + "T00:00:00.000Z");
+    // Local midnight expressed as a UTC instant: local 00:00 minus the offset.
+    const from = new Date(new Date(date + "T00:00:00.000Z").getTime() - tz * 60_000);
     if (Number.isNaN(from.getTime())) {
       return jsonResponse(400, { error: "invalid date" });
     }
@@ -48,6 +56,12 @@ export function makeOverviewHandler(deps: OverviewHandlerDeps) {
 
     return jsonResponse(200, aggregateDay(date, events, byItem));
   };
+}
+
+/** East-positive UTC offset in minutes; 0 when absent or unparseable. */
+function parseTz(value: string | null): number {
+  const n = value === null ? 0 : Number(value);
+  return Number.isFinite(n) ? n : 0;
 }
 
 function bearerToken(req: Request): string | null {
