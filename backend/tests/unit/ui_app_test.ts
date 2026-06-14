@@ -174,6 +174,27 @@ Deno.test("ui: timeline food rows show 'Meal — item' with a clickable ingredie
   }
 });
 
+Deno.test("ui: light + dark theme with a system-following toggle", () => {
+  const js = scriptBody();
+  const html = APP_HTML;
+  // Both palettes are defined as CSS-variable sets, switched by a data-theme attribute.
+  assert(html.includes("color-scheme: light"), "light palette is the base");
+  assert(html.includes('[data-theme="dark"]'), "a dark palette overrides via data-theme");
+  // A head init script resolves the theme before paint (no flash); the test's scriptBody()
+  // still extracts the main (attribute-less) <script>, so guard the init tag separately.
+  assert(html.includes("<script data-theme-init>"), "a pre-paint theme init script exists");
+  assert(html.includes("prefers-color-scheme: dark"), "default follows the system appearance");
+  // The header exposes a toggle; the choice persists as te_theme.
+  assert(html.includes('id="themeToggle"'), "a header theme toggle button");
+  assert(js.includes("initTheme") && js.includes('"te_theme"'), "toggle persists the appearance");
+  assert(
+    js.includes('"system"') && js.includes('"light"') && js.includes('"dark"'),
+    "cycles system/light/dark",
+  );
+  // The old Aurora gradient/glow vars are gone (single flat accent now).
+  assert(!js.includes("--grad:") && !js.includes("--glow:"), "Aurora gradient/glow removed");
+});
+
 Deno.test("ui: the editable category list matches the backend vocabulary", async () => {
   const { CATEGORIES } = await import("../../src/vocab.ts");
   const js = scriptBody();

@@ -14,9 +14,16 @@ Safari → https://<your-app>.deno.dev/  →  Share → Add to Home Screen  → 
 
 ## Look & feel
 
-A dark **"Aurora"** theme: an indigo→cyan gradient glow behind near-black, frosted-glass cards, a
-gradient app title, and gradient/glowing primary buttons and selected rating chips. It's pure CSS in
-[`ui/app.ts`](../ui/app.ts) (no assets, no build step) — the markup and behaviour are unchanged.
+A clean, calm theme inspired by modern iOS habit trackers: solid cards with soft shadows, generous
+rounded corners, lots of whitespace, and a single **indigo** accent (selected chips, primary
+buttons, links, the active tab) instead of gradients/glow.
+
+**Light and dark mode** (R-VIEW-6). The whole palette is a set of CSS variables; **light** is the
+base and **dark** overrides them under `:root[data-theme="dark"]`. The app **follows the system
+appearance by default** and offers a header toggle that cycles **System → Light → Dark**, persisted
+on the device as `te_theme`. A tiny inline script in `<head>` resolves the effective theme before
+first paint (no flash), and the `<meta name="theme-color">` is kept in sync. It's pure CSS + vanilla
+JS in [`ui/app.ts`](../ui/app.ts) (no assets, no build step).
 
 ## First run
 
