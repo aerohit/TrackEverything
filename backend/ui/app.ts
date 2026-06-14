@@ -121,6 +121,7 @@ export const APP_HTML = `<!DOCTYPE html>
   .card.soon h2 { display:flex; align-items:center; gap:8px; }
   .soon-tag { font-size:10px; letter-spacing:.08em; color:#bfe9f2; background:rgba(34,211,238,.12); border:1px solid rgba(34,211,238,.3); border-radius:20px; padding:1px 8px; }
   .prodlink { color:var(--accent-2); text-decoration:none; border-bottom:1px dotted rgba(34,211,238,.5); }
+  .tlicon { display:inline-block; margin-right:6px; font-size:15px; line-height:1; }
   .modal-ov { position:fixed; inset:0; z-index:50; background:rgba(0,0,0,.55); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; padding:24px; }
   .modal { background:#15151d; border:1px solid var(--line-2); border-radius:16px; padding:16px; width:100%; max-width:360px; max-height:80vh; overflow:auto; box-shadow:0 20px 60px rgba(0,0,0,.5); }
   .modal-h { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
@@ -677,7 +678,9 @@ export const APP_HTML = `<!DOCTYPE html>
     var MEALS = ["breakfast", "lunch", "dinner", "snack"];
     var msel = $("#foodMeal");
     MEALS.forEach(function (m) {
-      var o = el("option"); o.value = m; o.textContent = m; msel.appendChild(o);
+      var o = el("option"); o.value = m;
+      o.textContent = emojiFor(m) + " " + cap(m);
+      msel.appendChild(o);
     });
     var h = new Date().getHours();
     msel.value = h < 11 ? "breakfast" : h < 16 ? "lunch" : h < 21 ? "dinner" : "snack";
@@ -835,6 +838,18 @@ export const APP_HTML = `<!DOCTYPE html>
 
   // ---- today overview ----
   function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  // An emoji for a meal or an event category (single code points, so they work in
+  // both textContent and innerHTML). Empty string when there's no icon for the kind.
+  function emojiFor(kind) {
+    var M = {
+      breakfast: 0x1F373, lunch: 0x1F957, dinner: 0x1F37D, snack: 0x1F34E,
+      food: 0x1F374, drink: 0x1F964, supplement: 0x1F48A, sleep: 0x1F634,
+      workout: 0x1F4AA, breathwork: 0x1F9D8, mood: 0x1F642, energy: 0x26A1,
+      focus: 0x1F3AF, stressor: 0x1F62B, hydration: 0x1F4A7, note: 0x1F4DD,
+    };
+    var c = M[kind];
+    return c ? String.fromCodePoint(c) : "";
+  }
   function fmtTime(iso) { try { return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); } catch (e) { return iso; } }
   function renderOverview(s) {
     var L = ["<strong>" + s.date + "</strong> &middot; " + s.eventCount + " events"];
@@ -849,7 +864,8 @@ export const APP_HTML = `<!DOCTYPE html>
     if (s.products && s.products.length) {
       L.push("<span class='mut'>Supplements:</span>");
       s.products.forEach(function (p, i) {
-        L.push("&nbsp;&nbsp;<a href='#' class='prodlink' data-pi='" + i + "'>" + escapeHtml(p.name) + "</a>");
+        L.push("&nbsp;&nbsp;<span class='tlicon'>" + emojiFor("supplement") + "</span>" +
+          "<a href='#' class='prodlink' data-pi='" + i + "'>" + escapeHtml(p.name) + "</a>");
       });
     }
     if (L.length === 1) L.push("<span class='mut'>Nothing logged.</span>");
@@ -1013,13 +1029,17 @@ export const APP_HTML = `<!DOCTYPE html>
         // (ADR-014 / the dish-name-only timeline); other categories show their fields.
         if (e.category === "food") {
           var f = e.fields || {};
+          var fic = emojiFor(f.meal) || emojiFor("food");
+          var ficon = fic ? ("<span class='tlicon'>" + fic + "</span>") : "";
           var meal = f.meal ? ("<span class='mut'>" + escapeHtml(cap(f.meal)) + " \\u2014 </span>") : "";
           var nm = escapeHtml(f.item || "food");
-          return "<div class='tlrow'>" + time + meal +
+          return "<div class='tlrow'>" + time + ficon + meal +
             "<a href='#' class='foodlink' data-i='" + i + "'>" + nm + "</a>" + pill + note + "</div>";
         }
+        var ic = emojiFor(e.category);
+        var icon = ic ? ("<span class='tlicon'>" + ic + "</span>") : "";
         var fs = fieldSummary(e.fields);
-        return "<div class='tlrow'>" + time + "<strong>" + escapeHtml(e.category) + "</strong>" +
+        return "<div class='tlrow'>" + time + icon + "<strong>" + escapeHtml(e.category) + "</strong>" +
           (fs ? (" <span class='mut'>" + escapeHtml(fs) + "</span>") : "") + pill + note + "</div>";
       }).join("");
       // Wire the food names to an ingredients pop-up (with a meal/calorie subtitle).
@@ -1028,7 +1048,7 @@ export const APP_HTML = `<!DOCTYPE html>
           ev.preventDefault();
           var f = (evs[Number(a.getAttribute("data-i"))] || {}).fields || {};
           var sub = [];
-          if (f.meal) sub.push(cap(f.meal));
+          if (f.meal) sub.push((emojiFor(f.meal) ? emojiFor(f.meal) + " " : "") + cap(f.meal));
           if (f.calories) sub.push(f.calories + " kcal");
           if (f.protein_g != null || f.carbs_g != null || f.fat_g != null) {
             sub.push("P " + (f.protein_g || 0) + " / C " + (f.carbs_g || 0) + " / F " + (f.fat_g || 0) + " g");
