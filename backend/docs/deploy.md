@@ -124,6 +124,32 @@ Supabase, then query. Two things keep this small:
   serving you and the Supabase region. Check the Deno region via the `via:` response header
   (`curl -sD - .../health -o /dev/null | grep -i ^via:`) and the Supabase region in the dashboard or
   the pooler host (`aws-0-<region>.pooler.supabase.com`); keep them on the same continent.
+  - In the Deno console → app **Settings → Deployment Region**, **pin a single region near
+    Supabase** (e.g. `ams` for a `eu-west` database). "All Regions" can serve a request from a far
+    region (e.g. `ord`/Chicago) that then makes every DB round-trip cross an ocean — which, on a
+    stale pooled connection, surfaces as `canceling statement due to statement timeout`.
+
+## Isolate resilience (don't crash on a bad query)
+
+A Deno Deploy isolate that throws an **uncaught promise rejection crashes and reboots** — and the
+next request pays a cold start, often a `503 DEPLOYMENT_TIMED_OUT`. We saw exactly this in the logs:
+a dropped/stale pooled connection produced an _uncaught_
+`PostgresError: canceling statement due to
+statement timeout`, crash-looping the production isolate.
+Two safeguards in code:
+
+- [`main.ts`](../main.ts) installs a global `unhandledrejection` handler that logs and swallows
+  stray rejections, so one bad DB result can't take the service down.
+- [`db.ts`](../src/db.ts) sets `connect_timeout`, `idle_timeout`, and `max_lifetime` so the driver
+  **fails fast** and **recycles** the connection instead of reusing a half-open socket.
+
+## Preview deployments share production env
+
+Deno Deploy **builds every push to the repo** (a preview deployment per branch). By default env vars
+have **context "All"**, so a preview inherits the **production `DATABASE_URL`** and would hit the
+real database if it received traffic. CI (GitHub Actions) is unaffected — it uses its own throwaway
+Postgres. To isolate previews, set `DATABASE_URL` (at least) to a **Production-only** context in the
+console, or turn off branch/preview builds; merging to `main` still triggers the production deploy.
 
 ## Good to know
 
