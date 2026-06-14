@@ -334,6 +334,44 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 
 ---
 
+## Stage G — Nutrition & food
+
+### Phase 12 — Photo food logging ◐
+- **Goal:** Log meals from a photo with calorie + macro estimates (R-CAP-16).
+- **Build:** `POST /food-scan` (Claude vision → itemized foods with `amount`/`unit`, `calories`,
+  `protein_g`/`carbs_g`/`fat_g`, context `ingredients`); a Home **Photo food** card (review/edit each
+  item — adjust amount to rescale, or type calories; pick a meal) → `POST /events` as `food` events
+  (`source: photo`); a daily **calorie + macro total** on the overview. Nutrition is **LLM-estimated**
+  ([ADR-013](ARCHITECTURE.md#adr-013)).
+- **Tests:** unit (food parsing/sanitising; food-scan handler; aggregate calories/macros; router 503);
+  integration (overview calorie total); UI feature-lock (scan → itemized edit → rescale → overview).
+- **You verify:** Photograph steak + eggs → two editable items with sensible guesses; bump the steak
+  to 250 g and watch calories scale; override the eggs' calories; pick a meal; save → two food events;
+  Today shows the calorie + macro totals.
+- **Builds:** R-CAP-16, R-PAT-2 (calories), [ADR-013](ARCHITECTURE.md#adr-013). New `photo` source.
+- **Implementation notes (in progress):**
+  - [`src/food.ts`](../backend/src/food.ts) (prompt + `parseFoodCandidates` + `extractFoodFromImage`),
+    [`functions/food_scan/index.ts`](../backend/functions/food_scan/index.ts),
+    [`ui/app.ts`](../backend/ui/app.ts) (Photo food card; amount rescales calories+macros; calorie
+    total on the overview). Aggregate sums `calories` + macros.
+  - **Local status:** deterministic suite green — **124 passed** / **141 with a DB**. Browser-verified
+    the review/edit/rescale/save + overview totals with a mocked scan response (the live vision call is
+    device-verified, needs `ANTHROPIC_API_KEY`).
+  - **On approval:** flip `R-CAP-16` → Built.
+
+### Phase 13 — Nutrition database integration ☐ (deferred)
+- **Goal:** Replace/back-stop the LLM calorie+macro estimates with a real nutrition database for
+  accuracy (supersedes [ADR-013](ARCHITECTURE.md#adr-013)).
+- **Build:** Identify foods (vision) → look up calories/macros in a nutrition DB (USDA FoodData
+  Central / Nutritionix); map portions; keep the same `food` event shape. (Resolves the accuracy
+  trade-off noted in ADR-013.)
+- **Tests:** Unit (food→DB mapping from fixtures); integration (lookup → event); live suite hits the
+  real nutrition API.
+- **You verify:** A scanned meal's calories match the database within a sensible tolerance.
+- **Builds:** R-CAP-16 (accuracy), R-SRC-3 (pluggable sources).
+
+---
+
 ## Changelog
 
 | Date | Change |
@@ -370,3 +408,4 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 | 2026-06-14 | Post-UI-test fixes (browser-driven): Timeline auto-refreshes after every log; `/overview` day window is the user's **local** day (`tzOffsetMinutes`); Timeline shows the note (`raw_text`); product quick-logs carry `item` = product name. |
 | 2026-06-14 | Split the PWA into **four tabbed screens** (bottom nav): Home (check-in/capture/quick-log/manual), Overview (Today + Timeline + a **Weekly** placeholder for Phase 10 reports), Ask, Manage. UI-only, no API change. |
 | 2026-06-14 | Overview enrichments: mood/energy/focus **line chart** (`/overview` now returns subjective `points`); composite supplements shown **by name** with a click-to-open **ingredients pop-up** (`/overview` returns a `products` list). |
+| 2026-06-14 | Phase 12 (photo food logging: `POST /food-scan` vision → itemized calories+macros, Home card, overview totals) implemented → ◐ in review. Added Phase 13 (nutrition DB, deferred) and ADR-013. |

@@ -22,7 +22,7 @@ export const CATEGORIES = [
 ] as const;
 export type Category = typeof CATEGORIES[number];
 
-export const SOURCES = ["voice", "manual", "quicklog", "whoop"] as const;
+export const SOURCES = ["voice", "manual", "quicklog", "whoop", "photo"] as const;
 export type Source = typeof SOURCES[number];
 
 export const OCCURRED_AT_CONFIDENCE = ["high", "inferred"] as const;

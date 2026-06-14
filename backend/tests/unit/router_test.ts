@@ -40,6 +40,8 @@ Deno.test("router: dispatches to a handler (PUT /events -> 405, no DB touched)",
 
 Deno.test("router: claude routes return 503 when no key is configured", async () => {
   const router = buildRouter({ sql: noSql, claude: null, token: null });
-  const res = await router(new Request("http://x/ask", { method: "POST" }));
-  assertEquals(res.status, 503);
+  for (const path of ["/ask", "/food-scan"]) {
+    const res = await router(new Request("http://x" + path, { method: "POST" }));
+    assertEquals(res.status, 503, path);
+  }
 });

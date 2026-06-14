@@ -61,6 +61,18 @@ Deno.test("aggregateDay: caffeine, sleep, workout, subjective, ingredient expans
       item_id: itemId,
       fields: { servings: 2 },
     }),
+    makeEvent({
+      occurred_at: new Date("2026-06-12T13:00:00Z"),
+      category: "food",
+      source: "photo",
+      fields: { item: "steak", calories: 460, protein_g: 50, carbs_g: 0, fat_g: 28, meal: "lunch" },
+    }),
+    makeEvent({
+      occurred_at: new Date("2026-06-12T13:05:00Z"),
+      category: "food",
+      source: "photo",
+      fields: { item: "eggs", calories: 180, protein_g: 12, carbs_g: 1, fat_g: 14, meal: "lunch" },
+    }),
   ];
   const map = new Map<string, IngredientRow[]>([
     [itemId, [
@@ -71,12 +83,15 @@ Deno.test("aggregateDay: caffeine, sleep, workout, subjective, ingredient expans
 
   const s = aggregateDay("2026-06-12", events, map);
 
-  assertEquals(s.eventCount, 7);
+  assertEquals(s.eventCount, 9);
   assertEquals(s.byCategory.drink, 2);
+  assertEquals(s.byCategory.food, 2);
   assertEquals(s.caffeineMg, 210);
   assertEquals(s.lastCaffeineAt, "2026-06-12T14:00:00.000Z");
   assertEquals(s.sleepMinutes, 420);
   assertEquals(s.workout, { count: 1, durationMin: 45 });
+  assertEquals(s.calories, 640); // 460 + 180
+  assertEquals(s.macros, { protein_g: 62, carbs_g: 1, fat_g: 42 });
   assertEquals(s.subjective.mood, {
     avg: 3,
     n: 2,

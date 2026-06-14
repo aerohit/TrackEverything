@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-13 (ADR-012: iPhone UI as a PWA, not native SwiftUI)
+> **Last updated:** 2026-06-14 (ADR-013: LLM-estimated food nutrition; nutrition DB deferred)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -314,6 +314,27 @@ the owner verifies. No phase starts before the prior one is approved.
 **Consequences:** Slower nominal throughput but continuous verification and low
 risk of building the wrong thing. Requires keeping ROADMAP.md in sync with the
 two core docs.
+
+### ADR-013
+**Title:** Estimate food nutrition with the LLM now; defer a nutrition-database integration.
+**Status:** Accepted (2026-06-14).
+**Context:** Phase 12 logs food from a photo (R-CAP-16) and needs calories + macros per
+item. Two sources: (a) Claude vision estimates the nutrition directly, or (b) vision
+identifies the food and a nutrition database (USDA FoodData Central / Nutritionix)
+supplies precise values. (b) is more accurate but adds an external integration, an API
+key/account, food-name matching, and portion mapping — a phase in itself.
+**Decision:** Start with **(a) LLM-estimated** calories + macros. The vision call
+([`POST /food-scan`](../backend/functions/food_scan/index.ts), prompt in
+[`src/food.ts`](../backend/src/food.ts)) returns per-item `amount`/`unit`, `calories`,
+`protein_g`/`carbs_g`/`fat_g`, and context `ingredients`. The user **always confirms/edits**
+the amount (which rescales the estimate) or types calories directly before saving, so an
+imperfect estimate is cheap to correct. Foods persist as `food` events (`source: photo`)
+via the existing `POST /events`; the daily overview sums `calories` + macros.
+**Consequences:** No new external dependency or key beyond the Anthropic key already in
+use; ships now and is verifiable with the mock seam. Trade-off: estimates are approximate
+and not reproducible. A **nutrition-database integration is added to the roadmap** as a
+later phase that can supersede this ADR (replace or back-stop the estimate), keeping the
+same event shape so stored data needn't change.
 
 ### ADR-012
 **Title:** Build the iPhone UI as a server-served PWA, not a native SwiftUI app.

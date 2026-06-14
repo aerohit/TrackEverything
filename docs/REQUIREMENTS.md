@@ -1,7 +1,7 @@
 # TrackEverything — Requirements
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-14 (UI-test fixes: local-day overview, timeline auto-refresh + note, product self-describing)
+> **Last updated:** 2026-06-14 (Phase 12: photo food logging — R-CAP-16, LLM-estimated calories/macros)
 > **Owner:** aerohit
 > **Companion doc:** [ARCHITECTURE.md](ARCHITECTURE.md)
 
@@ -54,6 +54,7 @@ The product succeeds only if **capture is nearly frictionless** and the
 | R-CAP-13 | Log a multi-ingredient supplement (e.g. sleep stack, pre-workout) by its **product name alone**, as a single quick entry — without re-entering ingredients each time. | Built |
 | R-CAP-14 | Define a supplement **product's ingredient list once** (per ingredient: name, amount, unit); it is reused for every log of that product. Support a servings/dose multiplier per log. | Built |
 | R-CAP-15 | Populate a product's ingredient list by **uploading a photo** of the supplement-facts / ingredients label; the system extracts the structured ingredient list for confirmation/edit (image capture modality). | Built |
+| R-CAP-16 | **Photo food logging:** photograph a meal; the system recognizes each food, itemizes it, and **estimates calories + macros** (protein/carbs/fat) and a portion. The user confirms/edits the amount (grams / count / serving — which rescales the nutrition) or enters calories directly, picks a meal (breakfast/lunch/dinner/snack), and saves one `food` event per item. Guessed ingredients are shown for context only. Nutrition is LLM-estimated for now (see [ADR-013](ARCHITECTURE.md#adr-013)). | Designed |
 
 ## 4. Data sources & integrations
 
@@ -188,3 +189,4 @@ This document is kept current by an explicit process, not by hope. See
 | 2026-06-14 | PWA reorganised into four tabbed screens (Home / Overview / Ask / Manage) — navigation/IA only, no requirement change. |
 | 2026-06-14 | Cold-start mitigation (R-NFR-3): warm the DB connection at isolate startup; `GET /health?warm=1` DB ping + an hourly/post-deploy warm-up workflow (prevents the Supabase 7-day pause). |
 | 2026-06-14 | Overview (R-VIEW-1): `/overview` returns subjective `points` (the UI plots mood/energy/focus separately) and a `products` list (composite supplements by name; the UI shows names with a click-to-open ingredients pop-up instead of the summed rollup). |
+| 2026-06-14 | Added R-CAP-16 (photo food logging: recognize → itemize → estimate calories+macros → edit amount or enter calories). LLM-estimated nutrition (ADR-013); nutrition-database integration deferred to a later phase. Daily calorie/macro totals added to `/overview` (R-PAT-2). New `photo` source. Phase 12. |

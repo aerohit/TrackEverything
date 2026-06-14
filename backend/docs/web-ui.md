@@ -30,8 +30,8 @@ Shortcut) — the cookie survives reloads and app relaunches even where an iOS s
 The app is organised into **four tabs** (a bottom nav bar); the active screen shows, the others are
 hidden client-side (no routing/build step — it's one page that toggles `.screen` sections):
 
-- **Home** — the capture loop you use all day: **Check in**, **Capture**, **Quick log**, **Log
-  manually**.
+- **Home** — the capture loop you use all day: **Check in**, **Capture**, **Photo food**, **Quick
+  log**, **Log manually**.
 - **Overview** — read-only views: **Today**, the **Timeline**, and a **Weekly** placeholder for the
   reports coming in Phase 10. Refreshes when you open the tab.
 - **Ask** — the real-time questions.
@@ -39,16 +39,21 @@ hidden client-side (no routing/build step — it's one page that toggles `.scree
 
 The cards within each tab:
 
-- **Today** (Overview) — a daily summary (caffeine, sleep, workout, mood/energy/focus averages) from
-  `GET /overview`, for the **local** day (the UI sends its UTC offset), plus a **line chart** of the
-  day's mood / energy / focus check-ins (plotted separately from `subjective.*.points`) and the
-  day's **composite supplements by name** — tap a name for an **ingredients pop-up**. A date box
-  loads any day (Phase 9).
+- **Today** (Overview) — a daily summary (caffeine, sleep, workout, **calories + P/C/F macros**,
+  mood/energy/focus averages) from `GET /overview`, for the **local** day (the UI sends its UTC
+  offset), plus a **line chart** of the day's mood / energy / focus check-ins (plotted separately
+  from `subjective.*.points`) and the day's **composite supplements by name** — tap a name for an
+  **ingredients pop-up**. A date box loads any day (Phase 9).
 - **Timeline** (Overview) — a newest-first list of recent events from `GET /events?limit=50` (time,
   category, fields, source, and the note if one was added). It **auto-refreshes after every log**;
   **Refresh** reloads it on demand (Phase 11d, R-VIEW-4).
 - **Check in** (Home) — tap a 1–5 button for mood / energy / focus (any subset), add an optional
   **note**, **Log check-in** → `POST /checkin`.
+- **Photo food** — pick a **meal** (pre-filled by time), take/choose a meal photo, **Scan food** →
+  `POST /food-scan` (Claude vision). Each recognised food is an **editable** row — name, **amount +
+  unit** (changing the amount rescales calories/macros), **calories** (or type one in to override),
+  **P / C / F**, and a tap-to-open **ingredients** pop-up (context). **Save foods** → one `food`
+  event per item (`source: photo`). Nutrition is LLM-estimated (Phase 12, R-CAP-16).
 - **Quick log** — buttons built from your `/templates` and `/products`; tap one to log it →
   `POST /quicklog`. **Options…** reveals a **servings** (scales a product's dose) and a **fields**
   override (`caffeine_mg=95, item=decaf`) applied to subsequent taps (Phase 11b).
@@ -87,7 +92,7 @@ DATABASE_URL=... INGEST_TOKEN=... ANTHROPIC_API_KEY=... deno task start
 # open http://localhost:8000/app
 ```
 
-(`ANTHROPIC_API_KEY` is only needed for the Capture/Ask screens.)
+(`ANTHROPIC_API_KEY` is only needed for the Capture, Photo food, and Ask features.)
 
 ## Not in this slice (future)
 

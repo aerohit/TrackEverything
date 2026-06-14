@@ -311,6 +311,29 @@
       ]
     },
     {
+      "name": "Food scan (meal photo)",
+      "item": [
+        {
+          "name": "Scan a meal photo",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "content-type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"image\": \"<base64-encoded image bytes>\",\n  \"mediaType\": \"image/jpeg\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/food-scan",
+              "host": ["{{baseUrl}}"],
+              "path": ["food-scan"]
+            },
+            "description": "Claude vision identifies the foods in a meal photo and estimates per-item amount + calories + macros + ingredients (NOT saved). Returns `{ foods: [{ item, unit, amount, calories, protein_g, carbs_g, fat_g, ingredients }] }`; confirm/edit (adjust amount or type calories) then POST /events as `food` events (source `photo`). `mediaType` is image/jpeg|png|webp|gif. Needs ANTHROPIC_API_KEY."
+          }
+        }
+      ]
+    },
+    {
       "name": "Check-in (mood/energy/focus)",
       "item": [
         {

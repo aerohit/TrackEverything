@@ -20,6 +20,7 @@ import { makeTemplatesHandler } from "./functions/templates/index.ts";
 import { makeQuicklogHandler } from "./functions/quicklog/index.ts";
 import { makeProductsHandler } from "./functions/products/index.ts";
 import { makeIngredientScanHandler } from "./functions/ingredient_scan/index.ts";
+import { makeFoodScanHandler } from "./functions/food_scan/index.ts";
 import { makeCheckinHandler } from "./functions/checkin/index.ts";
 import { makeAskHandler } from "./functions/ask/index.ts";
 import { makeOverviewHandler } from "./functions/overview/index.ts";
@@ -62,6 +63,7 @@ export function buildRouter(deps: RouterDeps): Handler {
     "/overview": makeOverviewHandler({ sql, token }),
     "/capture": claudeRoute((c) => makeCaptureHandler({ claude: c, token })),
     "/ingredient-scan": claudeRoute((c) => makeIngredientScanHandler({ claude: c, token })),
+    "/food-scan": claudeRoute((c) => makeFoodScanHandler({ claude: c, token })),
     "/ask": claudeRoute((c) => makeAskHandler({ sql, claude: c, token })),
   };
 
