@@ -66,8 +66,18 @@ export function buildRouter(deps: RouterDeps): Handler {
   };
 
   return (req: Request): Promise<Response> => {
-    const path = new URL(req.url).pathname.replace(/\/+$/, "") || "/";
+    const url = new URL(req.url);
+    const path = url.pathname.replace(/\/+$/, "") || "/";
     if (path === "/health") {
+      // `?warm=1` also pings the database — used by the warm-up cron to keep the
+      // pooled connection (and a free-tier Supabase project) from going cold/paused.
+      // Plain /health stays DB-free so it's a fast liveness probe.
+      if (url.searchParams.has("warm")) {
+        return sql`select 1 as ok`.then(
+          () => json(200, { ok: true, service: "trackeverything", db: true }),
+          () => json(200, { ok: true, service: "trackeverything", db: false }),
+        );
+      }
       return Promise.resolve(json(200, { ok: true, service: "trackeverything" }));
     }
     const handler = routes[path];
@@ -93,6 +103,11 @@ if (import.meta.main) {
     console.warn("INGEST_TOKEN is not set — endpoints will accept unauthenticated requests.");
   }
   const sql = await connect(cfg.databaseUrl);
+  // Open the first DB connection now (fire-and-forget) so the TLS + auth handshake
+  // overlaps with the isolate boot instead of blocking the first request — cuts the
+  // cold-start latency seen right after a deploy. Errors are ignored (the real
+  // request will surface any genuine DB problem).
+  sql`select 1`.catch(() => {});
   const claude = cfg.anthropicApiKey
     ? new AnthropicClaudeClient(cfg.anthropicApiKey, cfg.claudeModel)
     : null;

@@ -30,9 +30,17 @@
             "url": {
               "raw": "{{baseUrl}}/health",
               "host": ["{{baseUrl}}"],
-              "path": ["health"]
+              "path": ["health"],
+              "query": [
+                {
+                  "key": "warm",
+                  "value": "1",
+                  "description": "also ping the DB (select 1) and report db:true/false — used by the warm-up cron",
+                  "disabled": true
+                }
+              ]
             },
-            "description": "Liveness probe. Returns `{ ok: true, service: \"trackeverything\" }`. No auth."
+            "description": "Liveness probe. Returns `{ ok: true, service: \"trackeverything\" }` (DB-free). Add `?warm=1` to also run a `select 1` and return `db: true|false` — keeps the pooled connection and a free-tier Supabase project warm. No auth."
           }
         },
         {

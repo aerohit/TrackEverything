@@ -104,10 +104,31 @@ In every Shortcut, use `https://<your-project>.deno.dev` as the base URL and sen
 - **Local/test** uses a throwaway Postgres and your gitignored `backend/.env`.
 - See the README "Environments & credentials" section for the full split.
 
+## Cold starts & warm-up
+
+Deno Deploy is serverless: a deploy (or a few minutes idle) evicts the warm isolate, so the **first
+request after that pays a cold start** — boot the isolate, open a fresh TLS+auth connection to
+Supabase, then query. Two things keep this small:
+
+- **Startup connection warm** — [`main.ts`](../main.ts) fires a non-blocking `select 1` at boot, so
+  the DB handshake overlaps with the isolate starting rather than blocking the first request.
+- **Warm-up workflow** — [`.github/workflows/warmup.yml`](../../.github/workflows/warmup.yml) pings
+  `GET /health?warm=1` (which runs a `select 1`) **hourly**, **after each push to `main`**, and on
+  manual dispatch. This keeps the pooled connection warm and, crucially, **prevents the Supabase
+  7-day pause**. Override the target with a repo variable `APP_URL` if your deploy URL differs.
+  - _Caveat:_ GitHub runners are US-based, so the cron warms whichever Deno region is nearest them
+    (not necessarily yours) — it reliably prevents the Supabase pause, but to keep _your_ region's
+    isolate warm too, point an uptime monitor (e.g. cron-job.org / UptimeRobot, in your region) at
+    the same `/health?warm=1` URL.
+- **Region co-location matters most.** Every query crosses the network between the Deno region
+  serving you and the Supabase region. Check the Deno region via the `via:` response header
+  (`curl -sD - .../health -o /dev/null | grep -i ^via:`) and the Supabase region in the dashboard or
+  the pooler host (`aws-0-<region>.pooler.supabase.com`); keep them on the same continent.
+
 ## Good to know
 
 - A free Supabase project **pauses after ~7 days idle** — restore it in the dashboard (data is
-  kept). Daily use generally avoids this.
+  kept). The hourly warm-up workflow above prevents this; daily use also avoids it.
 - Cost: Deno Deploy free tier + Supabase free tier + Anthropic usage (the only real ongoing cost;
   small for one user, smaller with `claude-haiku-4-5`).
 - Migrations run from your laptop against `DATABASE_URL`. There's no auto-migrate on deploy, so run
