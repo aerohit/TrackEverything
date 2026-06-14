@@ -13,7 +13,18 @@ import type { Sql } from "npm:postgres@^3.4.4";
  */
 export async function connect(databaseUrl: string): Promise<Sql> {
   const { default: postgres } = await import("npm:postgres@^3.4.4");
-  return postgres(databaseUrl, { max: 1, prepare: false });
+  return postgres(databaseUrl, {
+    max: 1,
+    prepare: false,
+    // Fail fast instead of hanging the whole request (which Deno Deploy turns into
+    // a DEPLOYMENT_TIMED_OUT) if the database is slow/unreachable on a cold start.
+    connect_timeout: 10,
+    // Recycle the single pooled connection so we don't reuse one the Supabase pooler
+    // has silently dropped — a stale/half-open socket is what produced "canceling
+    // statement due to statement timeout" errors and crash-looped the isolate.
+    idle_timeout: 30,
+    max_lifetime: 60 * 10,
+  });
 }
 
 /** Open a connection, run `select 1`, and report whether it succeeded. */

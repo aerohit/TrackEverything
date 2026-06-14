@@ -96,6 +96,17 @@ function json(status: number, body: unknown): Response {
 }
 
 if (import.meta.main) {
+  // A stray DB rejection (e.g. postgres.js surfacing a "canceling statement due to
+  // statement timeout" on a dropped pooled connection, with no awaiting context)
+  // would otherwise be an *uncaught* rejection that crashes the Deno Deploy isolate —
+  // which then reboots and the next request pays a cold start (often a
+  // DEPLOYMENT_TIMED_OUT). Swallow it (logged) so one bad query can't take the
+  // service down; real request errors are still handled per-route and returned as 5xx.
+  globalThis.addEventListener("unhandledrejection", (e) => {
+    console.error("unhandled rejection (kept alive):", e.reason);
+    e.preventDefault();
+  });
+
   const cfg = loadConfig();
   if (!cfg.databaseUrl) {
     console.error("DATABASE_URL is required.");
