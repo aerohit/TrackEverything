@@ -128,6 +128,21 @@ Deno.test("ui: overview chart + clickable supplement popup", () => {
   assert(!js.includes('"Ingredients:"'), "overview should not show the raw ingredient rollup");
 });
 
+Deno.test("ui: photo food card — scan, itemized edit, calories on overview (Phase 12)", () => {
+  const js = scriptBody();
+  const html = APP_HTML;
+  // A photo-food card on Home with a meal selector + image picker.
+  assert(html.includes('id="foodImage"') && html.includes('id="foodMeal"'), "photo food inputs");
+  assert(html.includes('id="foodScanBtn"'), "scan button");
+  // Calls the vision endpoint and saves food events sourced as photo.
+  assert(js.includes("/food-scan"), "should call the food-scan endpoint");
+  assert(js.includes('source: "photo"'), "food saved as photo-sourced events");
+  // Amount change rescales calories + macros from the original estimate.
+  assert(js.includes("base.calories") && js.includes("base.amount"), "amount rescales nutrition");
+  // Overview shows the daily calorie total + macros.
+  assert(js.includes("s.calories") && js.includes("s.macros"), "overview shows calories + macros");
+});
+
 Deno.test("ui: the editable category list matches the backend vocabulary", async () => {
   const { CATEGORIES } = await import("../../src/vocab.ts");
   const js = scriptBody();

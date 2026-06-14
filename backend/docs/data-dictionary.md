@@ -29,22 +29,31 @@ Mood/energy/focus check-ins (R-SUBJ-1) are ordinary events in these categories w
 
 ## Sources
 
-`voice`, `manual`, `quicklog`, `whoop`. New integrations add a source here + in `src/vocab.ts`.
+`voice`, `manual`, `quicklog`, `whoop`, `photo` (a meal photo scanned via `/food-scan`, Phase 12).
+New integrations add a source here + in `src/vocab.ts`.
 
 ## Field conventions (units)
 
 `fields` is open per category, but use these canonical names + units so values aggregate across
 sources:
 
-| Field          | Unit              | Used by                                   |
-| -------------- | ----------------- | ----------------------------------------- |
-| `caffeine_mg`  | milligrams        | drink, supplement                         |
-| `dose_mg`      | milligrams        | supplement                                |
-| `servings`     | count (default 1) | supplement (composite products, Phase 4b) |
-| `duration_min` | minutes           | workout, breathwork, sleep                |
-| `intensity`    | 1–10              | workout                                   |
-| `rating`       | 1–5               | mood, energy, focus                       |
-| `item`         | string label      | food, drink, supplement                   |
+| Field          | Unit                         | Used by                                   |
+| -------------- | ---------------------------- | ----------------------------------------- |
+| `caffeine_mg`  | milligrams                   | drink, supplement                         |
+| `dose_mg`      | milligrams                   | supplement                                |
+| `servings`     | count (default 1)            | supplement (composite products, Phase 4b) |
+| `duration_min` | minutes                      | workout, breathwork, sleep                |
+| `intensity`    | 1–10                         | workout                                   |
+| `rating`       | 1–5                          | mood, energy, focus                       |
+| `item`         | string label                 | food, drink, supplement                   |
+| `calories`     | kcal                         | food (Phase 12)                           |
+| `protein_g`    | grams                        | food (Phase 12)                           |
+| `carbs_g`      | grams                        | food (Phase 12)                           |
+| `fat_g`        | grams                        | food (Phase 12)                           |
+| `amount`       | number (+ `unit`)            | food — portion size                       |
+| `unit`         | `g`/`count`/`serving`        | food — portion unit                       |
+| `meal`         | breakfast/lunch/dinner/snack | food                                      |
+| `ingredients`  | string[]                     | food (context only, not aggregated)       |
 
 ## Reference tables
 

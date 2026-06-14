@@ -40,6 +40,8 @@ Returns `200`:
   "lastCaffeineAt": "2026-06-13T14:00:00.000Z",
   "sleepMinutes": 420,
   "workout": { "count": 1, "durationMin": 45 },
+  "calories": 870,
+  "macros": { "protein_g": 87, "carbs_g": 1, "fat_g": 56 },
   "ingredients": [{ "canonical_name": "magnesium glycinate", "amount": 400, "unit": "mg" }],
   "products": [
     {
@@ -65,6 +67,8 @@ Returns `200`:
   was logged. (Caffeine that's an _ingredient_ of a product shows in `ingredients`, not here.)
 - **sleepMinutes** — sum of `fields.duration_min` for `sleep` events.
 - **workout** — count + total `duration_min`.
+- **calories / macros** — sum of `fields.calories` and `protein_g`/`carbs_g`/`fat_g` across the
+  day's food (Phase 12, photo food logging).
 - **subjective** — per dimension (mood / energy / focus): `avg`, `n`, and `points` (each rating with
   its time, oldest first) so the client can **plot** the day's check-ins.
 - **ingredients** — every logged product expanded (`servings × per-ingredient amount`,

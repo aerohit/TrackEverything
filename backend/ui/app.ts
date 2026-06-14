@@ -156,6 +156,15 @@ export const APP_HTML = `<!DOCTYPE html>
     </section>
 
     <section class="card">
+      <h2>Photo food</h2>
+      <p class="mut">Take a photo of your meal; it estimates each food's calories and macros. Adjust the amount or type calories in, then save.</p>
+      <div class="row"><span class="lbl">Meal</span><select id="foodMeal"></select></div>
+      <input type="file" id="foodImage" accept="image/*" capture="environment" />
+      <button class="primary" id="foodScanBtn">Scan food</button>
+      <div id="foodCands"></div>
+    </section>
+
+    <section class="card">
       <h2>Quick log</h2>
       <div class="btns" id="quickBtns"><span class="mut">Loading&hellip;</span></div>
       <button class="ghost" id="quickOptToggle" type="button">Options&hellip;</button>
@@ -657,6 +666,130 @@ export const APP_HTML = `<!DOCTYPE html>
     });
   })();
 
+  // ---- photo food (Phase 12) ----
+  (function initFood() {
+    var MEALS = ["breakfast", "lunch", "dinner", "snack"];
+    var msel = $("#foodMeal");
+    MEALS.forEach(function (m) {
+      var o = el("option"); o.value = m; o.textContent = m; msel.appendChild(o);
+    });
+    var h = new Date().getHours();
+    msel.value = h < 11 ? "breakfast" : h < 16 ? "lunch" : h < 21 ? "dinner" : "snack";
+
+    function numIn(cls, v, w) {
+      var i = el("input", cls); i.type = "text"; i.inputMode = "decimal"; i.value = String(v);
+      if (w) i.style.maxWidth = w;
+      return i;
+    }
+    function num(inp) { var n = Number(inp.value); return (inp.value.trim() !== "" && !isNaN(n) && n >= 0) ? n : 0; }
+
+    function foodCard(c, i) {
+      var card = el("div", "cand"); card.dataset.i = String(i);
+      var cb = el("input"); cb.type = "checkbox"; cb.checked = true; cb.className = "inc";
+      cb.addEventListener("change", function () { card.classList.toggle("off", !cb.checked); });
+      var body = el("div", "cfields");
+
+      var name = el("input", "fname"); name.type = "text"; name.value = c.item;
+      body.appendChild(labelledRow("Food", name));
+
+      var amt = numIn("famt", c.amount, "90px");
+      var unit = el("select", "funit");
+      ["g", "count", "serving"].forEach(function (u) {
+        var o = el("option"); o.value = u; o.textContent = u; if (u === c.unit) o.selected = true; unit.appendChild(o);
+      });
+      var arow = el("div", "row"); var al = el("span", "lbl"); al.textContent = "Amount";
+      arow.appendChild(al); arow.appendChild(amt); arow.appendChild(unit); body.appendChild(arow);
+
+      var cals = numIn("fcal", c.calories);
+      body.appendChild(labelledRow("Calories", cals));
+
+      var pr = numIn("fpro", c.protein_g, "60px");
+      var cr = numIn("fcarb", c.carbs_g, "60px");
+      var fr = numIn("ffat", c.fat_g, "60px");
+      var mrow = el("div", "row"); var ml = el("span", "lbl"); ml.textContent = "P / C / F";
+      mrow.appendChild(ml); mrow.appendChild(pr); mrow.appendChild(cr); mrow.appendChild(fr); body.appendChild(mrow);
+
+      if (c.ingredients && c.ingredients.length) {
+        var irow = el("div", "row"); var il = el("span", "lbl"); il.textContent = "";
+        var link = el("a", "prodlink"); link.href = "#"; link.textContent = "ingredients";
+        link.addEventListener("click", function (ev) {
+          ev.preventDefault();
+          openIngredientsModal({ name: c.item, ingredients: c.ingredients });
+        });
+        irow.appendChild(il); irow.appendChild(link); body.appendChild(irow);
+      }
+
+      // Changing the amount rescales calories + macros from the original estimate.
+      var base = { amount: c.amount || 1, calories: c.calories, protein_g: c.protein_g, carbs_g: c.carbs_g, fat_g: c.fat_g };
+      amt.addEventListener("input", function () {
+        if (base.amount <= 0) return;
+        var k = num(amt) / base.amount;
+        cals.value = String(Math.round(base.calories * k));
+        pr.value = String(Math.round(base.protein_g * k));
+        cr.value = String(Math.round(base.carbs_g * k));
+        fr.value = String(Math.round(base.fat_g * k));
+      });
+
+      card.appendChild(cb); card.appendChild(body);
+      return card;
+    }
+
+    function renderFoodCands(foods) {
+      var box = $("#foodCands"); box.innerHTML = "";
+      if (!foods.length) { box.innerHTML = "<span class='mut'>No foods recognised. Try another photo.</span>"; return; }
+      var note = el("p", "mut");
+      note.textContent = "Review & edit, then save. Changing the amount rescales calories/macros; type calories in to override.";
+      box.appendChild(note);
+      var cards = [];
+      foods.forEach(function (c, i) { var card = foodCard(c, i); cards.push(card); box.appendChild(card); });
+      var save = el("button", "primary"); save.textContent = "Save foods";
+      save.addEventListener("click", function () {
+        var meal = $("#foodMeal").value;
+        var nowIso = new Date().toISOString();
+        var events = [];
+        cards.forEach(function (card) {
+          if (!card.querySelector(".inc").checked) return;
+          var orig = foods[Number(card.dataset.i)];
+          events.push({
+            category: "food", occurredAt: nowIso, occurredAtConfidence: "high", source: "photo",
+            fields: {
+              item: card.querySelector(".fname").value.trim() || orig.item,
+              amount: num(card.querySelector(".famt")),
+              unit: card.querySelector(".funit").value,
+              calories: num(card.querySelector(".fcal")),
+              protein_g: num(card.querySelector(".fpro")),
+              carbs_g: num(card.querySelector(".fcarb")),
+              fat_g: num(card.querySelector(".ffat")),
+              meal: meal,
+              ingredients: orig.ingredients || [],
+            },
+          });
+        });
+        if (!events.length) { toast("Nothing selected", true); return; }
+        api("/events", "POST", { events: events }).then(function (r) {
+          if (r.ok) {
+            toast("Saved " + events.length);
+            box.innerHTML = ""; $("#foodImage").value = "";
+            loadOverview(); loadTimeline();
+          } else { toast("Save failed (" + r.status + ")", true); }
+        });
+      });
+      box.appendChild(save);
+    }
+
+    $("#foodScanBtn").addEventListener("click", function () {
+      var f = $("#foodImage").files && $("#foodImage").files[0];
+      if (!f) { toast("Choose a meal photo first", true); return; }
+      $("#foodCands").innerHTML = "<span class='mut'>Scanning\\u2026</span>";
+      fileToBase64(f).then(function (b64) {
+        return api("/food-scan", "POST", { image: b64, mediaType: f.type || "image/jpeg" });
+      }).then(function (r) {
+        if (!r.ok || !r.data) { $("#foodCands").innerHTML = "<span class='mut'>Scan failed (" + r.status + ")</span>"; return; }
+        renderFoodCands(r.data.foods || []);
+      }).catch(function () { $("#foodCands").innerHTML = "<span class='mut'>Could not read the image</span>"; });
+    });
+  })();
+
   // ---- ask ----
   function renderAnswer(answer, cited) {
     var html = "<div>" + escapeHtml(answer || "(no answer)").replace(/\\n/g, "<br>") + "</div>";
@@ -702,6 +835,10 @@ export const APP_HTML = `<!DOCTYPE html>
     if (s.caffeineMg) L.push("Caffeine: " + s.caffeineMg + " mg" + (s.lastCaffeineAt ? (" &middot; last " + fmtTime(s.lastCaffeineAt)) : ""));
     if (s.sleepMinutes) L.push("Sleep: " + (s.sleepMinutes / 60).toFixed(1) + " h");
     if (s.workout && s.workout.count) L.push("Workout: " + s.workout.count + " (" + s.workout.durationMin + " min)");
+    if (s.calories) {
+      var mac = s.macros || {};
+      L.push("Calories: " + s.calories + " kcal &middot; P " + (mac.protein_g || 0) + " / C " + (mac.carbs_g || 0) + " / F " + (mac.fat_g || 0) + " g");
+    }
     ["mood", "energy", "focus"].forEach(function (d) {
       if (s.subjective && s.subjective[d]) L.push(cap(d) + ": " + s.subjective[d].avg + " (avg of " + s.subjective[d].n + ")");
     });
@@ -783,6 +920,7 @@ export const APP_HTML = `<!DOCTYPE html>
       body.innerHTML = "<span class='mut'>No ingredients listed.</span>";
     } else {
       body.innerHTML = ings.map(function (g) {
+        if (typeof g === "string") return "<div class='tlrow'>" + escapeHtml(g) + "</div>";
         var amt = g.amount != null ? (" \\u2014 " + g.amount + (g.unit || "")) : "";
         return "<div class='tlrow'>" + escapeHtml(g.name || g.canonical_name || "") + amt + "</div>";
       }).join("");

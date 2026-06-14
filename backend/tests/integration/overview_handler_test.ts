@@ -41,6 +41,19 @@ Deno.test({
         itemId: product.id,
         fields: { servings: 2 },
       });
+      await insertEvent(sql, {
+        category: "food",
+        occurredAt: "2026-06-12T13:00:00Z",
+        source: "photo",
+        fields: {
+          item: "steak",
+          calories: 460,
+          protein_g: 50,
+          carbs_g: 0,
+          fat_g: 28,
+          meal: "lunch",
+        },
+      });
 
       const handler = makeOverviewHandler({ sql, token: null });
       const res = await handler(new Request("http://x/overview?date=2026-06-12"));
@@ -49,6 +62,8 @@ Deno.test({
       const s = await res.json();
       assertEquals(s.date, "2026-06-12");
       assertEquals(s.caffeineMg, 120);
+      assertEquals(s.calories, 460); // from the photo-food event
+      assertEquals(s.macros.protein_g, 50);
       assertEquals(s.subjective.mood.avg, 4);
       assertEquals(s.subjective.mood.points.length, 1); // for the chart
       const mag = s.ingredients.find((i: { canonical_name: string }) =>
