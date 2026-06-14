@@ -14,16 +14,20 @@ import type { Sql } from "npm:postgres@^3.4.4";
 export async function connect(databaseUrl: string): Promise<Sql> {
   const { default: postgres } = await import("npm:postgres@^3.4.4");
   return postgres(databaseUrl, {
-    max: 1,
+    // A small pool (not 1) so the page's parallel API calls don't serialize on one
+    // socket, and a single wedged connection can't block every query on the isolate.
+    // The Supabase transaction pooler handles this fine (with prepare:false).
+    max: 4,
     prepare: false,
-    // Fail fast instead of hanging the whole request (which Deno Deploy turns into
-    // a DEPLOYMENT_TIMED_OUT) if the database is slow/unreachable on a cold start.
+    // Fail fast instead of hanging the whole request (which Deno Deploy turns into a
+    // DEPLOYMENT_TIMED_OUT) if the database is slow/unreachable.
     connect_timeout: 10,
-    // Recycle the single pooled connection so we don't reuse one the Supabase pooler
-    // has silently dropped — a stale/half-open socket is what produced "canceling
-    // statement due to statement timeout" errors and crash-looped the isolate.
-    idle_timeout: 30,
-    max_lifetime: 60 * 10,
+    // Recycle connections quickly so we rarely reuse one the Supabase pooler has
+    // silently half-dropped — a stale/half-open socket is what produced the recurring
+    // "canceling statement due to statement timeout" (57014) errors on this
+    // low-traffic app (long-idle connections are the ones that wedge).
+    idle_timeout: 10,
+    max_lifetime: 60 * 5,
   });
 }
 
