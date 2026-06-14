@@ -194,7 +194,13 @@ export const APP_HTML = `<!DOCTYPE html>
     </section>
 
     <section class="card">
+      <h2>Mood &middot; energy &middot; focus</h2>
+      <div id="subjChart" class="mut">Loading&hellip;</div>
+    </section>
+
+    <section class="card">
       <h2>Timeline</h2>
+      <p class="mut">What you did &amp; consumed (mood / energy / focus are in the chart above).</p>
       <div id="timeline" class="mut">Loading&hellip;</div>
       <button class="ghost" id="tlLoad" type="button">Refresh</button>
     </section>
@@ -839,9 +845,6 @@ export const APP_HTML = `<!DOCTYPE html>
       var mac = s.macros || {};
       L.push("Calories: " + s.calories + " kcal &middot; P " + (mac.protein_g || 0) + " / C " + (mac.carbs_g || 0) + " / F " + (mac.fat_g || 0) + " g");
     }
-    ["mood", "energy", "focus"].forEach(function (d) {
-      if (s.subjective && s.subjective[d]) L.push(cap(d) + ": " + s.subjective[d].avg + " (avg of " + s.subjective[d].n + ")");
-    });
     // Composite supplements: show product names only; click a name for its ingredients.
     if (s.products && s.products.length) {
       L.push("<span class='mut'>Supplements:</span>");
@@ -851,13 +854,9 @@ export const APP_HTML = `<!DOCTYPE html>
     }
     if (L.length === 1) L.push("<span class='mut'>Nothing logged.</span>");
     $("#overview").classList.remove("mut");
-    var chart = renderSubjChart(s.subjective || {});
-    // When the day has activity but no mood/energy/focus check-ins, the chart is
-    // empty — say so, so it doesn't look broken (vs. a totally empty day).
-    if (!chart && s.eventCount) {
-      chart = "<div class='mut' style='margin-top:12px;font-size:12px'>No mood / energy / focus check-ins on this day yet \\u2014 add one to see the chart.</div>";
-    }
-    $("#overview").innerHTML = L.join("<br>") + chart;
+    $("#overview").innerHTML = L.join("<br>");
+    // Perceptions (mood/energy/focus) live in their own chart card, not the summary.
+    renderChartCard(s.subjective || {});
     $("#overview").querySelectorAll(".prodlink").forEach(function (a) {
       a.addEventListener("click", function (ev) {
         ev.preventDefault();
@@ -910,6 +909,22 @@ export const APP_HTML = `<!DOCTYPE html>
     }).join("&nbsp;&nbsp;");
     return "<svg viewBox='0 0 " + W + " " + H + "' width='100%' style='margin-top:12px;display:block'>" + p.join("") + "</svg>" +
       "<div class='mut' style='font-size:11px;text-align:center;margin-top:2px'>" + legend + "</div>";
+  }
+
+  // Fill the perceptions chart card: averages caption + chart, or an empty-state hint.
+  function renderChartCard(subj) {
+    var box = $("#subjChart");
+    var chart = renderSubjChart(subj);
+    if (!chart) {
+      box.classList.add("mut");
+      box.textContent = "No mood / energy / focus check-ins on this day yet \\u2014 add one (Home \\u2192 Check in) to see the chart.";
+      return;
+    }
+    var caps = ["mood", "energy", "focus"]
+      .filter(function (d) { return subj[d]; })
+      .map(function (d) { return cap(d) + " " + subj[d].avg; });
+    box.classList.remove("mut");
+    box.innerHTML = "<div class='mut' style='font-size:13px'>" + caps.join(" &middot; ") + " &middot; avg</div>" + chart;
   }
 
   // Pop-up listing a product's ingredients (R-CAP-14 / R-PAT-5).
@@ -979,10 +994,14 @@ export const APP_HTML = `<!DOCTYPE html>
   function loadTimeline() {
     if (!token) { $("#timeline").textContent = "Set your token first."; return; }
     $("#timeline").textContent = "Loading\\u2026";
-    api("/events?limit=50", "GET").then(function (r) {
+    api("/events?limit=80", "GET").then(function (r) {
       if (!r.ok || !r.data) { $("#timeline").textContent = "Failed (" + r.status + ")"; return; }
-      var evs = r.data.events || [];
-      if (!evs.length) { $("#timeline").textContent = "No events yet."; return; }
+      // The timeline shows actions/inputs only; perceptions (mood/energy/focus) are
+      // the chart's job (see ADR-014). Filter them out here.
+      var evs = (r.data.events || []).filter(function (e) {
+        return e.category !== "mood" && e.category !== "energy" && e.category !== "focus";
+      });
+      if (!evs.length) { $("#timeline").textContent = "No actions logged yet."; return; }
       $("#timeline").classList.remove("mut");
       $("#timeline").innerHTML = evs.map(function (e) {
         var fs = fieldSummary(e.fields);
