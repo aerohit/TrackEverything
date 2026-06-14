@@ -63,7 +63,9 @@ export async function extractFoodFromImage(
     system: `You identify the foods in a photo of a meal and estimate their nutrition. Return
 ONLY JSON: {"foods":[{"item":...,"unit":...,"amount":...,"calories":...,"protein_g":...,"carbs_g":...,"fat_g":...,"ingredients":[...]}]}.
 One entry per distinct food on the plate (e.g. steak and eggs are two entries).
-- "item": the food name (e.g. "steak", "fried egg", "pizza slice").
+- "item": a short, recognisable name for the dish/food as a person would say it
+  (e.g. "salad", "pizza", "grilled chicken", "omelette") — this is the label shown in
+  the timeline. Put the components in "ingredients", not in the name.
 - "unit": "g" for foods weighed in grams, "count" for countable items (eggs, slices),
   or "serving" otherwise.
 - "amount": your best estimate of the portion shown, in that unit.

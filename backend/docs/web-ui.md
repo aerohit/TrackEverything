@@ -49,15 +49,18 @@ The cards within each tab:
   _only_ place perceptions appear (ADR-014).
 - **Timeline** (Overview) — a newest-first list of recent **actions/inputs** from `GET /events`
   (time, category, fields, source, and the note if one was added); the perception categories
-  (mood/energy/focus) are filtered out (ADR-014). It **auto-refreshes after every log**; **Refresh**
-  reloads it (Phase 11d, R-VIEW-4).
+  (mood/energy/focus) are filtered out (ADR-014). **Food** rows are shown as a simple **"Meal —
+  dish"** (e.g. "Lunch — Salad"), not the raw ingredient list — the dish name is a **link** that
+  opens an ingredients pop-up (with a meal · calories · P/C/F subtitle) (R-VIEW-5). It
+  **auto-refreshes after every log**; **Refresh** reloads it (Phase 11d, R-VIEW-4).
 - **Check in** (Home) — tap a 1–5 button for mood / energy / focus (any subset), add an optional
   **note**, **Log check-in** → `POST /checkin`.
 - **Photo food** — pick a **meal** (pre-filled by time), take/choose a meal photo, **Scan food** →
-  `POST /food-scan` (Claude vision). Each recognised food is an **editable** row — name, **amount +
-  unit** (changing the amount rescales calories/macros), **calories** (or type one in to override),
-  **P / C / F**, and a tap-to-open **ingredients** pop-up (context). **Save foods** → one `food`
-  event per item (`source: photo`). Nutrition is LLM-estimated (Phase 12, R-CAP-16).
+  `POST /food-scan` (Claude vision). The scan also guesses a dish-level **`item`** name (e.g.
+  "salad", "pizza") used as the timeline label. Each recognised food is an **editable** row — name,
+  **amount + unit** (changing the amount rescales calories/macros), **calories** (or type one in to
+  override), **P / C / F**, and a tap-to-open **ingredients** pop-up (context). **Save foods** → one
+  `food` event per item (`source: photo`). Nutrition is LLM-estimated (Phase 12, R-CAP-16).
 - **Quick log** — buttons built from your `/templates` and `/products`; tap one to log it →
   `POST /quicklog`. **Options…** reveals a **servings** (scales a product's dose) and a **fields**
   override (`caffeine_mg=95, item=decaf`) applied to subsequent taps (Phase 11b).
