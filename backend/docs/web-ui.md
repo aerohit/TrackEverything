@@ -51,8 +51,10 @@ The cards within each tab:
   (time, category, fields, source, and the note if one was added); the perception categories
   (mood/energy/focus) are filtered out (ADR-014). **Food** rows are shown as a simple **"Meal —
   dish"** (e.g. "Lunch — Salad"), not the raw ingredient list — the dish name is a **link** that
-  opens an ingredients pop-up (with a meal · calories · P/C/F subtitle) (R-VIEW-5). It
-  **auto-refreshes after every log**; **Refresh** reloads it (Phase 11d, R-VIEW-4).
+  opens an ingredients pop-up (with a meal · calories · P/C/F subtitle) (R-VIEW-5). Each row carries
+  a small **emoji icon** for its meal or category (🍳 breakfast, 🥗 lunch, 🍽 dinner, 🍎 snack, 💊
+  supplement, 💪 workout, 😴 sleep, …). It **auto-refreshes after every log**; **Refresh** reloads
+  it (Phase 11d, R-VIEW-4).
 - **Check in** (Home) — tap a 1–5 button for mood / energy / focus (any subset), add an optional
   **note**, **Log check-in** → `POST /checkin`.
 - **Photo food** — pick a **meal** (pre-filled by time), take/choose a meal photo, **Scan food** →

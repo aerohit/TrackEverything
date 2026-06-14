@@ -167,6 +167,11 @@ Deno.test("ui: timeline food rows show 'Meal — item' with a clickable ingredie
     "opens ingredients + subtitle",
   );
   assert(js.includes("f.ingredients"), "the pop-up lists the food's ingredients");
+  // Meals/categories carry an emoji icon (breakfast/lunch/dinner/supplement, etc.).
+  assert(js.includes("emojiFor"), "an emojiFor() helper maps meals/categories to icons");
+  for (const kind of ["breakfast", "lunch", "dinner", "snack", "supplement"]) {
+    assert(js.includes(kind + ":"), `emojiFor should map ${kind}`);
+  }
 });
 
 Deno.test("ui: the editable category list matches the backend vocabulary", async () => {
