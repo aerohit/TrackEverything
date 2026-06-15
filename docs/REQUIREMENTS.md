@@ -1,8 +1,8 @@
 # TrackEverything — Requirements
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this
-> stays current. **Last updated:** 2026-06-15 (R-DOM-1..3: v2 data-model overhaul
-> — 8 capture domains as typed entities; Subjective State built first) **Owner:** aerohit
+> stays current. **Last updated:** 2026-06-15 (R-DOM-2 refined by ADR-017:
+> Subjective State as immutable (kind, rating) readings) **Owner:** aerohit
 > **Companion doc:** [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each requirement has a stable ID (`R-<area>-<n>`) so it can be referenced from
@@ -87,7 +87,7 @@ requirements above are unchanged; this is how the data is **modelled and stored*
 | ID       | Requirement                                                                                                                                                                                                    | Status   |
 | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
 | R-DOM-1  | Capture is modelled as **8 domains, each its own typed entity** (typed columns + Postgres enums + a shared Zod schema), not a single `events` table with untyped `fields`. Supersedes the unified-log model.   | Designed |
-| R-DOM-2  | **Subjective State** entity (domain 5): rate **mood / energy / focus** on **1–5** as a **snapshot** (any subset per check-in); per-row edit-tracking (`updated_at`) + soft delete (`deleted_at`). First built. | Designed |
+| R-DOM-2  | **Subjective State** entity (domain 5): **immutable readings** — one row per `(kind, rating)` where `kind` ∈ {mood, energy, focus} (a single discriminator column, extensible to more states) and `rating` is 1–5; optional note; `recorded_at` only; **no edit/delete** (ADR-017). A check-in rates one or more states at once. First built. | Designed |
 | R-DOM-3  | The other seven domains (Inputs, Behaviors & Interventions, Exposures, Body Signals, Performance Outputs, Events/Stressors/Wins, Context) are each their own entity, delivered as later phases.                 | Proposed |
 
 ## 6. Real-time analysis
@@ -222,3 +222,4 @@ This document is kept current by an explicit process, not by hope. See
 | 2026-06-14 | R-VIEW-5 polish: meals and event categories now show an emoji icon (🍳/🥗/🍽/🍎 meals, 💊 supplement, 💪 workout, 😴 sleep, etc.) on the timeline, the food meal picker, and the Today supplements list. UI-only; no API change.                                                                                              |
 | 2026-06-15 | Added R-VIEW-6 (Built): UI restyled to a clean light/dark theme with a single indigo accent (replacing the dark-only "Aurora" gradient look); follows the system appearance by default with a System/Light/Dark header toggle persisted as `te_theme`. UI-only; no API change.                                               |
 | 2026-06-15 | v2 maturity rewrite kicked off (ADR-015/016). Added R-DOM-1..3: capture re-modelled as 8 typed per-domain entities (replacing the unified event log), Subjective State (mood/energy/focus, 1–5, snapshot) built first. Stack moves to Hono + SvelteKit + Drizzle + Zod on the same Deno Deploy + Supabase infra; clean-slate database at cutover. Functional requirements unchanged. |
+| 2026-06-15 | PR #35 review (ADR-017): refined R-DOM-2 — Subjective State is now **immutable readings**, a single `kind` discriminator column (extensible to more states) + `rating`, `recorded_at` only. Dropped the per-dimension columns, `occurred_at`, and the edit-tracking/soft-delete columns; the API is create + read only. |

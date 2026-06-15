@@ -50,3 +50,43 @@ jobs:
 
   # The live suite (real Claude/Whoop APIs) is intentionally NOT run here — CI
   # stays deterministic and offline. Run it on demand with `deno task test:live`.
+
+  # v2 rewrite (ADR-015/016): the Hono API + Drizzle data layer + shared Zod
+  # schemas at the repo root. Runs alongside the MVP job until the v2-X cutover.
+  v2:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Check formatting
+        run: deno task fmt:check
+
+      - name: Lint
+        run: deno task lint
+
+      - name: Type-check
+        run: deno task check
+
+      - name: Run tests (unit + integration)
+        run: deno task test
