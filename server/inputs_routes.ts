@@ -3,10 +3,13 @@
  * Mounted under /api by createApp (behind the same bearer-token guard).
  *
  *   GET  /substances                       the analytical vocabulary
+ *   POST /items/scan                       label photo → draft item (ADR-019)
+ *   POST /intake/recognize                 photo/phrase → recognized intake + matches (ADR-020)
  *   GET  /items ?search&limit              reusable items (summaries)
  *   GET  /items/:id                        one item + its components
  *   POST /items                            create a product / recipe / simple item
  *   POST /intake                           log an intake (resolves + snapshots)
+ *   GET  /intake/recent-items ?limit       recent distinct items for quick re-log (ADR-020)
  *   GET  /intake ?from&to&limit            live intake events (with resolution)
  *   GET  /intake/totals ?from&to           daily per-substance totals
  *   PATCH/DELETE /intake/:id               edit / soft-delete (mutable, ADR-018)
@@ -17,11 +20,13 @@ import { z } from "zod";
 import {
   createIntakeEventSchema,
   createItemSchema,
+  recognizeRequestSchema,
   scanRequestSchema,
   updateIntakeEventSchema,
 } from "../shared/inputs.ts";
 import type { Db } from "../db/client.ts";
 import type { ItemScanner } from "./scan.ts";
+import type { IntakeRecognizer } from "./recognize.ts";
 import {
   createIntakeEvent,
   createItem,
@@ -31,9 +36,16 @@ import {
   listIntakeEvents,
   listItems,
   listSubstances,
+  recentItems,
   softDeleteIntakeEvent,
   updateIntakeEvent,
 } from "../db/inputs.ts";
+
+/** Optional AI seams; each route 503s when its dependency is unconfigured. */
+export interface InputDeps {
+  scanner?: ItemScanner;
+  recognizer?: IntakeRecognizer;
+}
 
 const uuid = z.string().uuid();
 
@@ -50,7 +62,9 @@ function parseWindow(c: Context): { from?: Date; to?: Date } | { error: string }
   return out;
 }
 
-export function registerInputRoutes(api: Hono, db: Db, scanner?: ItemScanner) {
+export function registerInputRoutes(api: Hono, db: Db, deps: InputDeps = {}) {
+  const { scanner, recognizer } = deps;
+
   api.get("/substances", async (c) => c.json({ substances: await listSubstances(db) }));
 
   // Scan a label photo → a draft item (not saved; the client edits then POSTs /items).
@@ -62,6 +76,31 @@ export function registerInputRoutes(api: Hono, db: Db, scanner?: ItemScanner) {
       return c.json(await scanner.scan(parsed.data));
     } catch (e) {
       return c.json({ error: "scan failed", detail: (e as Error).message }, 502);
+    }
+  });
+
+  // Recognize an intake from a meal photo or a phrase, and match it against the catalog.
+  // (Voice is transcribed on-device via the Web Speech API and arrives here as text.)
+  api.post("/intake/recognize", async (c) => {
+    if (!recognizer) return c.json({ error: "intake recognition is not configured" }, 503);
+    const parsed = recognizeRequestSchema.safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) return c.json({ error: "invalid", issues: parsed.error.issues }, 400);
+    try {
+      const recognized = await recognizer.recognize(
+        parsed.data.source === "photo"
+          ? {
+            kind: "photo",
+            imageBase64: parsed.data.imageBase64,
+            mediaType: parsed.data.mediaType,
+          }
+          : { kind: "text", text: parsed.data.text },
+      );
+      const matches = recognized.name
+        ? await listItems(db, { search: recognized.name, limit: 5 })
+        : [];
+      return c.json({ recognized, matches });
+    } catch (e) {
+      return c.json({ error: "recognition failed", detail: (e as Error).message }, 502);
     }
   });
 
@@ -101,6 +140,17 @@ export function registerInputRoutes(api: Hono, db: Db, scanner?: ItemScanner) {
     } catch (e) {
       return c.json({ error: (e as Error).message }, 400);
     }
+  });
+
+  // Top-N distinct recently-logged items, for one-tap re-logging on the Log screen.
+  api.get("/intake/recent-items", async (c) => {
+    const limitRaw = c.req.query("limit");
+    let limit: number | undefined;
+    if (limitRaw) {
+      limit = Number(limitRaw);
+      if (!Number.isInteger(limit) || limit < 1) return c.json({ error: "invalid limit" }, 400);
+    }
+    return c.json({ items: await recentItems(db, limit ?? 10) });
   });
 
   api.get("/intake/totals", async (c) => {

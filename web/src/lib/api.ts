@@ -12,6 +12,8 @@ import type {
   DailyTotal,
   InputItemSummary,
   IntakeEvent,
+  RecentItem,
+  RecognizeResult,
   SubjectiveKind,
   Substance,
 } from "$lib/types";
@@ -114,6 +116,36 @@ export async function scanItem(
     throw new ApiError(res.status, msg || "Scan failed");
   }
   return await res.json() as CreateItemBody;
+}
+
+/**
+ * Recognize an intake from a meal photo or a phrase, and get catalog matches
+ * (POST /api/intake/recognize). Exactly one source is supplied.
+ */
+export async function recognizeIntake(
+  source: { imageBase64: string; mediaType: string } | { text: string },
+  ctx: ApiCtx = {},
+): Promise<RecognizeResult> {
+  const { f, token } = resolve(ctx);
+  const body = "text" in source ? { source: "text", ...source } : { source: "photo", ...source };
+  const res = await f("/api/intake/recognize", {
+    method: "POST",
+    headers: headers(token, true),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const msg = await res.json().then((b) => b?.error).catch(() => null);
+    throw new ApiError(res.status, msg || "Recognition failed");
+  }
+  return await res.json() as RecognizeResult;
+}
+
+/** The most recently logged distinct items, for one-tap re-logging. */
+export async function recentItems(limit = 10, ctx: ApiCtx = {}): Promise<RecentItem[]> {
+  const { f, token } = resolve(ctx);
+  const res = await f("/api/intake/recent-items?limit=" + limit, { headers: headers(token) });
+  if (!res.ok) throw new ApiError(res.status, "Failed to load recent items");
+  return (await res.json()).items as RecentItem[];
 }
 
 export async function createItem(body: CreateItemBody, ctx: ApiCtx = {}): Promise<InputItemSummary> {

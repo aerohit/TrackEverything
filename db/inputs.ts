@@ -13,6 +13,7 @@ import type {
   InputItemDetail,
   InputItemSummary,
   IntakeEvent,
+  RecentItem,
   Substance,
   SubstanceUnit,
   UpdateIntakeEvent,
@@ -349,6 +350,42 @@ export async function listIntakeEvents(db: Db, range: ListRange = {}): Promise<I
   }
 
   return events.map((e) => eventDto(e, byEvent.get(e.id) ?? []));
+}
+
+/**
+ * The most recently logged distinct items (by itemId, or by display name for freeform
+ * logs), newest first, carrying the quantity/unit of their last log — for one-tap
+ * re-logging on the Log screen.
+ */
+export async function recentItems(db: Db, limit = 10): Promise<RecentItem[]> {
+  const lim = Math.min(Math.max(limit, 1), 50);
+  const rows = await db.select({
+    itemId: intakeEvent.itemId,
+    displayName: intakeEvent.displayName,
+    quantity: intakeEvent.quantity,
+    unit: intakeEvent.unit,
+    occurredAt: intakeEvent.occurredAt,
+  }).from(intakeEvent)
+    .where(isNull(intakeEvent.deletedAt))
+    .orderBy(desc(intakeEvent.occurredAt))
+    .limit(500);
+
+  const seen = new Set<string>();
+  const out: RecentItem[] = [];
+  for (const r of rows) {
+    const key = r.itemId ?? `name:${r.displayName.trim().toLowerCase()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({
+      itemId: r.itemId,
+      displayName: r.displayName,
+      quantity: r.quantity,
+      unit: r.unit,
+      lastLoggedAt: r.occurredAt.toISOString(),
+    });
+    if (out.length >= lim) break;
+  }
+  return out;
 }
 
 function eventDto(

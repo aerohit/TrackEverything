@@ -210,3 +210,127 @@ Deno.test({
     }
   },
 });
+
+Deno.test({
+  name: "inputs API: recognize (+match) and recent items",
+  ignore: !DATABASE_URL,
+  async fn() {
+    await migrate(DATABASE_URL);
+    const { sql, db } = connect(DATABASE_URL);
+    try {
+      await sql`truncate resolved_amount, intake_event, item_component, input_item cascade`;
+
+      // Recognition defaults to 503 when unconfigured.
+      const bare = createApp(db, { token: TOKEN });
+      assertEquals(
+        (await bare.request("/api/intake/recognize", {
+          method: "POST",
+          headers: auth,
+          body: JSON.stringify({ source: "text", text: "a banana" }),
+        })).status,
+        503,
+      );
+
+      // A seed item so the recognizer's match has something to find.
+      await bare.request("/api/items", {
+        method: "POST",
+        headers: auth,
+        body: JSON.stringify({
+          name: "Banana",
+          kind: "simple",
+          primaryType: "food",
+          components: [{ substance: "calories", amount: 105, unit: "kcal" }],
+        }),
+      });
+
+      // Mock the recognizer (voice is transcribed on-device; it arrives here as text).
+      const recognizer = {
+        recognize: () =>
+          Promise.resolve({
+            name: "banana",
+            quantity: 1,
+            unit: "piece",
+            primaryType: "food" as const,
+            draft: {
+              name: "banana",
+              kind: "simple" as const,
+              primaryType: "food" as const,
+              roles: [],
+              defaultServing: { displayQuantity: 1, displayUnit: "piece" },
+              components: [{ substance: "calories", amount: 105, unit: "kcal" }],
+            },
+          }),
+      };
+      const app = createApp(db, { token: TOKEN, recognizer });
+
+      // Recognition returns the draft + a catalog match ("Banana").
+      const rec = await app.request("/api/intake/recognize", {
+        method: "POST",
+        headers: auth,
+        body: JSON.stringify({ source: "text", text: "one banana" }),
+      });
+      assertEquals(rec.status, 200);
+      const body = await rec.json();
+      assertEquals(body.recognized.name, "banana");
+      assertEquals(body.matches.length, 1);
+      assertEquals(body.matches[0].name, "Banana");
+
+      // Bad recognize payload → 400.
+      assertEquals(
+        (await app.request("/api/intake/recognize", {
+          method: "POST",
+          headers: auth,
+          body: JSON.stringify({ source: "photo" }),
+        })).status,
+        400,
+      );
+
+      // Recent items: distinct, newest first. Log two banana intakes + one coffee.
+      const itemId =
+        (await (await app.request("/api/items?search=Banana", { headers: auth })).json()).items[0]
+          .id;
+      await app.request("/api/intake", {
+        method: "POST",
+        headers: auth,
+        body: JSON.stringify({
+          displayName: "Banana",
+          itemId,
+          quantity: 1,
+          unit: "piece",
+          occurredAt: "2026-06-15T08:00:00.000Z",
+        }),
+      });
+      await app.request("/api/intake", {
+        method: "POST",
+        headers: auth,
+        body: JSON.stringify({
+          displayName: "Coffee",
+          quantity: 1,
+          unit: "cup",
+          occurredAt: "2026-06-15T09:00:00.000Z",
+        }),
+      });
+      await app.request("/api/intake", {
+        method: "POST",
+        headers: auth,
+        body: JSON.stringify({
+          displayName: "Banana",
+          itemId,
+          quantity: 2,
+          unit: "piece",
+          occurredAt: "2026-06-15T10:00:00.000Z",
+        }),
+      });
+
+      const recent = await app.request("/api/intake/recent-items?limit=10", { headers: auth });
+      assertEquals(recent.status, 200);
+      const items = (await recent.json()).items;
+      assertEquals(items.length, 2); // banana deduped to one entry
+      assertEquals(items[0].displayName, "Banana"); // newest first
+      assertEquals(items[0].quantity, 2); // carries the most recent log's qty
+      assertEquals(items[1].displayName, "Coffee");
+    } finally {
+      await sql.end();
+    }
+  },
+});

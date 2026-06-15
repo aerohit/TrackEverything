@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-15 (ADR-019: Add Item by label photo — Claude-vision draft, editable, unknown actives auto-create substances)
+> **Last updated:** 2026-06-15 (ADR-020: Log capture overhaul — photo / voice / recent, recognize + match + quick-confirm)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -389,6 +389,41 @@ the owner verifies. No phase starts before the prior one is approved.
 **Consequences:** Slower nominal throughput but continuous verification and low
 risk of building the wrong thing. Requires keeping ROADMAP.md in sync with the
 two core docs.
+
+### ADR-020
+**Title:** Log intake by photo, voice, or a recent item — recognize → match → quick-confirm; drop the manual form.
+**Status:** Accepted (2026-06-15). Builds on the Inputs domain (R-DOM-4, [ADR-018](#adr-018)) and the
+recognizer seam pattern of [ADR-019](#adr-019); realizes R-CAP-16/18/19.
+**Context:** Hand-typing every intake (name, search, amount, unit, time, tags) is the highest-friction
+part of daily capture and depresses logging. Most logs are either a meal/drink in front of the user, a
+quick spoken note, or a repeat of something logged before. We want those three to be near-instant while
+still producing the analytical decomposition the Inputs model needs — and without a manual fallback form
+re-growing the friction.
+**Decision:** The Log screen offers exactly three capture modes; the freeform manual form is removed.
+(1) **Photo** — a meal/drink photo is base64'd client-side and sent to `POST /api/intake/recognize`.
+(2) **Voice** — transcribed **on-device** by the browser's **Web Speech API** (vendor-prefixed
+`webkitSpeechRecognition`); the resulting transcript is sent to the same recognize route as text. No audio
+leaves the device and no transcription provider/secret is needed — this mirrors v1's model (Apple/OS
+dictation → text → Claude extracts), since the Anthropic API has no audio input. (3) **Recent** —
+`GET /api/intake/recent-items` returns the top-N distinct recently-logged items (deduped by `itemId`, or by
+display name for freeform logs) for one-tap re-logging. One new SDK-isolated seam mirrors `ItemScanner`: an
+**`IntakeRecognizer`** ([`server/recognize.ts`](../server/recognize.ts), Claude vision for a photo / text
+for a phrase) returns a recognized `{name, quantity, unit}` **and** a full draft item carrying estimated
+nutrients. The recognize route also **matches the catalog** (the existing `ilike` item search on the
+recognized name). The client shows a **quick-confirm** (editable name/quantity/unit/time) where the user
+picks one target: an existing matched item, **save as a new item** (persist the recognized draft via
+`POST /api/items`, auto-creating unknown substances per ADR-019) then log, or log by name with no breakdown
+— all converging on `POST /api/intake`. Recognition is optional: the route returns `503` when no Anthropic
+key is set, and the UI surfaces a friendly message (recent-item logging and on-device voice transcription
+need no server key). Pure parsing (`parseRecognized`) is kept SDK-free and unit-tested.
+**Consequences:** three-tap (or one-tap) capture that still yields resolved substances, with **Anthropic as
+the only API key**; the catalog and substance vocabulary keep growing from real logs. Trade-offs: Web Speech
+support and accuracy vary by browser (good on Chrome and Safari incl. iOS; absent on Firefox — the UI says
+so and offers photo/recent); recognition quality/cost ride on the chosen model and are device-verified (key
+lives only in Deno Deploy env); catalog matching is substring, not semantic, so near-misses may show as
+"save as new"; meal photos become a single `simple` item with estimated nutrient components rather than
+itemized per-food events (the MVP's meal-picker UX from R-CAP-16 is not carried over). Recent→confirm→log
+and the recognition 503 fallback are browser-verified; live photo/voice are device-verified.
 
 ### ADR-019
 **Title:** Add items by photographing the label — Claude vision drafts an editable item; unknown actives auto-create substances.
