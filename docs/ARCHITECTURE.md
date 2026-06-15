@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-14 (ADR-014: perceptions in the chart, actions-only timeline)
+> **Last updated:** 2026-06-15 (ADR-015/016: v2 maturity rewrite — Hono + SvelteKit + Drizzle + Zod; per-domain typed entities replace the unified event log)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -17,6 +17,9 @@ or reversible-with-cost decision is captured as an **ADR** in the
    smallest possible effort to log something.
 2. **One unified event log.** Everything — a voice note, a Whoop sleep record, a
    mood check-in — is a row in the same timeline. (R-CAP-1, R-SRC-4)
+   **(v1; superseded by [ADR-016](#adr-016).** v2 models each capture domain as its
+   own typed entity. The unifying idea moves up a level: one app and one capture
+   flow, but per-domain storage instead of one `events` table.)
 3. **Least code first.** Prove value with managed services and minimal custom
    code before investing in a native app. The owner runs code, doesn't author it.
    (R-NFR-1)
@@ -62,6 +65,8 @@ or reversible-with-cost decision is captured as an **ADR** in the
 
 ## 4. Data model — the event log
 
+> **v1 (MVP) — superseded by the v2 per-domain model in [§4b](#4b-data-model-v2--per-domain-entities) and [ADR-016](#adr-016).** The unified-log design below is the deployed MVP and is kept for history; v2 replaces it with one typed entity per capture domain (clean-slate database).
+
 Single append-only table of typed events. **Implemented** in
 [`backend/migrations/0001_event_log.sql`](../backend/migrations/0001_event_log.sql);
 conventions in [`backend/docs/data-dictionary.md`](../backend/docs/data-dictionary.md).
@@ -102,6 +107,46 @@ Sketch:
   label-photo extraction in `extractIngredientsFromImage`.
 - The **data dictionary** is extended with a canonical-ingredient vocabulary +
   unit normalization (open question Q5).
+
+## 4b. Data model (v2) — per-domain entities
+
+> **The v2 direction ([ADR-016](#adr-016)).** Replaces §4. Not yet built — the first
+> entity (Subjective State) lands in roadmap phase **v2-1**.
+
+Capture is organized into **8 domains, each its own typed entity/table** with explicit,
+range-checked columns (no shared `events` table, no untyped `fields` jsonb). Each domain's
+shape is also a **Zod schema in `shared/`**, used by the Hono API, the SvelteKit client,
+and any LLM-output validation. Closed vocabularies are **Postgres enums**. Every entity
+carries dual timestamps (`occurred_at` / `recorded_at`) plus `updated_at` and a
+`deleted_at` soft-delete column.
+
+| # | Domain | Examples |
+|---|---|---|
+| 1 | **Inputs** | food, drinks, supplements, medication, caffeine, hydration |
+| 2 | **Behaviors & Interventions** | sleep habits, workouts, meditation, breathwork, work blocks, social actions |
+| 3 | **Exposures (Environment & Context)** | light, weather, noise, temperature, social environment, work pressure |
+| 4 | **Body Signals / Biometrics** | sleep metrics, HRV, soreness, digestion, pain, illness, hunger |
+| 5 | **Subjective State** | mood, energy, focus, stress, confidence, motivation, calmness, playfulness |
+| 6 | **Performance Outputs** | deep work, learning, gym performance, social actions, habit adherence |
+| 7 | **Events / Stressors / Wins** | arguments, rejections, deadlines, good conversations, achievements |
+| 8 | **Context** | time, place, day type, season, current goal, experiment phase |
+
+**First entity — `subjective_state` (domain 5, phase v2-1).** A check-in is a **snapshot**:
+one row rates any subset of the dimensions; the rest are null. The first build tracks only
+**mood / energy / focus** (the other five dimensions are additive columns in a later phase).
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid pk | |
+| `occurred_at` | timestamptz | when you felt this (UTC instant; no stored tz offset — owner decision) |
+| `recorded_at` | timestamptz | insert time |
+| `mood` / `energy` / `focus` | smallint, nullable | 1–5, range-checked; rate any subset |
+| `note` | text, nullable | optional |
+| `created_at` / `updated_at` / `deleted_at` | timestamptz | edit-tracking + soft delete |
+
+The perceptions-vs-actions split (ADR-014) is now **inherent in the schema** — Subjective
+State is simply its own entity, separate from the input/behavior domains — rather than a
+presentation-time filter over a shared log.
 
 ## 5. Source adapter layer
 
@@ -315,9 +360,58 @@ the owner verifies. No phase starts before the prior one is approved.
 risk of building the wrong thing. Requires keeping ROADMAP.md in sync with the
 two core docs.
 
+### ADR-016
+**Title:** Replace the unified event log with one typed entity per capture domain.
+**Status:** Accepted (2026-06-15). **Supersedes [ADR-014](#adr-014)** and the unified-event-log
+data model in [§4](#4-data-model--the-event-log); **re-homes [ADR-010](#adr-010)** (composite
+supplements) and [ADR-013](#adr-013) (food nutrition) into v2 domain entities; **refines
+[ADR-006](#adr-006)** (controlled vocabularies move from app-layer checks to Postgres enums + Zod).
+**Context:** The MVP stored everything in one `events` table with a `category` and an untyped
+jsonb `fields` blob, governed only by a prose data dictionary. That caused silent drift — a
+`durationMin` vs `duration_min` key mismatch rolled a workout up to "0 min" with no error — and
+made per-category data hard to type, validate, or query. The owner redefined capture as **8
+domains**, each with its own attributes, and accepted a clean-slate database.
+**Decision:** Drop the single event log. Model capture as **8 domains, each its own typed
+entity/table** ([§4b](#4b-data-model-v2--per-domain-entities)) with explicit, range-checked
+columns and a **Zod schema in `shared/`** reused by the API, the client, and LLM-output
+validation. Closed vocabularies become **Postgres enums**; every entity carries dual timestamps
++ `updated_at` + a `deleted_at` soft-delete. The first entity built is **Subjective State**
+(mood/energy/focus; 1–5; snapshot/any-subset; UTC `occurred_at` only — no stored tz offset);
+the other seven domains follow as roadmap phases. The production database is **reset clean** at
+v2 cutover (owner accepted dropping all MVP data).
+**Consequences:** Removes the untyped-`fields` drift class; each domain gets a precise, queryable
+schema and shared types end to end. Trade-offs: more tables and per-domain migrations (cheap with
+Drizzle), and the cross-domain timeline / correlation work now unions typed entities instead of
+scanning one table (handled in the analysis layer). The perceptions-vs-actions split (ADR-014) is
+now structural rather than a UI filter.
+
+### ADR-015
+**Title:** Rebuild on Hono + SvelteKit + Drizzle + Zod, served as a single Deno Deploy service.
+**Status:** Accepted (2026-06-15). **Refines [ADR-012](#adr-012)** (still a PWA, but built with
+SvelteKit instead of a hand-written HTML string) and the single `Deno.serve` router in
+[ADR-011](#adr-011) (Hono replaces the hand-rolled router; the Deno Deploy + Supabase hosting is
+unchanged). Builds on [ADR-009](#adr-009) (Deno + TypeScript stays).
+**Context:** The MVP is one `Deno.serve` router ([`main.ts`](../backend/main.ts)) serving a
+self-contained HTML-string PWA with inline vanilla JS, plus hand-written SQL and raw migrations.
+It meets the functional requirements but is hard to grow: untyped data access, no component
+model, no typed migrations. The owner wants a more mature codebase on the **same infrastructure**
+(Deno Deploy / console.deno.com + Supabase, free tier).
+**Decision:** Rebuild with **Hono** (typed API, middleware, RPC types) for the backend,
+**SvelteKit** (Svelte 5) for the PWA, **Drizzle ORM** (typed schema + `drizzle-kit` migrations)
+for the data layer, and **Zod** for shared validation (request bodies, row shapes, LLM output).
+**One Deno Deploy service** serves the built SvelteKit assets *and* the Hono API on the same
+origin (no CORS); Supabase remains Postgres. The repo restructures into `web/` (SvelteKit),
+`server/` (Hono + the Deno entrypoint), `db/` (Drizzle schema + migrations), and `shared/` (Zod
+schemas), replacing `backend/`. Done on a `v2-overhaul` branch; the MVP is tagged `v1-mvp` and
+`main`/production keep running until a deliberate cutover.
+**Consequences:** Type safety end to end, real components with a build step, and typed migrations.
+Trade-offs: a build pipeline now exists (none before), and SvelteKit ships as static SPA assets
+served by Hono (SSR isn't needed for a single-user PWA). The PWA-over-native trade-off of ADR-012
+still stands. Hosting, free tier, and the manual-migrate workflow (ADR-011) are unchanged.
+
 ### ADR-014
 **Title:** Separate "perceptions" (mood/energy/focus) from "actions" in the Overview — perceptions render only in the chart; the timeline lists only actions/inputs.
-**Status:** Accepted (2026-06-14).
+**Status:** Accepted (2026-06-14). **Superseded by [ADR-016](#adr-016)** — in v2, Subjective State is its own entity, so perceptions are separated from actions/inputs by the schema itself, not by a presentation-time filter over a shared log.
 **Context:** mood/energy/focus are the **outcome** variables we ultimately correlate
 *against* inputs/actions (food, drink, supplement, sleep, workout, breathwork,
 stressor, hydration, note). Listing both in one timeline conflated "what I did" with
@@ -396,7 +490,7 @@ changes.
 
 ### ADR-010
 **Title:** Model composite supplements as products with an ingredient list; analyze at both levels.
-**Status:** Accepted (2026-06-12)
+**Status:** Accepted (2026-06-12). **Re-homed by [ADR-016](#adr-016)** — composite supplements move into the v2 **Inputs** domain entities; the dual-granularity (product vs ingredient) idea carries over.
 **Context:** Multi-ingredient supplements (sleep stacks, pre-workout) should be
 logged quickly by product name, but analysis needs ingredient-level resolution —
 total magnesium across all sources, or correlating a single ingredient with

@@ -1,8 +1,8 @@
 # TrackEverything — Requirements
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this
-> stays current. **Last updated:** 2026-06-15 (R-VIEW-6: light/dark appearance
-> with a system-following toggle; clean indigo theme) **Owner:** aerohit
+> stays current. **Last updated:** 2026-06-15 (R-DOM-1..3: v2 data-model overhaul
+> — 8 capture domains as typed entities; Subjective State built first) **Owner:** aerohit
 > **Companion doc:** [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each requirement has a stable ID (`R-<area>-<n>`) so it can be referenced from
@@ -73,6 +73,22 @@ The product succeeds only if **capture is nearly frictionless** and the
 | R-SUBJ-2 | **Scheduled prompts** nudge for a quick check-in at configured times of day.                                           | Built    |
 | R-SUBJ-3 | **On-demand** check-in: log a state any time, especially when something shifts (anxious, foggy, great).                | Built    |
 | R-SUBJ-4 | (Optional) Offer to attach a quick rating right after logging an event, to strengthen cause→effect links.              | Proposed |
+
+## 5b. Capture domains (v2 — the data-model overhaul)
+
+The v2 rewrite re-frames capture as **8 domains, each its own typed entity** (Drizzle table +
+shared Zod schema + Postgres enums), replacing the single event log of the MVP. Functional
+requirements above are unchanged; this is how the data is **modelled and stored**. See
+[ARCHITECTURE §4b](ARCHITECTURE.md#4b-data-model-v2--per-domain-entities) and
+[ADR-016](ARCHITECTURE.md#adr-016). The domains: **Inputs**, **Behaviors & Interventions**,
+**Exposures**, **Body Signals / Biometrics**, **Subjective State**, **Performance Outputs**,
+**Events / Stressors / Wins**, **Context**.
+
+| ID       | Requirement                                                                                                                                                                                                    | Status   |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| R-DOM-1  | Capture is modelled as **8 domains, each its own typed entity** (typed columns + Postgres enums + a shared Zod schema), not a single `events` table with untyped `fields`. Supersedes the unified-log model.   | Designed |
+| R-DOM-2  | **Subjective State** entity (domain 5): rate **mood / energy / focus** on **1–5** as a **snapshot** (any subset per check-in); per-row edit-tracking (`updated_at`) + soft delete (`deleted_at`). First built. | Designed |
+| R-DOM-3  | The other seven domains (Inputs, Behaviors & Interventions, Exposures, Body Signals, Performance Outputs, Events/Stressors/Wins, Context) are each their own entity, delivered as later phases.                 | Proposed |
 
 ## 6. Real-time analysis
 
@@ -205,3 +221,4 @@ This document is kept current by an explicit process, not by hope. See
 | 2026-06-14 | Added R-VIEW-5 (Built): Timeline food rows show a dish-level "Meal — item" summary (e.g. "Lunch — Salad") instead of the raw ingredient list; the dish name is clickable to open an ingredients pop-up. The food-scan prompt now also returns a dish-level `item` name used as the label.                                    |
 | 2026-06-14 | R-VIEW-5 polish: meals and event categories now show an emoji icon (🍳/🥗/🍽/🍎 meals, 💊 supplement, 💪 workout, 😴 sleep, etc.) on the timeline, the food meal picker, and the Today supplements list. UI-only; no API change.                                                                                              |
 | 2026-06-15 | Added R-VIEW-6 (Built): UI restyled to a clean light/dark theme with a single indigo accent (replacing the dark-only "Aurora" gradient look); follows the system appearance by default with a System/Light/Dark header toggle persisted as `te_theme`. UI-only; no API change.                                               |
+| 2026-06-15 | v2 maturity rewrite kicked off (ADR-015/016). Added R-DOM-1..3: capture re-modelled as 8 typed per-domain entities (replacing the unified event log), Subjective State (mood/energy/focus, 1–5, snapshot) built first. Stack moves to Hono + SvelteKit + Drizzle + Zod on the same Deno Deploy + Supabase infra; clean-slate database at cutover. Functional requirements unchanged. |

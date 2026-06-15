@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-13 (Phase 11a approved; Phase 11b/11c/11d in review; Phase 8 deferred)
+> **Status:** Living document. **Last updated:** 2026-06-15 (v2 maturity rewrite planned — ADR-015/016; per-domain entities, Subjective State built first)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -15,6 +15,54 @@ Each phase is **small, independently testable, and ends in an approval gate**
 Status legend: ☐ not started · ◐ in progress · ☑ approved
 
 ---
+
+## v2 — Maturity rewrite (current)
+
+> **Status (2026-06-15).** The MVP (Stages A–G below) is complete and deployed. The owner
+> chose to mature the codebase and **redefine the data model**, keeping the same functional
+> scope and infrastructure (Deno Deploy / console.deno.com + Supabase). See
+> [ADR-015](ARCHITECTURE.md#adr-015) (stack: **Hono + SvelteKit + Drizzle + Zod**, one Deno
+> Deploy service serving the built web + API) and [ADR-016](ARCHITECTURE.md#adr-016) (**8 typed
+> per-domain entities** replace the unified event log; **clean-slate database**).
+>
+> Built on a `v2-overhaul` branch; the MVP is tagged `v1-mvp` and production keeps running it
+> until the **v2-X cutover**. Everything under the "v1 (MVP)" divider is kept for history.
+
+Capture is re-modelled into **8 domains** (R-DOM-1), each its own entity, delivered one phase at
+a time. Only **Subjective State** is built first (R-DOM-2); the rest are documented below.
+
+### Phase v2-1 — Foundation + Subjective State ☐
+- **Goal:** Stand up the new stack and ship the first domain end to end — check in mood/energy/focus and see them charted.
+- **Build:**
+  - **Scaffold** the new layout: `web/` (SvelteKit PWA), `server/` (Hono API + the single Deno Deploy entrypoint that also serves the built web assets), `db/` (Drizzle schema + `drizzle-kit` migrations), `shared/` (Zod schemas). CI runs fmt/lint/type-check/tests; one deployable service.
+  - **`subjective_state` entity** (Drizzle): `mood`/`energy`/`focus` smallint 1–5 nullable, `occurred_at`/`recorded_at`, `note`, `created_at`/`updated_at`/`deleted_at`; shared Zod schema.
+  - **API** (Hono): create a check-in, list by range, edit, soft-delete — Zod-validated, typed RPC to the client.
+  - **PWA** (SvelteKit): a check-in card (tap 1–5 for any of mood/energy/focus + optional note) and a day view with the line chart; carry over the light/dark theme.
+- **Tests:** unit (Zod validation, entity repo, chart/aggregation pure fns); integration (HTTP → DB roundtrip for create/list/edit/soft-delete); a UI build + smoke check.
+- **You verify:** check in mood/energy/focus on the deployed preview, see the day chart, edit and soft-delete a check-in.
+- **Builds:** R-DOM-1, R-DOM-2; the v2 realisation of R-SUBJ-1/2/3 and the subjective slice of R-VIEW-1.
+
+### Phases v2-2 … v2-8 — the remaining domains ☐ (documented, not built)
+One phase per domain; each adds its own typed entity (Drizzle + Zod + enums), capture UI, and day/overview surface, following the v2-1 pattern. Order TBD with the owner.
+
+- **v2-2 — Inputs** — food, drinks, supplements, medication, caffeine, hydration. Re-homes the MVP's food ([ADR-013](ARCHITECTURE.md#adr-013)) and composite-supplement/ingredient model ([ADR-010](ARCHITECTURE.md#adr-010)) into typed entities.
+- **v2-3 — Behaviors & Interventions** — sleep habits, workouts, meditation, breathwork, work blocks, social actions.
+- **v2-4 — Exposures (Environment & Context)** — light, weather, noise, temperature, social environment, work pressure.
+- **v2-5 — Body Signals / Biometrics** — sleep metrics, HRV, soreness, digestion, pain, illness, hunger. (Natural home for the deferred Whoop adapter, ex-Phase 8.)
+- **v2-6 — Performance Outputs** — deep work, learning, gym performance, social actions, habit adherence.
+- **v2-7 — Events / Stressors / Wins** — arguments, rejections, deadlines, good conversations, achievements.
+- **v2-8 — Context** — time, place, day type, season, current goal, experiment phase.
+- **Expand Subjective State** (small) — add the remaining dimensions (stress, confidence, motivation, calmness, playfulness) as columns when the owner wants them.
+
+### Phase v2-A — Cross-domain analysis ☐ (documented)
+Re-frames MVP Stage C (real-time questions) and Phase 10 (correlation) over the typed entities: assemble a cross-domain timeline by unioning the entities, compute correlations (inputs/behaviors/exposures → subjective/performance outcomes), and have the LLM interpret. Carries forward R-RT-* and R-PAT-*.
+
+### Phase v2-X — Cutover ☐ (documented)
+Tag `v1-mvp`; run the fresh Drizzle migrations on the production Supabase DB (drops the MVP tables — owner accepted the clean slate); deploy the v2 service; point the domain; tag `v2`.
+
+---
+
+## v1 (MVP) — superseded by v2 (kept for history)
 
 ## Stage A — Foundation
 
@@ -409,3 +457,4 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 | 2026-06-14 | Split the PWA into **four tabbed screens** (bottom nav): Home (check-in/capture/quick-log/manual), Overview (Today + Timeline + a **Weekly** placeholder for Phase 10 reports), Ask, Manage. UI-only, no API change. |
 | 2026-06-14 | Overview enrichments: mood/energy/focus **line chart** (`/overview` now returns subjective `points`); composite supplements shown **by name** with a click-to-open **ingredients pop-up** (`/overview` returns a `products` list). |
 | 2026-06-14 | Phase 12 (photo food logging: `POST /food-scan` vision → itemized calories+macros, Home card, overview totals) implemented → ◐ in review. Added Phase 13 (nutrition DB, deferred) and ADR-013. |
+| 2026-06-15 | **v2 maturity rewrite** planned (ADR-015/016). Same repo, same infra (Deno Deploy + Supabase); new stack Hono + SvelteKit + Drizzle + Zod, single service. Data model re-framed as **8 typed per-domain entities** (R-DOM-1) replacing the unified event log; clean-slate DB at cutover. Added phases v2-1 (Foundation + Subjective State — mood/energy/focus, built first), v2-2…v2-8 (remaining domains, documented), v2-A (cross-domain analysis), v2-X (cutover). MVP stages A–G retained as history. |
