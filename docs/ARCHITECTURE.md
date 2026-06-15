@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-15 (ADR-017: Subjective State as immutable (kind, rating) readings — single discriminator column, no edit/delete)
+> **Last updated:** 2026-06-15 (ADR-018: Inputs — intake events over reusable items, with a resolved substance snapshot)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -149,6 +149,34 @@ the `subjective_kind` enum — **no new columns**. The first build tracks `mood`
 The perceptions-vs-actions split (ADR-014) is now **inherent in the schema** — Subjective
 State is simply its own entity, separate from the input/behavior domains — rather than a
 presentation-time filter over a shared log.
+
+## 4c. Data model (v2) — Inputs (domain 1)
+
+> **Built: data + resolution layer ([ADR-018](#adr-018), R-DOM-4).** API + UI follow.
+
+"Input = anything intentionally put into the body." Two layers — a fast human-level log and a
+rich analytical decomposition:
+
+- **`substance`** — the analytical vocabulary (seeded; elemental forms only for now): `name`,
+  `substance_type` (macronutrient/mineral/electrolyte/vitamin/stimulant/…), `canonical_unit`
+  (g/mg/mcg/ml/kcal/iu), `aliases[]`.
+- **`input_item`** — a reusable thing (`kind`: product | recipe | simple). Not forced into one
+  category: `primary_type` + `roles[]` (a smoothie is drink + food + meal). Carries a default
+  serving (display + canonical) and a `version`. Mutable, soft-deletable.
+- **`item_component`** — composition; each row is **exactly one of** a `substance` (actives /
+  nutrients) **or** a `child_item` (recipe ingredients), with an amount + unit per serving.
+- **`intake_event`** — one thing consumed at one time. Optional `item_id` (freeform logs allowed),
+  display quantity/unit + resolved canonical quantity/unit, `confidence`, `context_tags[]`
+  (pre_workout, fasted, …). **Mutable** (edit + soft delete) for progressive refinement.
+- **`resolved_amount`** — the analytical **snapshot** frozen per event (canonical units), produced
+  by the resolver ([`db/resolve.ts`](../db/resolve.ts)): expand item × quantity → substances,
+  recursing recipes, scaling by serving, normalizing mass/volume/energy. Re-computed on edit, never
+  rewritten by later item edits. Powers daily per-substance totals.
+
+So the user logs **objects** ("1 scoop pre-workout") while the app analyses **components**
+(200 mg caffeine, 5 g creatine, …). Quantities keep both a display form and a canonical form; every
+event and amount carries a confidence. Compound→elemental conversion (magnesium glycinate → Mg) is
+deferred; tags are `text[]` for now.
 
 ## 5. Source adapter layer
 
@@ -361,6 +389,33 @@ the owner verifies. No phase starts before the prior one is approved.
 **Consequences:** Slower nominal throughput but continuous verification and low
 risk of building the wrong thing. Requires keeping ROADMAP.md in sync with the
 two core docs.
+
+### ADR-018
+**Title:** Model Inputs as intake events over reusable items, with a resolved substance snapshot.
+**Status:** Accepted (2026-06-15). Realizes the first of the v2 per-domain entities (R-DOM-4) under
+[ADR-016](#adr-016); re-homes the MVP's food ([ADR-013](#adr-013)) and composite-supplement
+([ADR-010](#adr-010)) ideas into this domain.
+**Context:** "Input = anything intentionally put into the body" — food, drink, supplement,
+medication, caffeine, electrolytes, alcohol, pre-workout, smoothie… all just **types of input**.
+The user logs simple objects ("pre-workout") but analysis needs the components (caffeine, creatine,
+sodium…). We need fast human-level capture **and** rich analytical decomposition, stable history,
+honest confidence, and time-awareness — without forcing messy real-world items into one category.
+**Decision:** Two layers ([§4c](#4c-data-model-v2--inputs-domain-1)). An **`intake_event`** (mutable,
+soft-deletable) records one thing consumed at a time, optionally linked to a reusable **`input_item`**
+(`product` | `recipe` | `simple`) composed via **`item_component`** of **`substance`s** (the seeded
+analytical vocabulary, elemental units) and/or **child items** (recipe ingredients). On log, a pure
+resolver ([`db/resolve.ts`](../db/resolve.ts)) expands item × quantity into substance amounts in
+canonical units — recursing recipes, scaling by serving, normalizing mass/volume/energy — and freezes
+them per event as **`resolved_amount`**, the snapshot that powers daily per-substance totals and stays
+stable when items are later edited (`item_version` is retained for explicit recompute). Items use
+`primary_type` + `roles[]` (not one rigid category); quantities keep display + canonical forms; every
+event and amount carries a `confidence`. Freeform logs (no item, optional manual substance amounts)
+are allowed for fast/rough capture and later refinement.
+**Consequences:** simple capture with granular, time-aware analysis from a single log; history is
+stable yet recomputable. Trade-offs: resolution depends on unit reconciliation (unreconcilable →
+no resolved amounts + `confidence: low`); **compound→elemental conversion is deferred** (substances
+are elemental); effect tags are `text[]` for now. Built data+resolution-first (this slice); the
+Hono API and SvelteKit capture/overview UI follow as later slices.
 
 ### ADR-017
 **Title:** Model Subjective State as immutable (kind, rating) readings — a single discriminator

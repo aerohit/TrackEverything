@@ -1,8 +1,8 @@
 # TrackEverything — Requirements
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this
-> stays current. **Last updated:** 2026-06-15 (R-VIEW-7: responsive
-> phone+desktop PWA — v2-1b SvelteKit front end) **Owner:** aerohit
+> stays current. **Last updated:** 2026-06-15 (R-DOM-4 + ADR-018: Inputs domain
+> — intake events + reusable items + resolved substance snapshot) **Owner:** aerohit
 > **Companion doc:** [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each requirement has a stable ID (`R-<area>-<n>`) so it can be referenced from
@@ -89,6 +89,7 @@ requirements above are unchanged; this is how the data is **modelled and stored*
 | R-DOM-1  | Capture is modelled as **8 domains, each its own typed entity** (typed columns + Postgres enums + a shared Zod schema), not a single `events` table with untyped `fields`. Supersedes the unified-log model.   | Built    |
 | R-DOM-2  | **Subjective State** entity (domain 5): **immutable readings** — one row per `(kind, rating)` where `kind` ∈ {mood, energy, focus} (a single discriminator column, extensible to more states) and `rating` is 1–5; optional note; `recorded_at` only; **no edit/delete** (ADR-017). A check-in rates one or more states at once. First built. | Built |
 | R-DOM-3  | The other seven domains (Inputs, Behaviors & Interventions, Exposures, Body Signals, Performance Outputs, Events/Stressors/Wins, Context) are each their own entity, delivered as later phases.                 | Proposed |
+| R-DOM-4  | **Inputs** domain ("anything put into the body"): a **mutable** `intake_event` records one thing consumed at a time, optionally linked to a reusable `input_item` (product/recipe/simple) decomposed into `substance`s (+ child items); logging freezes a per-event `resolved_amount` snapshot in canonical units (confidence-tagged), which rolls up into daily per-substance totals. Elemental substances only (ADR-018). | Built    |
 
 ## 6. Real-time analysis
 
@@ -225,3 +226,4 @@ This document is kept current by an explicit process, not by hope. See
 | 2026-06-15 | v2 maturity rewrite kicked off (ADR-015/016). Added R-DOM-1..3: capture re-modelled as 8 typed per-domain entities (replacing the unified event log), Subjective State (mood/energy/focus, 1–5, snapshot) built first. Stack moves to Hono + SvelteKit + Drizzle + Zod on the same Deno Deploy + Supabase infra; clean-slate database at cutover. Functional requirements unchanged. |
 | 2026-06-15 | PR #35 review (ADR-017): refined R-DOM-2 — Subjective State is now **immutable readings**, a single `kind` discriminator column (extensible to more states) + `rating`, `recorded_at` only. Dropped the per-dimension columns, `occurred_at`, and the edit-tracking/soft-delete columns; the API is create + read only. |
 | 2026-06-15 | v2-1b: added R-VIEW-7 (responsive phone+desktop UI) — the SvelteKit PWA is mobile-first single column with an adaptive two-pane desktop layout; carries the R-VIEW-6 light/dark theme. |
+| 2026-06-15 | v2-2 (Inputs) data layer: added R-DOM-4 + ADR-018. Unified `intake_event` over reusable `input_item`s (product/recipe/simple) decomposed into seeded `substance`s; pure resolution engine freezes a per-event `resolved_amount` snapshot (canonical units, confidence) → daily totals. Mutable events; elemental substances only (compound→elemental deferred). Data + resolution + repo + tests; API/UI to follow. |
