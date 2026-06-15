@@ -427,3 +427,29 @@ textarea:focus {
   color: var(--mut);
   margin: 10px 0 4px;
 }
+
+select.field {
+  appearance: none;
+  -webkit-appearance: none;
+}
+.comp {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  margin: 8px 0;
+}
+.itemrow {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+}
+.itemrow:last-child {
+  border-bottom: none;
+}
+.itemrow .meta {
+  color: var(--mut);
+  font-size: 12px;
+}

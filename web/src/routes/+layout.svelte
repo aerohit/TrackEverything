@@ -40,7 +40,11 @@
     showToken = false;
   }
 
-  const tabs = [{ href: "/", label: "Feel" }, { href: "/inputs", label: "Inputs" }];
+  const tabs = [
+    { href: "/", label: "Feel" },
+    { href: "/inputs", label: "Inputs" },
+    { href: "/manage", label: "Manage" },
+  ];
   const path = $derived($page.url.pathname);
 
   onMount(() => {

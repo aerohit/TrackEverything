@@ -82,3 +82,34 @@ export interface CreateIntake {
   contextTags?: string[];
   notes?: string;
 }
+
+export interface Substance {
+  id: string;
+  name: string;
+  substanceType: string;
+  canonicalUnit: SubstanceUnit;
+  aliases: string[];
+}
+
+export interface ComponentInput {
+  substance?: string;
+  childItemId?: string;
+  amount: number;
+  unit: string;
+}
+
+export interface CreateItemBody {
+  name: string;
+  kind: "product" | "recipe" | "simple";
+  primaryType: string;
+  roles?: string[];
+  brand?: string;
+  defaultServing?: {
+    displayQuantity?: number;
+    displayUnit?: string;
+    canonicalQuantity?: number;
+    canonicalUnit?: string;
+  };
+  notes?: string;
+  components?: ComponentInput[];
+}
