@@ -541,3 +541,85 @@ select.field {
   max-height: 280px;
   border-radius: 10px;
 }
+
+/* Log capture (ADR-020): photo / voice mode buttons, recent chips, save-as options. */
+.modes {
+  display: flex;
+  gap: 10px;
+  margin: 12px 0 4px;
+}
+.modebtn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-height: 84px;
+  justify-content: center;
+  padding: 12px;
+  border: 1px dashed var(--line-2);
+  border-radius: 14px;
+  background: var(--field);
+  color: var(--fg);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.modebtn:disabled,
+.modebtn.busy {
+  opacity: 0.55;
+  cursor: default;
+}
+.modebtn input[type="file"] {
+  display: none;
+}
+.modebtn .ico {
+  font-size: 26px;
+  line-height: 1;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+.chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: var(--field);
+  color: var(--fg);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.chip:hover {
+  border-color: var(--accent);
+}
+.chip .meta {
+  color: var(--mut);
+  font-size: 11px;
+}
+.opts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.opt {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--field);
+  font-size: 14px;
+  cursor: pointer;
+}
+.opt.sel {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}

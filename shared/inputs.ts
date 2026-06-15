@@ -125,7 +125,59 @@ export const scanRequestSchema = z.object({
 });
 export type ScanRequest = z.infer<typeof scanRequestSchema>;
 
+/** Request to transcribe a voice memo into text (POST /api/transcribe). */
+export const transcribeRequestSchema = z.object({
+  audioBase64: z.string().min(1),
+  mediaType: z.string().regex(
+    /^audio\/(webm|ogg|mp4|mpeg|mp3|wav|m4a|x-m4a)$/,
+    "unsupported audio type",
+  ),
+});
+export type TranscribeRequest = z.infer<typeof transcribeRequestSchema>;
+
+/**
+ * Recognize an intake from a meal photo or a spoken/typed phrase, then match the
+ * catalog (POST /api/intake/recognize). Exactly one source is supplied.
+ */
+export const recognizeRequestSchema = z.discriminatedUnion("source", [
+  z.object({
+    source: z.literal("photo"),
+    imageBase64: z.string().min(1),
+    mediaType: z.string().regex(/^image\/(jpeg|png|webp|heic|heif|gif)$/, "unsupported image type"),
+  }),
+  z.object({ source: z.literal("text"), text: z.string().min(1) }),
+]);
+export type RecognizeRequest = z.infer<typeof recognizeRequestSchema>;
+
 // ---- read DTOs ----
+
+/**
+ * What the recognizer extracted from a photo/phrase: a human-level guess (name +
+ * quantity + unit + type) and a full draft item to persist if saved as new.
+ */
+export interface RecognizedIntake {
+  name: string;
+  quantity: number;
+  unit: string;
+  primaryType: InputPrimaryType;
+  draft: CreateItem;
+}
+
+/** Recognition + catalog match returned by POST /api/intake/recognize. */
+export interface RecognizeResult {
+  recognized: RecognizedIntake;
+  matches: InputItemSummary[];
+  transcript?: string;
+}
+
+/** One distinct recently-logged item, for quick re-logging (GET /api/intake/recent-items). */
+export interface RecentItem {
+  itemId: string | null;
+  displayName: string;
+  quantity: number;
+  unit: string;
+  lastLoggedAt: string;
+}
 
 export interface Substance {
   id: string;

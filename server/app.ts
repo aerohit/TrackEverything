@@ -12,14 +12,20 @@ import { sql } from "drizzle-orm";
 import { createCheckinSchema, kindSchema } from "../shared/subjective_state.ts";
 import type { Db } from "../db/client.ts";
 import { createCheckin, listCheckins, type ListRange, toCheckin } from "../db/checkins.ts";
-import { registerInputRoutes } from "./inputs_routes.ts";
+import { type InputDeps, registerInputRoutes } from "./inputs_routes.ts";
 import type { ItemScanner } from "./scan.ts";
+import type { IntakeRecognizer } from "./recognize.ts";
+import type { Transcriber } from "./transcribe.ts";
 
 export interface AppOptions {
   /** When set, every /api request must present this as a Bearer / x-ingest-token. */
   token?: string;
   /** Label-scan backend (Claude vision). When absent, /api/items/scan returns 503. */
   scanner?: ItemScanner;
+  /** Meal-photo / phrase recognizer (Claude). When absent, /api/intake/recognize returns 503. */
+  recognizer?: IntakeRecognizer;
+  /** Voice transcriber (Whisper). When absent, /api/transcribe returns 503. */
+  transcriber?: Transcriber;
 }
 
 export function createApp(db: Db, opts: AppOptions = {}): Hono {
@@ -85,7 +91,12 @@ export function createApp(db: Db, opts: AppOptions = {}): Hono {
   });
 
   // Inputs domain (v2-2b) routes.
-  registerInputRoutes(api, db, opts.scanner);
+  const deps: InputDeps = {
+    scanner: opts.scanner,
+    recognizer: opts.recognizer,
+    transcriber: opts.transcriber,
+  };
+  registerInputRoutes(api, db, deps);
 
   app.route("/api", api);
   return app;

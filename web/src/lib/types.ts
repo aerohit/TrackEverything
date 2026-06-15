@@ -114,3 +114,28 @@ export interface CreateItemBody {
   notes?: string;
   components?: ComponentInput[];
 }
+
+/** What the recognizer extracted from a photo/phrase (mirrors shared/inputs.ts). */
+export interface RecognizedIntake {
+  name: string;
+  quantity: number;
+  unit: string;
+  primaryType: string;
+  draft: CreateItemBody;
+}
+
+/** Recognition + catalog match returned by POST /api/intake/recognize. */
+export interface RecognizeResult {
+  recognized: RecognizedIntake;
+  matches: InputItemSummary[];
+  transcript?: string;
+}
+
+/** One distinct recently-logged item (GET /api/intake/recent-items). */
+export interface RecentItem {
+  itemId: string | null;
+  displayName: string;
+  quantity: number;
+  unit: string;
+  lastLoggedAt: string;
+}
