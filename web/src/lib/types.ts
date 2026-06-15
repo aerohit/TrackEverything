@@ -56,6 +56,7 @@ export interface IntakeEvent {
 
 export interface DailyTotal {
   substance: string;
+  substanceType: string;
   amount: number;
   unit: SubstanceUnit;
 }
