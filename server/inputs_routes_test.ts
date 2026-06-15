@@ -65,20 +65,22 @@ Deno.test({
       const item = await created.json();
       assertEquals(item.components.length, 2);
 
-      // An unknown substance → 400.
-      assertEquals(
-        (await app.request("/api/items", {
-          method: "POST",
-          headers: auth,
-          body: JSON.stringify({
-            name: "x",
-            kind: "simple",
-            primaryType: "food",
-            components: [{ substance: "unobtainium", amount: 1, unit: "g" }],
-          }),
-        })).status,
-        400,
-      );
+      // An unknown substance is auto-created (ADR-019), not rejected.
+      const novel = await app.request("/api/items", {
+        method: "POST",
+        headers: auth,
+        body: JSON.stringify({
+          name: "Greens powder",
+          kind: "simple",
+          primaryType: "supplement",
+          components: [{ substance: "Spirulina", amount: 1, unit: "g" }],
+        }),
+      });
+      assertEquals(novel.status, 201);
+      const subNames = (await (await app.request("/api/substances", { headers: auth })).json())
+        .substances
+        .map((s: { name: string }) => s.name);
+      assert(subNames.includes("spirulina")); // normalized + auto-created
 
       // Item search finds it.
       assertEquals(
@@ -150,6 +152,59 @@ Deno.test({
       const after =
         (await (await app.request(`/api/intake/totals?${DAY}`, { headers: auth })).json()).totals;
       assertEquals(byName(after).get("caffeine"), 120); // only the coffee remains
+    } finally {
+      await sql.end();
+    }
+  },
+});
+
+Deno.test({
+  name: "inputs API: label scan returns a draft; 503 when scanning is unconfigured",
+  ignore: !DATABASE_URL,
+  async fn() {
+    const { sql, db } = connect(DATABASE_URL);
+    try {
+      // No scanner configured → 503.
+      const noScan = createApp(db, { token: TOKEN });
+      assertEquals(
+        (await noScan.request("/api/items/scan", {
+          method: "POST",
+          headers: auth,
+          body: JSON.stringify({ imageBase64: "abc", mediaType: "image/png" }),
+        })).status,
+        503,
+      );
+
+      // With a (mock) scanner → returns the draft.
+      const scanner = {
+        // deno-lint-ignore require-await
+        scan: async () => ({
+          name: "Scanned Multi",
+          kind: "product" as const,
+          primaryType: "supplement" as const,
+          roles: [],
+          defaultServing: { displayQuantity: 1, displayUnit: "tablet" },
+          components: [{ substance: "niacin", amount: 16, unit: "mg" }],
+        }),
+      };
+      const app = createApp(db, { token: TOKEN, scanner });
+
+      // Bad image payload → 400.
+      assertEquals(
+        (await app.request("/api/items/scan", { method: "POST", headers: auth, body: "{}" }))
+          .status,
+        400,
+      );
+
+      const res = await app.request("/api/items/scan", {
+        method: "POST",
+        headers: auth,
+        body: JSON.stringify({ imageBase64: "abc", mediaType: "image/png" }),
+      });
+      assertEquals(res.status, 200);
+      const draft = await res.json();
+      assertEquals(draft.name, "Scanned Multi");
+      assertEquals(draft.components[0].substance, "niacin");
     } finally {
       await sql.end();
     }

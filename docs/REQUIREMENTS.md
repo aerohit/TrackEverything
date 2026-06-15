@@ -1,8 +1,8 @@
 # TrackEverything — Requirements
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this
-> stays current. **Last updated:** 2026-06-15 (R-DOM-4 + ADR-018: Inputs domain
-> — intake events + reusable items + resolved substance snapshot) **Owner:** aerohit
+> stays current. **Last updated:** 2026-06-15 (R-CAP-17 + ADR-019: Add Item by
+> label photo — Claude-vision editable draft; unknown actives auto-create substances) **Owner:** aerohit
 > **Companion doc:** [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each requirement has a stable ID (`R-<area>-<n>`) so it can be referenced from
@@ -55,6 +55,7 @@ The product succeeds only if **capture is nearly frictionless** and the
 | R-CAP-14 | Define a supplement **product's ingredient list once** (per ingredient: name, amount, unit); it is reused for every log of that product. Support a servings/dose multiplier per log.                                                                                                                                                                                                                                                                                                                    | Built    |
 | R-CAP-15 | Populate a product's ingredient list by **uploading a photo** of the supplement-facts / ingredients label; the system extracts the structured ingredient list for confirmation/edit (image capture modality).                                                                                                                                                                                                                                                                                           | Built    |
 | R-CAP-16 | **Photo food logging:** photograph a meal; the system recognizes each food, itemizes it, and **estimates calories + macros** (protein/carbs/fat) and a portion. The user confirms/edits the amount (grams / count / serving — which rescales the nutrition) or enters calories directly, picks a meal (breakfast/lunch/dinner/snack), and saves one `food` event per item. Guessed ingredients are shown for context only. Nutrition is LLM-estimated for now (see [ADR-013](ARCHITECTURE.md#adr-013)). | Designed |
+| R-CAP-17 | **Add Item by label photo (v2):** the "Add Item" screen takes/uploads a photo of a product label; Claude vision scans the **whole ingredients panel** and returns an **editable draft** item (name, kind, type, serving, one row per active) for the user to correct, then **Save** persists it as a reusable `input_item`. Unknown actives **auto-create** a `substance` (normalized name, coerced canonical unit, `type: other`) so the entire label is captured. Scanning is optional — with no model key the screen falls back to manual entry. Supersedes R-CAP-15 on the v2 stack. ([ADR-019](ARCHITECTURE.md#adr-019)) | Built |
 
 ## 4. Data sources & integrations
 
@@ -227,3 +228,4 @@ This document is kept current by an explicit process, not by hope. See
 | 2026-06-15 | PR #35 review (ADR-017): refined R-DOM-2 — Subjective State is now **immutable readings**, a single `kind` discriminator column (extensible to more states) + `rating`, `recorded_at` only. Dropped the per-dimension columns, `occurred_at`, and the edit-tracking/soft-delete columns; the API is create + read only. |
 | 2026-06-15 | v2-1b: added R-VIEW-7 (responsive phone+desktop UI) — the SvelteKit PWA is mobile-first single column with an adaptive two-pane desktop layout; carries the R-VIEW-6 light/dark theme. |
 | 2026-06-15 | v2-2 (Inputs) data layer: added R-DOM-4 + ADR-018. Unified `intake_event` over reusable `input_item`s (product/recipe/simple) decomposed into seeded `substance`s; pure resolution engine freezes a per-event `resolved_amount` snapshot (canonical units, confidence) → daily totals. Mutable events; elemental substances only (compound→elemental deferred). Data + resolution + repo + tests; API/UI to follow. |
+| 2026-06-15 | v2-2e (Add Item by label photo, in review): added R-CAP-17 + ADR-019. "Manage" → **Add Item**; the manual item form is replaced by photo capture/upload → `POST /api/items/scan` (Claude vision via `ItemScanner`/`AnthropicItemScanner`, SDK-isolated; tolerant pure parser) → an **editable draft** → Save. Unknown actives **auto-create** a `substance` (normalized name, coerced canonical unit, `type: other`). Scanning optional (503 → manual fallback). Supersedes R-CAP-15 on v2. Server + web tests added; scan→edit→save + auto-create browser-verified. |

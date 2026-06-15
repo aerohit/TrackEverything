@@ -43,7 +43,7 @@
   const tabs = [
     { href: "/", label: "Log" },
     { href: "/overview", label: "Overview" },
-    { href: "/manage", label: "Manage" },
+    { href: "/manage", label: "Add Item" },
   ];
   const path = $derived($page.url.pathname);
 

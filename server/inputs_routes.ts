@@ -17,9 +17,11 @@ import { z } from "zod";
 import {
   createIntakeEventSchema,
   createItemSchema,
+  scanRequestSchema,
   updateIntakeEventSchema,
 } from "../shared/inputs.ts";
 import type { Db } from "../db/client.ts";
+import type { ItemScanner } from "./scan.ts";
 import {
   createIntakeEvent,
   createItem,
@@ -48,8 +50,20 @@ function parseWindow(c: Context): { from?: Date; to?: Date } | { error: string }
   return out;
 }
 
-export function registerInputRoutes(api: Hono, db: Db) {
+export function registerInputRoutes(api: Hono, db: Db, scanner?: ItemScanner) {
   api.get("/substances", async (c) => c.json({ substances: await listSubstances(db) }));
+
+  // Scan a label photo → a draft item (not saved; the client edits then POSTs /items).
+  api.post("/items/scan", async (c) => {
+    if (!scanner) return c.json({ error: "label scanning is not configured" }, 503);
+    const parsed = scanRequestSchema.safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) return c.json({ error: "invalid", issues: parsed.error.issues }, 400);
+    try {
+      return c.json(await scanner.scan(parsed.data));
+    } catch (e) {
+      return c.json({ error: "scan failed", detail: (e as Error).message }, 502);
+    }
+  });
 
   api.get("/items", async (c) => {
     const limitRaw = c.req.query("limit");
