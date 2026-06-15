@@ -154,6 +154,7 @@ export interface IntakeEvent {
 /** One substance's total across a day (canonical unit). */
 export interface DailyTotal {
   substance: string;
+  substanceType: SubstanceType;
   amount: number;
   unit: SubstanceUnit;
 }

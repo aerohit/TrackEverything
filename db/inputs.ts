@@ -419,6 +419,7 @@ export async function getItemDetail(db: Db, id: string): Promise<InputItemDetail
 export async function dailyTotals(db: Db, from: Date, to: Date): Promise<DailyTotal[]> {
   const rows = await db.select({
     substance: substance.name,
+    substanceType: substance.substanceType,
     unit: resolvedAmount.unit,
     amount: sql<number>`sum(${resolvedAmount.amount})`,
   })
@@ -432,11 +433,12 @@ export async function dailyTotals(db: Db, from: Date, to: Date): Promise<DailyTo
         lt(intakeEvent.occurredAt, to),
       ),
     )
-    .groupBy(substance.name, resolvedAmount.unit)
+    .groupBy(substance.name, substance.substanceType, resolvedAmount.unit)
     .orderBy(substance.name);
 
   return rows.map((r) => ({
     substance: r.substance,
+    substanceType: r.substanceType,
     unit: r.unit,
     amount: Math.round(Number(r.amount) * 1000) / 1000,
   }));
