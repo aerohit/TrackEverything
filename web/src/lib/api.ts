@@ -97,6 +97,25 @@ export async function listSubstances(ctx: ApiCtx = {}): Promise<Substance[]> {
   return (await res.json()).substances as Substance[];
 }
 
+/** Send a label photo to the vision scanner; returns an editable draft item. */
+export async function scanItem(
+  imageBase64: string,
+  mediaType: string,
+  ctx: ApiCtx = {},
+): Promise<CreateItemBody> {
+  const { f, token } = resolve(ctx);
+  const res = await f("/api/items/scan", {
+    method: "POST",
+    headers: headers(token, true),
+    body: JSON.stringify({ imageBase64, mediaType }),
+  });
+  if (!res.ok) {
+    const msg = await res.json().then((b) => b?.error).catch(() => null);
+    throw new ApiError(res.status, msg || "Scan failed");
+  }
+  return await res.json() as CreateItemBody;
+}
+
 export async function createItem(body: CreateItemBody, ctx: ApiCtx = {}): Promise<InputItemSummary> {
   const { f, token } = resolve(ctx);
   const res = await f("/api/items", {

@@ -7,6 +7,7 @@ import {
   listCheckins,
   listSubstances,
   logIntake,
+  scanItem,
   searchItems,
 } from "./api";
 
@@ -98,5 +99,25 @@ describe("api client", () => {
     const bad = vi.fn<typeof globalThis.fetch>(async () => jsonResponse({ error: "Unknown substance: x" }, false, 400));
     await expect(createItem({ name: "X", kind: "simple", primaryType: "food" }, { fetch: bad, token: "t" }))
       .rejects.toThrow("Unknown substance");
+  });
+
+  it("scanItem POSTs the image and returns the draft", async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>(async () =>
+      jsonResponse({ name: "Multivitamin", kind: "product", primaryType: "supplement", components: [] })
+    );
+    const draft = await scanItem("BASE64DATA", "image/png", { fetch, token: "t" });
+    expect(draft.name).toBe("Multivitamin");
+    const [url, init] = fetch.mock.calls[0];
+    expect(String(url)).toBe("/api/items/scan");
+    expect(init?.method).toBe("POST");
+    const body = JSON.parse(init?.body as string);
+    expect(body).toEqual({ imageBase64: "BASE64DATA", mediaType: "image/png" });
+  });
+
+  it("scanItem surfaces a 503 when scanning is unconfigured", async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>(async () =>
+      jsonResponse({ error: "label scanning is not configured" }, false, 503)
+    );
+    await expect(scanItem("x", "image/png", { fetch, token: "t" })).rejects.toThrow("not configured");
   });
 });

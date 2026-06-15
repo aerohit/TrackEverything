@@ -12,6 +12,7 @@
   },
   "imports": {
     "@std/assert": "jsr:@std/assert@^1.0.8",
+    "@anthropic-ai/sdk": "npm:@anthropic-ai/sdk@^0.104.1",
     "hono": "npm:hono@^4.6.14",
     "hono/": "npm:/hono@^4.6.14/",
     "drizzle-orm": "npm:drizzle-orm@^0.38.3",

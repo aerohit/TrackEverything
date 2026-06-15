@@ -118,6 +118,13 @@ export const updateIntakeEventSchema = createIntakeEventSchema.partial().refine(
 );
 export type UpdateIntakeEvent = z.infer<typeof updateIntakeEventSchema>;
 
+/** Request to scan a label photo into a draft item (POST /api/items/scan). */
+export const scanRequestSchema = z.object({
+  imageBase64: z.string().min(1),
+  mediaType: z.string().regex(/^image\/(jpeg|png|webp|heic|heif|gif)$/, "unsupported image type"),
+});
+export type ScanRequest = z.infer<typeof scanRequestSchema>;
+
 // ---- read DTOs ----
 
 export interface Substance {

@@ -8,6 +8,7 @@ import { serveStatic } from "hono/deno";
 import { sql } from "drizzle-orm";
 import { connect } from "../db/client.ts";
 import { createApp } from "./app.ts";
+import { AnthropicItemScanner } from "./scan_anthropic.ts";
 
 // On Deno Deploy an uncaught rejection crashes the isolate (the v1 crash-loop —
 // see ADR-011's consequences). Keep the isolate alive and just log instead.
@@ -20,7 +21,11 @@ const { db } = connect();
 // Warm the pooled DB connection at startup so the first request isn't cold.
 db.execute(sql`select 1`).catch(() => {});
 
-const app = createApp(db, { token: Deno.env.get("INGEST_TOKEN") });
+// Label scanning is enabled when an Anthropic key is present (Claude vision).
+const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
+const scanner = anthropicKey ? new AnthropicItemScanner(anthropicKey) : undefined;
+
+const app = createApp(db, { token: Deno.env.get("INGEST_TOKEN"), scanner });
 
 const WEB_ROOT = "./web/build";
 app.use("/*", serveStatic({ root: WEB_ROOT }));

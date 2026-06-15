@@ -17,6 +17,7 @@ import type {
   SubstanceUnit,
   UpdateIntakeEvent,
 } from "../shared/inputs.ts";
+import { SUBSTANCE_UNITS } from "../shared/inputs.ts";
 import type { Db } from "./client.ts";
 import {
   inputItem,
@@ -34,15 +35,52 @@ interface SubstanceMeta {
 }
 
 /** name + each alias (lowercased) → {id, canonical unit}. */
+/** Normalize a substance name for matching: lowercase, spaces/hyphens → underscores. */
+function normalizeSubstance(s: string): string {
+  return s.trim().toLowerCase().replace(/[\s-]+/g, "_");
+}
+
+/** Coerce a free-text unit into a canonical substance unit (defaults to mg). */
+function toSubstanceUnit(u: string): SubstanceUnit {
+  const n = u.trim().toLowerCase();
+  if (n === "µg" || n === "ug") return "mcg";
+  return (SUBSTANCE_UNITS as readonly string[]).includes(n) ? n as SubstanceUnit : "mg";
+}
+
+/** name + aliases (normalized) → {id, canonical unit}. */
 async function substanceIndex(db: Db): Promise<Map<string, SubstanceMeta>> {
   const rows = await db.select().from(substance);
   const m = new Map<string, SubstanceMeta>();
   for (const s of rows) {
     const meta = { id: s.id, unit: s.canonicalUnit };
-    m.set(s.name.toLowerCase(), meta);
-    for (const a of s.aliases) m.set(a.toLowerCase(), meta);
+    m.set(normalizeSubstance(s.name), meta);
+    for (const a of s.aliases) m.set(normalizeSubstance(a), meta);
   }
   return m;
+}
+
+/** Find a substance by name, auto-creating it (type "other") if unknown — ADR-019. */
+async function resolveSubstanceId(
+  db: Db,
+  index: Map<string, SubstanceMeta>,
+  name: string,
+  unit: string,
+): Promise<string> {
+  const key = normalizeSubstance(name);
+  let meta = index.get(key);
+  if (!meta) {
+    const canonicalUnit = toSubstanceUnit(unit);
+    let [created] = await db.insert(substance)
+      .values({ name: key, substanceType: "other", canonicalUnit })
+      .onConflictDoNothing()
+      .returning();
+    if (!created) {
+      [created] = await db.select().from(substance).where(eq(substance.name, key));
+    }
+    meta = { id: created.id, unit: created.canonicalUnit };
+    index.set(key, meta);
+  }
+  return meta.id;
 }
 
 export async function createItem(db: Db, input: CreateItem): Promise<string> {
@@ -62,14 +100,13 @@ export async function createItem(db: Db, input: CreateItem): Promise<string> {
   const components = input.components ?? [];
   if (components.length) {
     const subs = await substanceIndex(db);
-    const rows = components.map((c, i) => {
-      let substanceId: string | null = null;
-      if (c.substance) {
-        const meta = subs.get(c.substance.toLowerCase());
-        if (!meta) throw new Error(`Unknown substance: ${c.substance}`);
-        substanceId = meta.id;
-      }
-      return {
+    const rows = [];
+    for (let i = 0; i < components.length; i++) {
+      const c = components[i];
+      const substanceId = c.substance
+        ? await resolveSubstanceId(db, subs, c.substance, c.unit)
+        : null;
+      rows.push({
         parentItemId: item.id,
         substanceId,
         childItemId: c.childItemId ?? null,
@@ -77,8 +114,8 @@ export async function createItem(db: Db, input: CreateItem): Promise<string> {
         unit: c.unit,
         position: c.position ?? i,
         prepState: c.prepState ?? null,
-      };
-    });
+      });
+    }
     await db.insert(itemComponent).values(rows);
   }
   return item.id;
@@ -172,18 +209,19 @@ async function computeResolution(
   }
   if (input.resolved?.length) {
     const subs = await substanceIndex(db);
-    const rows = input.resolved.map((r) => {
-      const meta = subs.get(r.substance.toLowerCase());
-      if (!meta) throw new Error(`Unknown substance: ${r.substance}`);
+    const rows = [];
+    for (const r of input.resolved) {
+      const substanceId = await resolveSubstanceId(db, subs, r.substance, r.unit);
+      const meta = subs.get(normalizeSubstance(r.substance)) as SubstanceMeta;
       const amt = convert(r.amount, r.unit, meta.unit) ?? r.amount;
-      return {
-        substanceId: meta.id,
+      rows.push({
+        substanceId,
         amount: Math.round(amt * 1000) / 1000,
         unit: meta.unit,
         confidence: r.confidence ?? baseConfidence,
         source: "manual",
-      };
-    });
+      });
+    }
     return { rows, canonicalQuantity: null, canonicalUnit: null };
   }
   return { rows: [], canonicalQuantity: null, canonicalUnit: null };

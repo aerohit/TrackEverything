@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-15 (ADR-018: Inputs — intake events over reusable items, with a resolved substance snapshot)
+> **Last updated:** 2026-06-15 (ADR-019: Add Item by label photo — Claude-vision draft, editable, unknown actives auto-create substances)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -389,6 +389,37 @@ the owner verifies. No phase starts before the prior one is approved.
 **Consequences:** Slower nominal throughput but continuous verification and low
 risk of building the wrong thing. Requires keeping ROADMAP.md in sync with the
 two core docs.
+
+### ADR-019
+**Title:** Add items by photographing the label — Claude vision drafts an editable item; unknown actives auto-create substances.
+**Status:** Accepted (2026-06-15). Builds on the Inputs domain (R-DOM-4, [ADR-018](#adr-018)); realizes
+R-CAP-17. Re-homes the MVP's photo-food idea ([ADR-013](#adr-013)) onto the typed Inputs model.
+**Context:** Hand-entering a supplement's full active list (a dozen substances, amounts, units) is the
+slowest, most error-prone part of capture. The label already has the data. We want phone-camera capture
+that reads the whole ingredients panel, but the model can misread, and a scanned active may not be in
+the seeded `substance` vocabulary — so the result must be correctable and a save must never be blocked
+by an unknown name.
+**Decision:** The `/manage` "Add Item" screen takes/uploads a label photo, base64-encodes it client-side,
+and `POST`s it to **`/api/items/scan`**. A server-side **`ItemScanner`** ([`server/scan.ts`](../server/scan.ts))
+abstracts the model; the concrete **`AnthropicItemScanner`** ([`server/scan_anthropic.ts`](../server/scan_anthropic.ts))
+sends the image to Claude vision (`@anthropic-ai/sdk`, model `CLAUDE_MODEL`, default `claude-haiku-4-5`)
+and a tolerant pure parser (`extractJson` + `parseScannedItem`) returns a `CreateItem` **draft** — never
+persisting anything. The screen renders the draft as **editable fields** (name, kind, type, serving,
+one row per ingredient) for the user to correct, then **Save** calls the existing `POST /api/items`.
+On save, **unrecognized actives auto-create a `substance`** (`db/inputs.ts` `resolveSubstanceId`): the
+name is normalized (lowercase, `[\s-]+`→`_`, so "Vitamin D" matches the seed `vitamin_d`), the unit is
+coerced to a canonical `SUBSTANCE_UNIT` (µg/ug→mcg, else mg), and a `type: "other"` substance is inserted
+`onConflictDoNothing` then re-selected — so the whole label is captured and rolls into totals going
+forward. Scanning is **optional**: `/api/items/scan` returns `503` when `ANTHROPIC_API_KEY` is unset, and
+the UI falls back to an empty editable draft for manual entry, so capture works with no model configured.
+The SDK is isolated in `scan_anthropic.ts`, keeping the parser (`scan.ts`) SDK-free and unit-testable.
+**Consequences:** near-zero-friction capture of complex labels with a human correction step before
+persistence; the analytical vocabulary grows automatically instead of dropping unknown actives. Trade-offs:
+auto-created substances carry a coerced unit and `type: "other"` (no elemental classification — curation
+deferred); normalization reduces but cannot fully prevent near-duplicate substances (e.g. synonyms);
+vision quality/cost ride on the chosen model; live scan accuracy is device-verified (the key lives only
+in Deno Deploy env). The scan→draft→edit→save flow and auto-create are browser-verified; the manual
+fallback works offline of the model.
 
 ### ADR-018
 **Title:** Model Inputs as intake events over reusable items, with a resolved substance snapshot.
