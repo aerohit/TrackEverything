@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-15 (ADR-021: refine Log capture — camera/upload photo, OS keyboard dictation, live catalog search, unit dropdown)
+> **Last updated:** 2026-06-15 (ADR-022: fuzzy item search via pg_trgm — voice/photo names rarely match the catalog exactly)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -389,6 +389,29 @@ the owner verifies. No phase starts before the prior one is approved.
 **Consequences:** Slower nominal throughput but continuous verification and low
 risk of building the wrong thing. Requires keeping ROADMAP.md in sync with the
 two core docs.
+
+### ADR-022
+**Title:** Fuzzy item search with pg_trgm — match a recognized name to a stored item despite punctuation, word order, and mishears.
+**Status:** Accepted (2026-06-15). Refines the catalog-match step of [ADR-020](#adr-020)/[ADR-021](#adr-021)
+from owner feedback; affects `listItems` ([`db/inputs.ts`](../db/inputs.ts)) and adds a migration.
+**Context:** The catalog search (used by both the recognize auto-match and the confirm-card search box, R-CAP-18)
+was a strict `ILIKE '%query%'` on `input_item.name`. Voice/photo recognition rarely reproduces a stored name
+exactly — "dope max pre-workout" never substring-matches **"Dope-Max Pre-Workout"** because of the hyphen, and
+word-order or minor mishears miss too — so the user couldn't find items they'd already saved.
+**Decision:** Enable the Postgres **`pg_trgm`** extension and search by **trigram word-similarity** instead.
+`listItems(search)` now matches rows where `word_similarity(query, name) > 0.3` **or** the name still contains
+the query as a substring (belt-and-suspenders for very short queries), ordered by `word_similarity(...) DESC`
+so the best match is first. A GIN trigram index (`input_item using gin (name gin_trgm_ops)`) is added — it
+also accelerates the `ILIKE` fallback. Migration `0003_item_search_trgm.sql`. The threshold (`0.3`) is lenient
+to favour recall in a tool where the user confirms the choice; `word_similarity` (not plain `similarity`)
+handles a short query against a longer name (e.g. "magnesium" → "Magnesium Glycinate").
+**Consequences:** recognized/typed names reliably surface their stored item across punctuation, case,
+word-order, and small spelling differences ("yoghurt" → "Greek Yogurt"), ranked best-first. Trade-offs: a new
+(standard, Supabase-available) extension dependency; the lenient threshold can surface loosely-related items
+low in the list (acceptable — the user picks, and "save as new" is always present); `pg_trgm` must exist in CI
+Postgres (the migration's `create extension if not exists` handles it). Verified by an integration test
+("dope max pre workout" → "Dope-Max Pre-Workout"; partials and a misspelling match; an unrelated query does
+not) and browser-verified in the confirm-card search.
 
 ### ADR-021
 **Title:** Refine Log capture — camera-or-upload photo, OS keyboard dictation for voice, live catalog search in the confirm card.
