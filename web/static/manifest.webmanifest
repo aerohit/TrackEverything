@@ -1,0 +1,9 @@
+{
+  "name": "TrackEverything",
+  "short_name": "Track",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3f4f7",
+  "theme_color": "#f3f4f7",
+  "icons": []
+}
