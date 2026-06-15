@@ -28,8 +28,10 @@ describe("orderTotals", () => {
       "vitamin_d",
       "magnesium",
       "sodium",
+      // "rest" tier, alphabetical: caffeine, fiber, water
       "caffeine",
       "fiber",
+      "water",
     ]);
   });
 
