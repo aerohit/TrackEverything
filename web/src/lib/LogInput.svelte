@@ -1,13 +1,20 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import {
-    createItem,
-    logIntake,
-    recentItems,
-    recognizeIntake,
-    transcribeAudio,
-  } from "$lib/api";
+  import { createItem, logIntake, recentItems, recognizeIntake } from "$lib/api";
   import type { CreateItemBody, RecentItem } from "$lib/types";
+
+  // Minimal shape of the (still vendor-prefixed) Web Speech API we rely on.
+  interface SpeechRec {
+    lang: string;
+    interimResults: boolean;
+    maxAlternatives: number;
+    onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+    onerror: ((e: { error?: string }) => void) | null;
+    onend: (() => void) | null;
+    start(): void;
+    stop(): void;
+  }
+  type SpeechRecCtor = new () => SpeechRec;
 
   // One way to log: snap a photo, speak it, or tap a recent item. The current
   // selection is reviewed in a confirm card before it's saved (ADR-020).
@@ -28,13 +35,20 @@
   };
 
   let busy = $state<string | null>(null); // a status label while an AI call runs
-  let recording = $state(false);
+  let listening = $state(false);
   let confirm = $state<Confirm | null>(null);
   let recents = $state<RecentItem[]>([]);
   let saving = $state(false);
   let toast = $state<{ msg: string; err: boolean } | null>(null);
-  let recorder: MediaRecorder | null = null;
-  let chunks: Blob[] = [];
+  let speech: SpeechRec | null = null;
+
+  function speechCtor(): SpeechRecCtor | undefined {
+    const w = globalThis as unknown as {
+      SpeechRecognition?: SpeechRecCtor;
+      webkitSpeechRecognition?: SpeechRecCtor;
+    };
+    return w.SpeechRecognition ?? w.webkitSpeechRecognition;
+  }
 
   function pad(n: number) {
     return String(n).padStart(2, "0");
@@ -104,44 +118,46 @@
     }
   }
 
-  async function toggleRecord() {
-    if (recording) {
-      recorder?.stop();
+  // Voice = on-device dictation (Web Speech API). The transcript is then sent to
+  // the recognizer as text — no audio leaves the browser, no extra API key.
+  function toggleVoice() {
+    if (listening) {
+      speech?.stop();
       return;
     }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      chunks = [];
-      recorder = new MediaRecorder(stream);
-      recorder.ondataavailable = (ev) => ev.data.size && chunks.push(ev.data);
-      recorder.onstop = async () => {
-        stream.getTracks().forEach((t) => t.stop());
-        recording = false;
-        const blob = new Blob(chunks, { type: recorder?.mimeType || "audio/webm" });
-        await transcribeAndRecognize(blob);
-      };
-      recorder.start();
-      recording = true;
-    } catch {
-      flash("Microphone unavailable — allow mic access to log by voice.", true);
+    const Ctor = speechCtor();
+    if (!Ctor) {
+      flash("Voice input isn't supported in this browser — try Chrome or Safari.", true);
+      return;
     }
+    const rec = new Ctor();
+    rec.lang = navigator.language || "en-US";
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
+    rec.onresult = (e) => {
+      const transcript = Array.from(e.results, (r) => r[0]?.transcript ?? "").join(" ").trim();
+      if (transcript) recognizeText(transcript);
+      else flash("Didn't catch that — try again.", true);
+    };
+    rec.onerror = (e) => {
+      listening = false;
+      if (e.error !== "aborted") {
+        flash(e.error === "not-allowed" ? "Allow microphone access to log by voice." : "Voice input failed — try again.", true);
+      }
+    };
+    rec.onend = () => (listening = false);
+    speech = rec;
+    listening = true;
+    rec.start();
   }
 
-  async function transcribeAndRecognize(blob: Blob) {
-    busy = "Transcribing…";
+  async function recognizeText(transcript: string) {
+    busy = "Recognizing…";
     try {
-      const audioBase64 = await blobToBase64(blob);
-      const mediaType = (blob.type || "audio/webm").split(";", 1)[0];
-      const transcript = await transcribeAudio(audioBase64, mediaType);
-      if (!transcript.trim()) {
-        flash("Didn't catch that — try again.", true);
-        return;
-      }
-      busy = "Recognizing…";
       const res = await recognizeIntake({ text: transcript });
       fromRecognition(res.recognized, res.matches, transcript);
     } catch (err) {
-      flash((err as Error).message || "Couldn't process the recording.", true);
+      flash((err as Error).message || "Couldn't make sense of that — try again.", true);
     } finally {
       busy = null;
     }
@@ -211,9 +227,9 @@
         <input type="file" accept="image/*" capture="environment" onchange={onPhoto} disabled={!!busy} />
         <span class="ico">📷</span><span>Photo</span>
       </label>
-      <button class="modebtn" onclick={toggleRecord} disabled={!!busy && !recording}>
-        <span class="ico">{recording ? "⏹" : "🎙"}</span>
-        <span>{recording ? "Stop" : "Voice"}</span>
+      <button class="modebtn" class:busy={!!busy} onclick={toggleVoice} disabled={!!busy && !listening}>
+        <span class="ico">{listening ? "🔴" : "🎙"}</span>
+        <span>{listening ? "Listening…" : "Voice"}</span>
       </button>
     </div>
 

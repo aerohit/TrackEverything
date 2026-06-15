@@ -11,7 +11,6 @@ import {
   recognizeIntake,
   scanItem,
   searchItems,
-  transcribeAudio,
 } from "./api";
 
 function jsonResponse(body: unknown, ok = true, status = 200): Response {
@@ -122,16 +121,6 @@ describe("api client", () => {
       jsonResponse({ error: "label scanning is not configured" }, false, 503)
     );
     await expect(scanItem("x", "image/png", { fetch, token: "t" })).rejects.toThrow("not configured");
-  });
-
-  it("transcribeAudio POSTs the audio and returns the text", async () => {
-    const fetch = vi.fn<typeof globalThis.fetch>(async () => jsonResponse({ text: "one banana" }));
-    const text = await transcribeAudio("AUDIO64", "audio/webm", { fetch, token: "t" });
-    expect(text).toBe("one banana");
-    const [url, init] = fetch.mock.calls[0];
-    expect(String(url)).toBe("/api/transcribe");
-    expect(init?.method).toBe("POST");
-    expect(JSON.parse(init?.body as string)).toEqual({ audioBase64: "AUDIO64", mediaType: "audio/webm" });
   });
 
   it("recognizeIntake posts a photo source and returns recognition + matches", async () => {

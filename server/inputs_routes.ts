@@ -4,7 +4,6 @@
  *
  *   GET  /substances                       the analytical vocabulary
  *   POST /items/scan                       label photo → draft item (ADR-019)
- *   POST /transcribe                       voice memo → text (ADR-020)
  *   POST /intake/recognize                 photo/phrase → recognized intake + matches (ADR-020)
  *   GET  /items ?search&limit              reusable items (summaries)
  *   GET  /items/:id                        one item + its components
@@ -23,13 +22,11 @@ import {
   createItemSchema,
   recognizeRequestSchema,
   scanRequestSchema,
-  transcribeRequestSchema,
   updateIntakeEventSchema,
 } from "../shared/inputs.ts";
 import type { Db } from "../db/client.ts";
 import type { ItemScanner } from "./scan.ts";
 import type { IntakeRecognizer } from "./recognize.ts";
-import type { Transcriber } from "./transcribe.ts";
 import {
   createIntakeEvent,
   createItem,
@@ -48,7 +45,6 @@ import {
 export interface InputDeps {
   scanner?: ItemScanner;
   recognizer?: IntakeRecognizer;
-  transcriber?: Transcriber;
 }
 
 const uuid = z.string().uuid();
@@ -67,7 +63,7 @@ function parseWindow(c: Context): { from?: Date; to?: Date } | { error: string }
 }
 
 export function registerInputRoutes(api: Hono, db: Db, deps: InputDeps = {}) {
-  const { scanner, recognizer, transcriber } = deps;
+  const { scanner, recognizer } = deps;
 
   api.get("/substances", async (c) => c.json({ substances: await listSubstances(db) }));
 
@@ -83,19 +79,8 @@ export function registerInputRoutes(api: Hono, db: Db, deps: InputDeps = {}) {
     }
   });
 
-  // Transcribe a voice memo → text (the client then feeds it to /intake/recognize).
-  api.post("/transcribe", async (c) => {
-    if (!transcriber) return c.json({ error: "voice transcription is not configured" }, 503);
-    const parsed = transcribeRequestSchema.safeParse(await c.req.json().catch(() => null));
-    if (!parsed.success) return c.json({ error: "invalid", issues: parsed.error.issues }, 400);
-    try {
-      return c.json({ text: await transcriber.transcribe(parsed.data) });
-    } catch (e) {
-      return c.json({ error: "transcription failed", detail: (e as Error).message }, 502);
-    }
-  });
-
   // Recognize an intake from a meal photo or a phrase, and match it against the catalog.
+  // (Voice is transcribed on-device via the Web Speech API and arrives here as text.)
   api.post("/intake/recognize", async (c) => {
     if (!recognizer) return c.json({ error: "intake recognition is not configured" }, 503);
     const parsed = recognizeRequestSchema.safeParse(await c.req.json().catch(() => null));

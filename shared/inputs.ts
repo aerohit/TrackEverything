@@ -125,19 +125,10 @@ export const scanRequestSchema = z.object({
 });
 export type ScanRequest = z.infer<typeof scanRequestSchema>;
 
-/** Request to transcribe a voice memo into text (POST /api/transcribe). */
-export const transcribeRequestSchema = z.object({
-  audioBase64: z.string().min(1),
-  mediaType: z.string().regex(
-    /^audio\/(webm|ogg|mp4|mpeg|mp3|wav|m4a|x-m4a)$/,
-    "unsupported audio type",
-  ),
-});
-export type TranscribeRequest = z.infer<typeof transcribeRequestSchema>;
-
 /**
  * Recognize an intake from a meal photo or a spoken/typed phrase, then match the
- * catalog (POST /api/intake/recognize). Exactly one source is supplied.
+ * catalog (POST /api/intake/recognize). Exactly one source is supplied. Voice is
+ * transcribed on-device (Web Speech API) and arrives here as `text` (ADR-020).
  */
 export const recognizeRequestSchema = z.discriminatedUnion("source", [
   z.object({

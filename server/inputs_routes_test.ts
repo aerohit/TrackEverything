@@ -212,7 +212,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "inputs API: transcribe, recognize (+match), and recent items",
+  name: "inputs API: recognize (+match) and recent items",
   ignore: !DATABASE_URL,
   async fn() {
     await migrate(DATABASE_URL);
@@ -220,16 +220,8 @@ Deno.test({
     try {
       await sql`truncate resolved_amount, intake_event, item_component, input_item cascade`;
 
-      // Voice + recognition default to 503 when unconfigured.
+      // Recognition defaults to 503 when unconfigured.
       const bare = createApp(db, { token: TOKEN });
-      assertEquals(
-        (await bare.request("/api/transcribe", {
-          method: "POST",
-          headers: auth,
-          body: JSON.stringify({ audioBase64: "AAA", mediaType: "audio/webm" }),
-        })).status,
-        503,
-      );
       assertEquals(
         (await bare.request("/api/intake/recognize", {
           method: "POST",
@@ -251,8 +243,7 @@ Deno.test({
         }),
       });
 
-      // Mock the AI seams.
-      const transcriber = { transcribe: () => Promise.resolve("one banana") };
+      // Mock the recognizer (voice is transcribed on-device; it arrives here as text).
       const recognizer = {
         recognize: () =>
           Promise.resolve({
@@ -270,23 +261,7 @@ Deno.test({
             },
           }),
       };
-      const app = createApp(db, { token: TOKEN, transcriber, recognizer });
-
-      // Transcription.
-      const tr = await app.request("/api/transcribe", {
-        method: "POST",
-        headers: auth,
-        body: JSON.stringify({ audioBase64: "AAA", mediaType: "audio/webm" }),
-      });
-      assertEquals(tr.status, 200);
-      assertEquals((await tr.json()).text, "one banana");
-
-      // Bad transcribe payload → 400.
-      assertEquals(
-        (await app.request("/api/transcribe", { method: "POST", headers: auth, body: "{}" }))
-          .status,
-        400,
-      );
+      const app = createApp(db, { token: TOKEN, recognizer });
 
       // Recognition returns the draft + a catalog match ("Banana").
       const rec = await app.request("/api/intake/recognize", {

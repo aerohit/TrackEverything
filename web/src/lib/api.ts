@@ -118,25 +118,6 @@ export async function scanItem(
   return await res.json() as CreateItemBody;
 }
 
-/** Transcribe a recorded voice memo to text (POST /api/transcribe). */
-export async function transcribeAudio(
-  audioBase64: string,
-  mediaType: string,
-  ctx: ApiCtx = {},
-): Promise<string> {
-  const { f, token } = resolve(ctx);
-  const res = await f("/api/transcribe", {
-    method: "POST",
-    headers: headers(token, true),
-    body: JSON.stringify({ audioBase64, mediaType }),
-  });
-  if (!res.ok) {
-    const msg = await res.json().then((b) => b?.error).catch(() => null);
-    throw new ApiError(res.status, msg || "Transcription failed");
-  }
-  return (await res.json()).text as string;
-}
-
 /**
  * Recognize an intake from a meal photo or a phrase, and get catalog matches
  * (POST /api/intake/recognize). Exactly one source is supplied.

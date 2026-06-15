@@ -15,7 +15,6 @@ import { createCheckin, listCheckins, type ListRange, toCheckin } from "../db/ch
 import { type InputDeps, registerInputRoutes } from "./inputs_routes.ts";
 import type { ItemScanner } from "./scan.ts";
 import type { IntakeRecognizer } from "./recognize.ts";
-import type { Transcriber } from "./transcribe.ts";
 
 export interface AppOptions {
   /** When set, every /api request must present this as a Bearer / x-ingest-token. */
@@ -24,8 +23,6 @@ export interface AppOptions {
   scanner?: ItemScanner;
   /** Meal-photo / phrase recognizer (Claude). When absent, /api/intake/recognize returns 503. */
   recognizer?: IntakeRecognizer;
-  /** Voice transcriber (Whisper). When absent, /api/transcribe returns 503. */
-  transcriber?: Transcriber;
 }
 
 export function createApp(db: Db, opts: AppOptions = {}): Hono {
@@ -94,7 +91,6 @@ export function createApp(db: Db, opts: AppOptions = {}): Hono {
   const deps: InputDeps = {
     scanner: opts.scanner,
     recognizer: opts.recognizer,
-    transcriber: opts.transcriber,
   };
   registerInputRoutes(api, db, deps);
 

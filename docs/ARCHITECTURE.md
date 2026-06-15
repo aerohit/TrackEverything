@@ -401,27 +401,29 @@ still producing the analytical decomposition the Inputs model needs — and with
 re-growing the friction.
 **Decision:** The Log screen offers exactly three capture modes; the freeform manual form is removed.
 (1) **Photo** — a meal/drink photo is base64'd client-side and sent to `POST /api/intake/recognize`.
-(2) **Voice** — recorded in-browser (`MediaRecorder`), sent to `POST /api/transcribe` for text, then to
-the same recognize route. (3) **Recent** — `GET /api/intake/recent-items` returns the top-N distinct
-recently-logged items (deduped by `itemId`, or by display name for freeform logs) for one-tap re-logging.
-Two new SDK-isolated seams mirror `ItemScanner`: an **`IntakeRecognizer`** ([`server/recognize.ts`](../server/recognize.ts),
-Claude vision for a photo / text for a phrase) returns a recognized `{name, quantity, unit}` **and** a full
-draft item carrying estimated nutrients; and a **`Transcriber`** ([`server/transcribe.ts`](../server/transcribe.ts),
-an OpenAI-compatible Whisper call configured by `TRANSCRIBE_API_KEY`/`_BASE_URL`/`_MODEL`). The recognize
-route also **matches the catalog** (the existing `ilike` item search on the recognized name). The client
-shows a **quick-confirm** (editable name/quantity/unit/time) where the user picks one target: an existing
-matched item, **save as a new item** (persist the recognized draft via `POST /api/items`, auto-creating
-unknown substances per ADR-019) then log, or log by name with no breakdown — all converging on
-`POST /api/intake`. Both AI seams are optional: each route returns `503` when its key is unset, and the UI
-surfaces a friendly message (recent-item logging needs no AI at all). Pure parsing
-(`parseRecognized`, `parseTranscription`) is kept SDK-free and unit-tested.
-**Consequences:** three-tap (or one-tap) capture that still yields resolved substances; the catalog and
-substance vocabulary keep growing from real logs. Trade-offs: voice adds a second external provider/secret
-(transcription is not an Anthropic capability); recognition/transcription quality and cost ride on the
-chosen models and are device-verified (keys live only in Deno Deploy env); catalog matching is substring,
-not semantic, so near-misses may show as "save as new"; meal photos become a single `simple` item with
-estimated nutrient components rather than itemized per-food events (the MVP's meal-picker UX from R-CAP-16
-is not carried over). Recent→confirm→log and the 503 fallbacks are browser-verified.
+(2) **Voice** — transcribed **on-device** by the browser's **Web Speech API** (vendor-prefixed
+`webkitSpeechRecognition`); the resulting transcript is sent to the same recognize route as text. No audio
+leaves the device and no transcription provider/secret is needed — this mirrors v1's model (Apple/OS
+dictation → text → Claude extracts), since the Anthropic API has no audio input. (3) **Recent** —
+`GET /api/intake/recent-items` returns the top-N distinct recently-logged items (deduped by `itemId`, or by
+display name for freeform logs) for one-tap re-logging. One new SDK-isolated seam mirrors `ItemScanner`: an
+**`IntakeRecognizer`** ([`server/recognize.ts`](../server/recognize.ts), Claude vision for a photo / text
+for a phrase) returns a recognized `{name, quantity, unit}` **and** a full draft item carrying estimated
+nutrients. The recognize route also **matches the catalog** (the existing `ilike` item search on the
+recognized name). The client shows a **quick-confirm** (editable name/quantity/unit/time) where the user
+picks one target: an existing matched item, **save as a new item** (persist the recognized draft via
+`POST /api/items`, auto-creating unknown substances per ADR-019) then log, or log by name with no breakdown
+— all converging on `POST /api/intake`. Recognition is optional: the route returns `503` when no Anthropic
+key is set, and the UI surfaces a friendly message (recent-item logging and on-device voice transcription
+need no server key). Pure parsing (`parseRecognized`) is kept SDK-free and unit-tested.
+**Consequences:** three-tap (or one-tap) capture that still yields resolved substances, with **Anthropic as
+the only API key**; the catalog and substance vocabulary keep growing from real logs. Trade-offs: Web Speech
+support and accuracy vary by browser (good on Chrome and Safari incl. iOS; absent on Firefox — the UI says
+so and offers photo/recent); recognition quality/cost ride on the chosen model and are device-verified (key
+lives only in Deno Deploy env); catalog matching is substring, not semantic, so near-misses may show as
+"save as new"; meal photos become a single `simple` item with estimated nutrient components rather than
+itemized per-food events (the MVP's meal-picker UX from R-CAP-16 is not carried over). Recent→confirm→log
+and the recognition 503 fallback are browser-verified; live photo/voice are device-verified.
 
 ### ADR-019
 **Title:** Add items by photographing the label — Claude vision drafts an editable item; unknown actives auto-create substances.
