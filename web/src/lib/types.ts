@@ -25,3 +25,60 @@ export interface Checkin {
   note: string | null;
   recordedAt: string;
 }
+
+// ---- Inputs domain (mirrors ../../shared/inputs.ts; server is authoritative) ----
+
+export type SubstanceUnit = "g" | "mg" | "mcg" | "ml" | "kcal" | "iu";
+export type Confidence = "high" | "medium" | "low" | "unknown";
+
+export interface ResolvedAmount {
+  substance: string;
+  amount: number;
+  unit: SubstanceUnit;
+  confidence: Confidence;
+  source: string;
+}
+
+export interface IntakeEvent {
+  id: string;
+  occurredAt: string;
+  displayName: string;
+  itemId: string | null;
+  quantity: number;
+  unit: string;
+  canonicalQuantity: number | null;
+  canonicalUnit: string | null;
+  confidence: Confidence;
+  contextTags: string[];
+  notes: string | null;
+  resolved: ResolvedAmount[];
+}
+
+export interface DailyTotal {
+  substance: string;
+  amount: number;
+  unit: SubstanceUnit;
+}
+
+export interface InputItemSummary {
+  id: string;
+  name: string;
+  kind: "product" | "recipe" | "simple";
+  primaryType: string;
+  roles: string[];
+  brand: string | null;
+  defaultDisplayQuantity: number | null;
+  defaultDisplayUnit: string | null;
+  defaultCanonicalQuantity: number | null;
+  defaultCanonicalUnit: string | null;
+}
+
+export interface CreateIntake {
+  displayName: string;
+  itemId?: string;
+  quantity: number;
+  unit: string;
+  occurredAt?: string;
+  contextTags?: string[];
+  notes?: string;
+}
