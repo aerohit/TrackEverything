@@ -65,7 +65,7 @@ or reversible-with-cost decision is captured as an **ADR** in the
 
 ## 4. Data model — the event log
 
-> **v1 (MVP) — superseded by the v2 per-domain model in [§4b](#4b-data-model-v2--per-domain-entities) and [ADR-016](#adr-016).** The unified-log design below is the deployed MVP and is kept for history; v2 replaces it with one typed entity per capture domain (clean-slate database).
+> **v1 (MVP) — superseded by the v2 per-domain model in [§4b](#4b-data-model-v2--per-domain-entities) and [ADR-016](#adr-016).** The unified-log design below was the MVP, kept for history; v2 replaced it with one typed entity per capture domain (clean-slate database). The v1 code (`backend/`) has since been removed — recoverable via the `v1-mvp` git tag.
 
 Single append-only table of typed events. **Implemented** in
 [`backend/migrations/0001_event_log.sql`](../backend/migrations/0001_event_log.sql);

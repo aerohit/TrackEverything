@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-15 (Phase v2-X ☑ — v2 is live; tagged v1-mvp / v2)
+> **Status:** Living document. **Last updated:** 2026-06-15 (v1 code removed — `backend/` deleted, preserved in the `v1-mvp` tag)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -27,7 +27,9 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 >
 > **v2 went live on 2026-06-15** (Phase v2-X): the deploy entrypoint is now `server/main.ts`.
 > The MVP is tagged **`v1-mvp`** and this cutover **`v2`**. Everything under the "v1 (MVP)"
-> divider is kept for history (the `backend/` code stays until a later cleanup).
+> divider is kept for history. The v1 code (the `backend/` directory) has since been
+> **removed** — recover it from the **`v1-mvp`** git tag if ever needed; the `backend/…`
+> file links in the historical notes below point at that tag's contents.
 
 Capture is re-modelled into **8 domains** (R-DOM-1), each its own entity, delivered one phase at
 a time. Only **Subjective State** is built first (R-DOM-2); the rest are documented below.
@@ -83,11 +85,14 @@ keeps the Supabase project awake. CI builds + tests `web/` and the Deno service.
 3. **Redeploy**, open the URL, enter the `INGEST_TOKEN` once — the new UI is live.
 4. **Optional clean slate:** once happy, drop the MVP tables (`events`, `templates`, `items`,
    `ingredients`) — owner okayed losing that data. v2 doesn't need them.
-5. Tag `v1-mvp` and `v2`. The MVP code stays in `backend/` for history until a later cleanup.
+5. Tag `v1-mvp` and `v2`. _(Done — and the `backend/` code has since been deleted; it lives on in the `v1-mvp` tag.)_
 
 ---
 
 ## v1 (MVP) — superseded by v2 (kept for history)
+
+> The v1 code has been **deleted** from the working tree; it's preserved in the **`v1-mvp`**
+> git tag. The `backend/…` links below are historical references to that tagged code.
 
 ## Stage A — Foundation
 
@@ -492,3 +497,4 @@ keeps the Supabase project awake. CI builds + tests `web/` and the Deno service.
 | 2026-06-15 | Slice v2-2c (Inputs PWA, in review): `/inputs` SvelteKit screen — capture (item search/freeform → `POST /api/intake`) + Inputs overview (daily totals + timeline with resolved breakdown). Added the responsive nav (top nav / bottom tab bar: Feel | Inputs) and lifted the token gate into the layout. Vitest + svelte-check + build clean; browser-verified. v2-2d (Manage items UI) noted next. |
 | 2026-06-15 | Slice v2-2d (Manage UI, in review): `/manage` SvelteKit screen to create items (product/recipe/simple) with components (substances — canonical unit auto-filled — or child-item ingredients) + an items list; added the Manage nav tab. Browser-verified: a UI-created item logs + resolves on Inputs. Inputs (v2-2) now feature-complete (item edit/delete UI later). 10 web tests pass. |
 | 2026-06-15 | UI reorg (in review): consolidated the web app into **Log** (capture — "How do you feel?" + "Log an input"), **Overview** (mood/energy/focus chart + today's totals + today's inputs timeline), and **Manage** (unchanged). Extracted `CheckinForm`/`InputForm` components; removed the `/inputs` route. svelte-check + build clean; browser-verified. |
+| 2026-06-15 | Removed the v1 (MVP) code: deleted the entire `backend/` directory (router, functions, src, migrations, ui, scripts, postman, MVP feature docs). v1 is preserved in the `v1-mvp` git tag. CI dropped the MVP `backend` job (kept `server` + `web`); CLAUDE.md's Postman binding rule removed (it governed the deleted collection). The living docs (REQUIREMENTS/ARCHITECTURE/ROADMAP) are unchanged except notes that v1 `backend/…` references are now historical (tag-only). |

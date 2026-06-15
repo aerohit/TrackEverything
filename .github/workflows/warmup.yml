@@ -3,12 +3,12 @@ name: Warm-up
 # Keeps the deployed app responsive by hitting it on a schedule and right after a
 # deploy. `/health?warm=1` boots a (possibly cold) Deno isolate AND runs a tiny
 # `select 1`, which keeps the pooled DB connection — and a free-tier Supabase
-# project, which pauses after ~7 days idle — warm. See backend/docs/deploy.md.
+# project, which pauses after ~7 days idle — warm. (The v2 service serves /health.)
 #
 # Caveat: GitHub runners are US-based, so this warms whichever Deno region is
 # nearest them (not necessarily yours). It reliably prevents the Supabase pause;
 # your own region's cold start is mitigated by the startup connection warm in
-# main.ts. For per-region warming, point an EU-based uptime monitor at the same URL.
+# server/main.ts. For per-region warming, point an EU-based uptime monitor at the URL.
 
 on:
   schedule:
