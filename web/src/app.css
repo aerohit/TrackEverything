@@ -258,7 +258,7 @@ textarea:focus {
 .toast {
   position: fixed;
   left: 50%;
-  bottom: 24px;
+  bottom: 80px;
   transform: translateX(-50%);
   background: var(--card);
   border: 1px solid var(--line-2);
@@ -271,4 +271,159 @@ textarea:focus {
 }
 .toast.err {
   border-color: var(--danger);
+}
+
+/* Navigation: top nav on desktop, bottom tab bar on phones. */
+.topnav {
+  display: none;
+  gap: 4px;
+}
+.topnav a {
+  text-decoration: none;
+  color: var(--mut);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 7px 14px;
+  border-radius: 10px;
+}
+.topnav a.active {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  border-top: 1px solid var(--line);
+  background: var(--header-bg);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.tabbar a {
+  flex: 1;
+  text-align: center;
+  text-decoration: none;
+  color: var(--mut);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 11px 0;
+}
+.tabbar a.active {
+  color: var(--accent);
+}
+@media (min-width: 880px) {
+  .topnav {
+    display: flex;
+  }
+  .tabbar {
+    display: none;
+  }
+  .layout {
+    padding-bottom: 24px;
+  }
+}
+.layout {
+  padding-bottom: 80px; /* clear the mobile tab bar */
+}
+
+.ghostbtn {
+  margin-top: 8px;
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid var(--line-2);
+  background: var(--field);
+  color: var(--fg);
+  border-radius: 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* Inputs capture + overview */
+.row {
+  display: flex;
+  gap: 8px;
+}
+.suggest {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--card);
+}
+.suggest button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  padding: 10px 12px;
+  cursor: pointer;
+  font: inherit;
+  color: var(--fg);
+}
+.suggest button:last-child {
+  border-bottom: none;
+}
+.suggest button:hover {
+  background: var(--field);
+}
+.suggest .meta {
+  color: var(--mut);
+  font-size: 12px;
+}
+.tline {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+.tline:last-child {
+  border-bottom: none;
+}
+.tline summary {
+  cursor: pointer;
+  list-style: none;
+}
+.tline summary::-webkit-details-marker {
+  display: none;
+}
+.tline .when {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  margin-right: 8px;
+}
+.tline .qty {
+  color: var(--mut);
+  font-size: 13px;
+}
+.tline .res {
+  margin: 6px 0 2px 0;
+  font-size: 13px;
+  color: var(--mut);
+}
+.totrow {
+  display: flex;
+  justify-content: space-between;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+}
+.totrow:last-child {
+  border-bottom: none;
+}
+.totrow b {
+  font-variant-numeric: tabular-nums;
+}
+.fieldlabel {
+  font-size: 12px;
+  color: var(--mut);
+  margin: 10px 0 4px;
 }
