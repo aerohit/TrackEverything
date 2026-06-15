@@ -18,7 +18,7 @@
 </script>
 
 {#if chart.empty}
-  <p class="mut">No check-ins yet today — log one to see the chart.</p>
+  <p class="mut">No mood / energy / focus check-ins on this day.</p>
 {:else}
   <svg viewBox="0 0 {W} {H}" width="100%" role="img" aria-label="Today's mood, energy and focus">
     {#each [1, 2, 3, 4, 5] as r}

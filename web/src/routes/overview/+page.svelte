@@ -4,6 +4,7 @@
   import { intakeTotals, listCheckins, listIntake } from "$lib/api";
   import type { Checkin, DailyTotal, IntakeEvent } from "$lib/types";
 
+  let day = $state(startOfToday());
   let checkins = $state<Checkin[]>([]);
   let events = $state<IntakeEvent[]>([]);
   let totals = $state<DailyTotal[]>([]);
@@ -13,6 +14,19 @@
     const d = new Date();
     d.setHours(0, 0, 0, 0);
     return d;
+  }
+  function addDays(d: Date, n: number): Date {
+    const x = new Date(d);
+    x.setDate(x.getDate() + n);
+    return x;
+  }
+  function isToday(d: Date): boolean {
+    return d.getTime() === startOfToday().getTime();
+  }
+  function dayLabel(d: Date): string {
+    if (isToday(d)) return "Today";
+    if (d.getTime() === addDays(startOfToday(), -1).getTime()) return "Yesterday";
+    return d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
   }
   function fmtTime(iso: string): string {
     return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -26,24 +40,36 @@
   }
 
   async function load() {
-    const from = startOfToday();
-    const to = new Date(from);
-    to.setDate(to.getDate() + 1);
+    const from = day;
+    const to = addDays(day, 1);
     try {
       [checkins, events, totals] = await Promise.all([
-        listCheckins({ from }),
+        listCheckins({ from, to }),
         listIntake({ from, to }),
         intakeTotals(from, to),
       ]);
     } catch {
-      flash("Couldn't load today — check your token.", true);
+      flash("Couldn't load — check your token.", true);
     }
+  }
+
+  function go(delta: number) {
+    const next = addDays(day, delta);
+    if (next.getTime() > startOfToday().getTime()) return; // no future days
+    day = next;
+    load();
   }
 
   onMount(load);
 </script>
 
 <main class="layout">
+  <div class="daynav">
+    <button class="iconbtn" aria-label="Previous day" onclick={() => go(-1)}>‹</button>
+    <span class="daylabel">{dayLabel(day)}</span>
+    <button class="iconbtn" aria-label="Next day" disabled={isToday(day)} onclick={() => go(1)}>›</button>
+  </div>
+
   <section class="card">
     <h2>Mood · energy · focus</h2>
     <Chart {checkins} />
@@ -51,18 +77,18 @@
 
   <div style="display:flex; flex-direction:column; gap:16px">
     <section class="card">
-      <h2>Today's totals</h2>
+      <h2>Totals</h2>
       {#if totals.length}
         {#each totals as t}
           <div class="totrow"><span>{t.substance}</span><b>{t.amount} {t.unit}</b></div>
         {/each}
       {:else}
-        <p class="mut">Nothing with a breakdown yet today.</p>
+        <p class="mut">Nothing with a breakdown on this day.</p>
       {/if}
     </section>
 
     <section class="card">
-      <h2>Today's inputs</h2>
+      <h2>Inputs</h2>
       {#if events.length}
         {#each events as e}
           <details class="tline">
@@ -74,7 +100,7 @@
           </details>
         {/each}
       {:else}
-        <p class="mut">No inputs logged yet today.</p>
+        <p class="mut">No inputs logged on this day.</p>
       {/if}
     </section>
   </div>

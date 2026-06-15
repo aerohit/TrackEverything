@@ -96,6 +96,27 @@ body {
 .iconbtn:active {
   background: var(--field);
 }
+.iconbtn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.daynav {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+.daynav .iconbtn {
+  font-size: 24px;
+  padding: 4px 12px;
+}
+.daylabel {
+  font-weight: 600;
+  min-width: 150px;
+  text-align: center;
+}
 
 /* Adaptive layout: one column on phones; two panes on wide screens. */
 .layout {
