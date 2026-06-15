@@ -3,26 +3,19 @@
  * served as static assets by server/main.ts. The app factory takes the Drizzle
  * `db` (so tests inject an ephemeral one) and an optional bearer token to guard
  * writes for this single-user tool.
+ *
+ * Subjective State readings are immutable (ADR-017): create + read only — there
+ * are no edit or delete routes by design.
  */
 import { Hono } from "hono";
-import { z } from "zod";
-import { createCheckinSchema, updateCheckinSchema } from "../shared/subjective_state.ts";
+import { createCheckinSchema, kindSchema } from "../shared/subjective_state.ts";
 import type { Db } from "../db/client.ts";
-import {
-  createCheckin,
-  listCheckins,
-  type ListRange,
-  softDeleteCheckin,
-  toCheckin,
-  updateCheckin,
-} from "../db/checkins.ts";
+import { createCheckin, listCheckins, type ListRange, toCheckin } from "../db/checkins.ts";
 
 export interface AppOptions {
   /** When set, every /api request must present this as a Bearer / x-ingest-token. */
   token?: string;
 }
-
-const uuid = z.string().uuid();
 
 export function createApp(db: Db, opts: AppOptions = {}): Hono {
   const app = new Hono();
@@ -41,19 +34,19 @@ export function createApp(db: Db, opts: AppOptions = {}): Hono {
 
   api.get("/health", (c) => c.json({ ok: true }));
 
-  // Create a check-in (snapshot of any subset of mood/energy/focus).
+  // Record a check-in: one or more immutable readings, sharing a recorded_at.
   api.post("/checkins", async (c) => {
     const body = await c.req.json().catch(() => null);
     const parsed = createCheckinSchema.safeParse(body);
     if (!parsed.success) return c.json({ error: "invalid", issues: parsed.error.issues }, 400);
-    const row = await createCheckin(db, parsed.data);
-    return c.json(toCheckin(row), 201);
+    const rows = await createCheckin(db, parsed.data);
+    return c.json({ checkins: rows.map(toCheckin) }, 201);
   });
 
-  // List live check-ins, newest first; optional [from, to) window + limit.
+  // List readings, newest first; optional [from, to) window, limit, and kind filter.
   api.get("/checkins", async (c) => {
     const range: ListRange = {};
-    const { from, to, limit } = c.req.query();
+    const { from, to, limit, kind } = c.req.query();
     for (const [key, raw] of [["from", from], ["to", to]] as const) {
       if (!raw) continue;
       const d = new Date(raw);
@@ -65,25 +58,13 @@ export function createApp(db: Db, opts: AppOptions = {}): Hono {
       if (!Number.isInteger(n) || n < 1) return c.json({ error: "invalid limit" }, 400);
       range.limit = n;
     }
+    if (kind) {
+      const k = kindSchema.safeParse(kind);
+      if (!k.success) return c.json({ error: "invalid kind" }, 400);
+      range.kind = k.data;
+    }
     const rows = await listCheckins(db, range);
     return c.json({ checkins: rows.map(toCheckin) });
-  });
-
-  // Edit a check-in.
-  api.patch("/checkins/:id", async (c) => {
-    if (!uuid.safeParse(c.req.param("id")).success) return c.json({ error: "not found" }, 404);
-    const body = await c.req.json().catch(() => null);
-    const parsed = updateCheckinSchema.safeParse(body);
-    if (!parsed.success) return c.json({ error: "invalid", issues: parsed.error.issues }, 400);
-    const row = await updateCheckin(db, c.req.param("id"), parsed.data);
-    return row ? c.json(toCheckin(row)) : c.json({ error: "not found" }, 404);
-  });
-
-  // Soft-delete a check-in.
-  api.delete("/checkins/:id", async (c) => {
-    if (!uuid.safeParse(c.req.param("id")).success) return c.json({ error: "not found" }, 404);
-    const deleted = await softDeleteCheckin(db, c.req.param("id"));
-    return deleted ? c.body(null, 204) : c.json({ error: "not found" }, 404);
   });
 
   app.route("/api", api);

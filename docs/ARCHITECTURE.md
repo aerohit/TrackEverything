@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-15 (ADR-015/016: v2 maturity rewrite — Hono + SvelteKit + Drizzle + Zod; per-domain typed entities replace the unified event log)
+> **Last updated:** 2026-06-15 (ADR-017: Subjective State as immutable (kind, rating) readings — single discriminator column, no edit/delete)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -116,9 +116,10 @@ Sketch:
 Capture is organized into **8 domains, each its own typed entity/table** with explicit,
 range-checked columns (no shared `events` table, no untyped `fields` jsonb). Each domain's
 shape is also a **Zod schema in `shared/`**, used by the Hono API, the SvelteKit client,
-and any LLM-output validation. Closed vocabularies are **Postgres enums**. Every entity
-carries dual timestamps (`occurred_at` / `recorded_at`) plus `updated_at` and a
-`deleted_at` soft-delete column.
+and any LLM-output validation. Closed vocabularies are **Postgres enums**. Mutable entities
+carry dual timestamps (`occurred_at` / `recorded_at`) plus `updated_at` and a `deleted_at`
+soft-delete column; entities that are **immutable by nature** (e.g. Subjective State —
+[ADR-017](#adr-017)) keep only `recorded_at`.
 
 | # | Domain | Examples |
 |---|---|---|
@@ -131,18 +132,19 @@ carries dual timestamps (`occurred_at` / `recorded_at`) plus `updated_at` and a
 | 7 | **Events / Stressors / Wins** | arguments, rejections, deadlines, good conversations, achievements |
 | 8 | **Context** | time, place, day type, season, current goal, experiment phase |
 
-**First entity — `subjective_state` (domain 5, phase v2-1).** A check-in is a **snapshot**:
-one row rates any subset of the dimensions; the rest are null. The first build tracks only
-**mood / energy / focus** (the other five dimensions are additive columns in a later phase).
+**First entity — `subjective_state` (domain 5, phase v2-1).** Modelled as **immutable readings**
+([ADR-017](#adr-017)): each row is one `kind` (which subjective state) + a 1–5 `rating`, stamped
+once at `recorded_at`. A check-in rating several states at once is just several readings recorded
+together — a batch insert sharing one `recorded_at`. New subjective states are added by extending
+the `subjective_kind` enum — **no new columns**. The first build tracks `mood` / `energy` / `focus`.
 
 | Column | Type | Notes |
 |---|---|---|
 | `id` | uuid pk | |
-| `occurred_at` | timestamptz | when you felt this (UTC instant; no stored tz offset — owner decision) |
-| `recorded_at` | timestamptz | insert time |
-| `mood` / `energy` / `focus` | smallint, nullable | 1–5, range-checked; rate any subset |
-| `note` | text, nullable | optional |
-| `created_at` / `updated_at` / `deleted_at` | timestamptz | edit-tracking + soft delete |
+| `kind` | `subjective_kind` enum | mood / energy / focus (extend the enum to track more) |
+| `rating` | integer | 1–5, range-checked |
+| `note` | text, nullable | optional; per check-in (shared across its readings) |
+| `recorded_at` | timestamptz | the only timestamp — rows are immutable (no update or delete) |
 
 The perceptions-vs-actions split (ADR-014) is now **inherent in the schema** — Subjective
 State is simply its own entity, separate from the input/behavior domains — rather than a
@@ -360,9 +362,34 @@ the owner verifies. No phase starts before the prior one is approved.
 risk of building the wrong thing. Requires keeping ROADMAP.md in sync with the
 two core docs.
 
+### ADR-017
+**Title:** Model Subjective State as immutable (kind, rating) readings — a single discriminator
+column, no edit/delete.
+**Status:** Accepted (2026-06-15). **Refines [ADR-016](#adr-016)** for the Subjective State entity
+(its general "dual timestamps + edit-tracking + soft-delete" maturity columns do not apply here).
+**Context:** ADR-016's first sketch of `subjective_state` used a dedicated column per dimension
+(`mood`/`energy`/`focus`) plus `occurred_at` + `created_at`/`updated_at`/`deleted_at`. The owner
+wants (a) to add **more subjective states over time without schema churn**, and (b) to treat a
+recorded feeling as a **fact that never changes**.
+**Decision:** Model Subjective State as **immutable readings**. One row = one `kind` (a Postgres
+enum discriminator — extend it to add states; **no per-dimension columns**) + a 1–5 `rating` +
+optional `note`, stamped once at `recorded_at`. There is **no `occurred_at`, `updated_at`,
+`created_at`, or `deleted_at`**, and the API exposes **create + read only** (no edit/delete routes).
+A check-in that rates several states at once is several readings inserted together, sharing one
+`recorded_at`. The shared Zod enum (`SUBJECTIVE_KINDS`) is the app-side source of truth; the DB
+enum mirrors it.
+**Consequences:** Adding a subjective state is a one-line enum extension (Zod + an `alter type …
+add value` migration) instead of a schema column; readings are append-only, which simplifies the
+API and makes the data trustworthy as an audit trail. Trade-offs: a mistaken entry can't be edited
+or removed (acceptable per the owner; revisit with a corrective-entry pattern if needed), and "a
+check-in" has no grouping row — its readings are associated only by a shared `recorded_at`. This
+refines ADR-016 only for Subjective State; other domains may still be mutable with the full
+timestamp set.
+
 ### ADR-016
 **Title:** Replace the unified event log with one typed entity per capture domain.
-**Status:** Accepted (2026-06-15). **Supersedes [ADR-014](#adr-014)** and the unified-event-log
+**Status:** Accepted (2026-06-15). **Refined by [ADR-017](#adr-017)** for the Subjective State
+entity (immutable readings; single `kind` column; only `recorded_at`). **Supersedes [ADR-014](#adr-014)** and the unified-event-log
 data model in [§4](#4-data-model--the-event-log); **re-homes [ADR-010](#adr-010)** (composite
 supplements) and [ADR-013](#adr-013) (food nutrition) into v2 domain entities; **refines
 [ADR-006](#adr-006)** (controlled vocabularies move from app-layer checks to Postgres enums + Zod).

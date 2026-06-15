@@ -1,27 +1,26 @@
 /**
- * Drizzle schema for the v2 data model (ADR-016). One typed entity per capture
- * domain; this phase ships the first: `subjective_state` (domain 5).
+ * Drizzle schema for the v2 data model (ADR-016/017). One typed entity per
+ * capture domain; this phase ships the first: Subjective State (domain 5).
  *
- * Range checks (1–5) and the "at least one rating" rule are enforced in the
- * migration SQL (db/migrations) and mirrored by the shared Zod schema.
+ * Subjective State is modelled as immutable readings: a `kind` discriminator
+ * (Postgres enum — extend it to track new states, no new columns) + a 1–5
+ * `rating`, stamped once at `recorded_at`. No update/soft-delete columns — the
+ * row never changes after insert. Range/enum integrity is enforced here and in
+ * the migration, mirrored by the shared Zod schema.
  */
-import { index, pgTable, smallint, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { index, integer, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { SUBJECTIVE_KINDS } from "../shared/subjective_state.ts";
+
+export const subjectiveKind = pgEnum("subjective_kind", SUBJECTIVE_KINDS);
 
 export const subjectiveState = pgTable("subjective_state", {
   id: uuid("id").primaryKey().defaultRandom(),
-  // Each dimension is an independent 1–5 rating; null = not rated this check-in.
-  mood: smallint("mood"),
-  energy: smallint("energy"),
-  focus: smallint("focus"),
+  kind: subjectiveKind("kind").notNull(),
+  rating: integer("rating").notNull(),
   note: text("note"),
-  // When you felt this (UTC instant — no stored tz offset, per the owner decision).
-  occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+  // When you recorded it. Immutable — this is the only timestamp (ADR-017).
   recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull().defaultNow(),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-  // Soft delete — rows are hidden, never hard-deleted.
-  deletedAt: timestamp("deleted_at", { withTimezone: true }),
-}, (t) => [index("subjective_state_occurred_at_idx").on(t.occurredAt)]);
+}, (t) => [index("subjective_state_recorded_at_idx").on(t.recordedAt)]);
 
 export type SubjectiveStateRow = typeof subjectiveState.$inferSelect;
 export type NewSubjectiveStateRow = typeof subjectiveState.$inferInsert;
