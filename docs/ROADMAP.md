@@ -31,8 +31,10 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 Capture is re-modelled into **8 domains** (R-DOM-1), each its own entity, delivered one phase at
 a time. Only **Subjective State** is built first (R-DOM-2); the rest are documented below.
 
-### Phase v2-1 — Foundation + Subjective State ☐
+### Phase v2-1 — Foundation + Subjective State ◐
 - **Goal:** Stand up the new stack and ship the first domain end to end — check in mood/energy/focus and see them charted.
+- **Delivered in two slices** (like the MVP's Phase 11): **v2-1a** — foundation + data + API (done, in review); **v2-1b** — the SvelteKit PWA (next).
+- **v2-1a status (in review):** repo layout (`server/` Hono, `db/` Drizzle, `shared/` Zod; `web/` to come) + root `deno.json` + a second CI job. The `subjective_state` entity (migration `db/migrations/0001`), typed repository, and the Hono API (`POST`/`GET`/`PATCH`/`DELETE /api/checkins`, token-guarded, Zod-validated, soft-delete) — **unit + integration tests green against real Postgres** (6 passed; the integration test does a create/list/edit/soft-delete roundtrip and asserts the row is hidden, not hard-deleted).
 - **Build:**
   - **Scaffold** the new layout: `web/` (SvelteKit PWA), `server/` (Hono API + the single Deno Deploy entrypoint that also serves the built web assets), `db/` (Drizzle schema + `drizzle-kit` migrations), `shared/` (Zod schemas). CI runs fmt/lint/type-check/tests; one deployable service.
   - **`subjective_state` entity** (Drizzle): `mood`/`energy`/`focus` smallint 1–5 nullable, `occurred_at`/`recorded_at`, `note`, `created_at`/`updated_at`/`deleted_at`; shared Zod schema.

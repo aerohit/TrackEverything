@@ -1,0 +1,30 @@
+{
+  "//": "v2 rewrite (ADR-015): Deno workspace for the Hono API (server/), Drizzle data layer (db/), and shared Zod schemas (shared/). The SvelteKit PWA in web/ is a separate Node/Vite project. The MVP under backend/ keeps its own deno.json and is untouched until cutover (v2-X).",
+  "tasks": {
+    "test": "deno test --allow-env --allow-net --allow-read server/ db/ shared/",
+    "fmt": "deno fmt",
+    "fmt:check": "deno fmt --check",
+    "lint": "deno lint",
+    "check": "deno check server/main.ts db/migrate.ts",
+    "migrate": "deno run --allow-env --allow-net --allow-read db/migrate.ts",
+    "start": "deno run --allow-env --allow-net --allow-read server/main.ts",
+    "dev": "deno run --watch --allow-env --allow-net --allow-read server/main.ts"
+  },
+  "imports": {
+    "@std/assert": "jsr:@std/assert@^1.0.8",
+    "hono": "npm:hono@^4.6.14",
+    "hono/": "npm:/hono@^4.6.14/",
+    "drizzle-orm": "npm:drizzle-orm@^0.38.3",
+    "drizzle-orm/": "npm:/drizzle-orm@^0.38.3/",
+    "postgres": "npm:postgres@^3.4.5",
+    "zod": "npm:zod@^3.24.1"
+  },
+  "fmt": {
+    "lineWidth": 100,
+    "include": ["server/", "db/", "shared/"]
+  },
+  "lint": {
+    "include": ["server/", "db/", "shared/"],
+    "rules": { "tags": ["recommended"] }
+  }
+}
