@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-15 (ADR-020: Log capture overhaul — photo / voice / recent, recognize + match + quick-confirm)
+> **Last updated:** 2026-06-15 (ADR-021: refine Log capture — camera/upload photo, OS keyboard dictation, live catalog search, unit dropdown)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -390,10 +390,43 @@ the owner verifies. No phase starts before the prior one is approved.
 risk of building the wrong thing. Requires keeping ROADMAP.md in sync with the
 two core docs.
 
+### ADR-021
+**Title:** Refine Log capture — camera-or-upload photo, OS keyboard dictation for voice, live catalog search in the confirm card.
+**Status:** Accepted (2026-06-15). Refines [ADR-020](#adr-020) (which it partially supersedes) from owner
+feedback after the first cut shipped; same Inputs model and recognizer seam.
+**Context:** Three issues surfaced in real phone use of the ADR-020 Log screen. (1) The photo input used
+`capture="environment"`, so phones jumped straight to the camera with no way to pick an existing photo from
+the album. (2) Voice used the Web Speech API; the owner prefers the phone's **own** dictation — the 🎤 on
+the system keyboard they already trust — over a browser engine. (3) Recognition's catalog match was a single
+server-side `ilike` on the recognized name, so when it returned nothing the user had no way to find and
+attach an existing item; they want to search the database and choose a stored item or save as new.
+**Decision:** (1) **Photo** splits into two file inputs — **Camera** (`capture="environment"`) and **Upload**
+(no `capture`, so the OS offers album/files) — both feeding the same recognizer. (2) **Voice** drops the Web
+Speech API entirely; the "Speak / type" mode opens a text field and focuses it within the tap gesture so the
+system keyboard appears, and the user taps its dictation mic (or types). The phrase is sent to
+`POST /api/intake/recognize` as text exactly as before — so we lean on the OS's transcription, mirroring v1,
+with Anthropic still the only key. (3) The confirm card gains a **live catalog search** box (seeded with the
+recognized/recent name, debounced `GET /api/items?search=`); results render as selectable "Log <item>"
+options alongside **Save as a new item** (when a recognized draft exists) and **Just log the name**. The
+target is tracked by a string key (`item:<id>` / `new` / `freeform`) so the option list can change as the
+user searches. (4) The intake **unit** becomes a dropdown of common display units ([`web/src/lib/units.ts`](../web/src/lib/units.ts)),
+keeping any off-list value (e.g. a recognizer's odd unit) selectable.
+**Consequences:** capture matches how phones actually work (album or camera), voice uses the dictation the
+user knows (and degrades to plain typing where dictation is unavailable — no browser-support caveat), and an
+intake can always be reconciled to an existing item by searching, not just by a lucky name match. Trade-offs:
+voice no longer auto-submits on end-of-speech (the user taps Continue), which is an extra tap but avoids
+false captures; the display-unit list is curated, not exhaustive (off-list values still work). The Web Speech
+client code (`webkitSpeechRecognition`) is removed; no server route changes. Camera/upload split, the
+dictation field, live search, and the unit dropdown are browser-verified; live photo/voice remain
+device-verified.
+
 ### ADR-020
 **Title:** Log intake by photo, voice, or a recent item — recognize → match → quick-confirm; drop the manual form.
 **Status:** Accepted (2026-06-15). Builds on the Inputs domain (R-DOM-4, [ADR-018](#adr-018)) and the
-recognizer seam pattern of [ADR-019](#adr-019); realizes R-CAP-16/18/19.
+recognizer seam pattern of [ADR-019](#adr-019); realizes R-CAP-16/18/19. **Partially superseded by
+[ADR-021](#adr-021)** (2026-06-15): the photo mode gains an explicit upload-vs-camera choice, voice moves
+from the Web Speech API to the OS keyboard's own dictation, and catalog matching becomes a live search in
+the confirm card. The seam architecture, recognizer, and recent-items design below are unchanged.
 **Context:** Hand-typing every intake (name, search, amount, unit, time, tags) is the highest-friction
 part of daily capture and depresses logging. Most logs are either a meal/drink in front of the user, a
 quick spoken note, or a repeat of something logged before. We want those three to be near-instant while
