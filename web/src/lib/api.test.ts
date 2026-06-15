@@ -1,5 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
-import { ApiError, createCheckin, intakeTotals, listCheckins, logIntake, searchItems } from "./api";
+import {
+  ApiError,
+  createCheckin,
+  createItem,
+  intakeTotals,
+  listCheckins,
+  listSubstances,
+  logIntake,
+  searchItems,
+} from "./api";
 
 function jsonResponse(body: unknown, ok = true, status = 200): Response {
   return { ok, status, json: async () => body } as Response;
@@ -64,5 +73,30 @@ describe("api client", () => {
     expect(url).toContain("/api/intake/totals?");
     expect(url).toContain("from=2026-06-15");
     expect(url).toContain("to=2026-06-16");
+  });
+
+  it("listSubstances reads the vocabulary", async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>(async () =>
+      jsonResponse({ substances: [{ id: "1", name: "caffeine", canonicalUnit: "mg" }] })
+    );
+    const out = await listSubstances({ fetch, token: "t" });
+    expect(out[0].name).toBe("caffeine");
+    expect(String(fetch.mock.calls[0][0])).toBe("/api/substances");
+  });
+
+  it("createItem POSTs the item body and surfaces a server error message", async () => {
+    const ok = vi.fn<typeof globalThis.fetch>(async () => jsonResponse({ id: "1", name: "X" }, true, 201));
+    await createItem(
+      { name: "X", kind: "product", primaryType: "supplement", components: [{ substance: "caffeine", amount: 200, unit: "mg" }] },
+      { fetch: ok, token: "t" },
+    );
+    const [url, init] = ok.mock.calls[0];
+    expect(String(url)).toBe("/api/items");
+    expect(init?.method).toBe("POST");
+    expect(JSON.parse(init?.body as string).components[0].substance).toBe("caffeine");
+
+    const bad = vi.fn<typeof globalThis.fetch>(async () => jsonResponse({ error: "Unknown substance: x" }, false, 400));
+    await expect(createItem({ name: "X", kind: "simple", primaryType: "food" }, { fetch: bad, token: "t" }))
+      .rejects.toThrow("Unknown substance");
   });
 });

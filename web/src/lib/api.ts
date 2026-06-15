@@ -8,10 +8,12 @@ import type {
   Checkin,
   CreateCheckin,
   CreateIntake,
+  CreateItemBody,
   DailyTotal,
   InputItemSummary,
   IntakeEvent,
   SubjectiveKind,
+  Substance,
 } from "$lib/types";
 
 export interface ApiCtx {
@@ -79,6 +81,34 @@ export async function searchItems(search: string, ctx: ApiCtx = {}): Promise<Inp
   const res = await f("/api/items?search=" + encodeURIComponent(search), { headers: headers(token) });
   if (!res.ok) throw new ApiError(res.status, "Failed to search items");
   return (await res.json()).items as InputItemSummary[];
+}
+
+export async function listItems(ctx: ApiCtx = {}): Promise<InputItemSummary[]> {
+  const { f, token } = resolve(ctx);
+  const res = await f("/api/items", { headers: headers(token) });
+  if (!res.ok) throw new ApiError(res.status, "Failed to load items");
+  return (await res.json()).items as InputItemSummary[];
+}
+
+export async function listSubstances(ctx: ApiCtx = {}): Promise<Substance[]> {
+  const { f, token } = resolve(ctx);
+  const res = await f("/api/substances", { headers: headers(token) });
+  if (!res.ok) throw new ApiError(res.status, "Failed to load substances");
+  return (await res.json()).substances as Substance[];
+}
+
+export async function createItem(body: CreateItemBody, ctx: ApiCtx = {}): Promise<InputItemSummary> {
+  const { f, token } = resolve(ctx);
+  const res = await f("/api/items", {
+    method: "POST",
+    headers: headers(token, true),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const msg = await res.json().then((b) => b?.error).catch(() => null);
+    throw new ApiError(res.status, msg || "Failed to create item");
+  }
+  return await res.json() as InputItemSummary;
 }
 
 export async function logIntake(body: CreateIntake, ctx: ApiCtx = {}): Promise<IntakeEvent> {
