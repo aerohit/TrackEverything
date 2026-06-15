@@ -430,6 +430,38 @@ textarea:focus {
   font-size: 13px;
   color: var(--mut);
 }
+.tlicon {
+  margin-right: 6px;
+  font-size: 15px;
+}
+
+/* Collapsible card (e.g. Totals): the <summary> is the header + a chevron. */
+.collapse > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mut);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.collapse > summary::-webkit-details-marker {
+  display: none;
+}
+.collapse > summary::after {
+  content: "›";
+  font-size: 16px;
+  transition: transform 0.15s;
+}
+.collapse[open] > summary {
+  margin-bottom: 12px;
+}
+.collapse[open] > summary::after {
+  transform: rotate(90deg);
+}
 .totrow {
   display: flex;
   justify-content: space-between;
