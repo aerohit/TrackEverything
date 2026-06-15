@@ -41,8 +41,8 @@
   }
 
   const tabs = [
-    { href: "/", label: "Feel" },
-    { href: "/inputs", label: "Inputs" },
+    { href: "/", label: "Log" },
+    { href: "/overview", label: "Overview" },
     { href: "/manage", label: "Manage" },
   ];
   const path = $derived($page.url.pathname);
