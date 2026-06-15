@@ -21,6 +21,9 @@ export function createApp(db: Db, opts: AppOptions = {}): Hono {
   const app = new Hono();
   const api = new Hono();
 
+  // Health stays open (warmup pings); everything else is token-guarded.
+  api.get("/health", (c) => c.json({ ok: true }));
+
   if (opts.token) {
     api.use("*", async (c, next) => {
       const header = c.req.header("authorization");
@@ -31,8 +34,6 @@ export function createApp(db: Db, opts: AppOptions = {}): Hono {
       await next();
     });
   }
-
-  api.get("/health", (c) => c.json({ ok: true }));
 
   // Record a check-in: one or more immutable readings, sharing a recorded_at.
   api.post("/checkins", async (c) => {

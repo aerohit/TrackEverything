@@ -1,8 +1,8 @@
 # TrackEverything — Requirements
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this
-> stays current. **Last updated:** 2026-06-15 (R-DOM-2 refined by ADR-017:
-> Subjective State as immutable (kind, rating) readings) **Owner:** aerohit
+> stays current. **Last updated:** 2026-06-15 (R-VIEW-7: responsive
+> phone+desktop PWA — v2-1b SvelteKit front end) **Owner:** aerohit
 > **Companion doc:** [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each requirement has a stable ID (`R-<area>-<n>`) so it can be referenced from
@@ -124,6 +124,7 @@ moment.
 | R-VIEW-4 | **Event timeline / history** list view: scroll recent events in time order (backed by a `GET /events` list endpoint).                                                          | Proposed |
 | R-VIEW-5 | Timeline **food** rows show a dish-level summary (**"Meal — item"**, e.g. "Lunch — Salad"), not the raw ingredient list; the dish name is clickable to reveal its ingredients. | Built    |
 | R-VIEW-6 | The UI supports **light and dark appearance**: follows the system setting by default with a manual toggle (System / Light / Dark), persisted on the device.                    | Built    |
+| R-VIEW-7 | The UI is **responsive for phone and desktop**: mobile-first single column; an adaptive two-pane layout on wide screens (the app is used on both a phone and a computer).       | Built    |
 
 ## 9. Non-functional requirements
 
@@ -223,3 +224,4 @@ This document is kept current by an explicit process, not by hope. See
 | 2026-06-15 | Added R-VIEW-6 (Built): UI restyled to a clean light/dark theme with a single indigo accent (replacing the dark-only "Aurora" gradient look); follows the system appearance by default with a System/Light/Dark header toggle persisted as `te_theme`. UI-only; no API change.                                               |
 | 2026-06-15 | v2 maturity rewrite kicked off (ADR-015/016). Added R-DOM-1..3: capture re-modelled as 8 typed per-domain entities (replacing the unified event log), Subjective State (mood/energy/focus, 1–5, snapshot) built first. Stack moves to Hono + SvelteKit + Drizzle + Zod on the same Deno Deploy + Supabase infra; clean-slate database at cutover. Functional requirements unchanged. |
 | 2026-06-15 | PR #35 review (ADR-017): refined R-DOM-2 — Subjective State is now **immutable readings**, a single `kind` discriminator column (extensible to more states) + `rating`, `recorded_at` only. Dropped the per-dimension columns, `occurred_at`, and the edit-tracking/soft-delete columns; the API is create + read only. |
+| 2026-06-15 | v2-1b: added R-VIEW-7 (responsive phone+desktop UI) — the SvelteKit PWA is mobile-first single column with an adaptive two-pane desktop layout; carries the R-VIEW-6 light/dark theme. |
