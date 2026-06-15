@@ -7,6 +7,7 @@
     "lint": "deno lint",
     "check": "deno check server/main.ts db/migrate.ts",
     "migrate": "deno run --allow-env --allow-net --allow-read db/migrate.ts",
+    "seed:inputs": "deno run --allow-env --allow-net --allow-read db/seed_inputs.ts",
     "start": "deno run --allow-env --allow-net --allow-read server/main.ts",
     "dev": "deno run --watch --allow-env --allow-net --allow-read server/main.ts"
   },
