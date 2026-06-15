@@ -1,5 +1,5 @@
 {
-  "//": "v2 rewrite (ADR-015): Deno workspace for the Hono API (server/), Drizzle data layer (db/), and shared Zod schemas (shared/). The SvelteKit PWA in web/ is a separate Node/Vite project. The MVP under backend/ keeps its own deno.json and is untouched until cutover (v2-X).",
+  "//": "Deno workspace for the Hono API (server/), Drizzle data layer (db/), and shared Zod schemas (shared/). The SvelteKit PWA in web/ is a separate Node/Vite project.",
   "tasks": {
     "test": "deno test --allow-env --allow-net --allow-read server/ db/ shared/",
     "fmt": "deno fmt",
