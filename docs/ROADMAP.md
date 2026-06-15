@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-15 (v2-1b in review: responsive SvelteKit PWA — check-in + day chart, R-VIEW-7)
+> **Status:** Living document. **Last updated:** 2026-06-15 (Phase v2-1 ☑; v2-X cutover ◐ — v2 service prod-hardened, awaiting the dashboard/entrypoint switch)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -31,10 +31,10 @@ Status legend: ☐ not started · ◐ in progress · ☑ approved
 Capture is re-modelled into **8 domains** (R-DOM-1), each its own entity, delivered one phase at
 a time. Only **Subjective State** is built first (R-DOM-2); the rest are documented below.
 
-### Phase v2-1 — Foundation + Subjective State ◐
+### Phase v2-1 — Foundation + Subjective State ☑
 - **Goal:** Stand up the new stack and ship the first domain end to end — check in mood/energy/focus and see them charted.
 - **Delivered in two slices** (like the MVP's Phase 11): **v2-1a** — foundation + data + API (merged); **v2-1b** — the SvelteKit PWA (in review).
-- **v2-1b status (in review):** the `web/` SvelteKit (Svelte 5) PWA, built to static assets and served by the Hono service as one origin. A **check-in card** (tap 1–5 for any of mood/energy/focus + optional note → `POST /api/checkins`) and a **Today** day chart (mood/energy/focus series from `GET /api/checkins`). **Responsive** — single column on phones, adaptive two-pane on desktop (R-VIEW-7) — with the **light/dark** theme carried over (R-VIEW-6). Token kept in `localStorage`. Tests: 5 Vitest unit tests (API client, chart transform) + the v2-1a server suite; `svelte-check` clean; production build green; a third CI job builds/tests `web/`. Browser-verified end to end (check-in persists, chart updates) on both wide and narrow layouts, light and dark.
+- **v2-1b status (merged):** the `web/` SvelteKit (Svelte 5) PWA, built to static assets and served by the Hono service as one origin. A **check-in card** (tap 1–5 for any of mood/energy/focus + optional note → `POST /api/checkins`) and a **Today** day chart (mood/energy/focus series from `GET /api/checkins`). **Responsive** — single column on phones, adaptive two-pane on desktop (R-VIEW-7) — with the **light/dark** theme carried over (R-VIEW-6). Token kept in `localStorage`. Tests: 5 Vitest unit tests (API client, chart transform) + the v2-1a server suite; `svelte-check` clean; production build green; a third CI job builds/tests `web/`. Browser-verified end to end (check-in persists, chart updates) on both wide and narrow layouts, light and dark.
 - **v2-1a status (in review):** repo layout (`server/` Hono, `db/` Drizzle, `shared/` Zod; `web/` to come) + root `deno.json` + a second CI job. The `subjective_state` entity (immutable `(kind, rating)` readings — ADR-017; migration `db/migrations/0001`), typed repository, and the Hono API (`POST`/`GET /api/checkins`, token-guarded, Zod-validated) — **unit + integration tests green against real Postgres** (7 passed; the integration test covers auth, batch create sharing one `recorded_at`, list + `kind` filter + bad-param 400s, and immutability — no edit/delete route).
 - **Build:**
   - **Scaffold** the new layout: `web/` (SvelteKit PWA), `server/` (Hono API + the single Deno Deploy entrypoint that also serves the built web assets), `db/` (Drizzle schema + migrations), `shared/` (Zod schemas). CI runs fmt/lint/type-check/tests; one deployable service.
@@ -60,8 +60,26 @@ One phase per domain; each adds its own typed entity (Drizzle + Zod + enums), ca
 ### Phase v2-A — Cross-domain analysis ☐ (documented)
 Re-frames MVP Stage C (real-time questions) and Phase 10 (correlation) over the typed entities: assemble a cross-domain timeline by unioning the entities, compute correlations (inputs/behaviors/exposures → subjective/performance outcomes), and have the LLM interpret. Carries forward R-RT-* and R-PAT-*.
 
-### Phase v2-X — Cutover ☐ (documented)
-Tag `v1-mvp`; run the fresh Drizzle migrations on the production Supabase DB (drops the MVP tables — owner accepted the clean slate); deploy the v2 service; point the domain; tag `v2`.
+### Phase v2-X — Cutover to v2 ◐
+Switch the live app from the MVP to v2 and retire the old UI.
+
+**In the repo (done):** the v2 service is production-hardened to match the MVP — an
+`unhandledrejection` guard + a startup DB warm in `server/main.ts`, and an open `/health`
+(and `/api/health`) where `?warm=1` runs `select 1` so the existing hourly warmup workflow
+keeps the Supabase project awake. CI builds + tests `web/` and the Deno service.
+
+**You do (Deno Deploy dashboard + prod DB — needs the dashboard/secret I don't have):**
+
+1. **Migrate prod:** `DATABASE_URL='<prod pooler URI>' deno task migrate` — additive; creates
+   `subjective_state`, does **not** touch the MVP tables.
+2. **Repoint the deploy:** in the Deno Deploy project, set the **build command** to
+   `npm --prefix web ci && npm --prefix web run build` and change the **entrypoint** from
+   `backend/main.ts` → `server/main.ts`. Env vars are unchanged (`DATABASE_URL`, `INGEST_TOKEN`).
+   _(If the project can't run a build step, ask me to commit a prebuilt `web/build` instead.)_
+3. **Redeploy**, open the URL, enter the `INGEST_TOKEN` once — the new UI is live.
+4. **Optional clean slate:** once happy, drop the MVP tables (`events`, `templates`, `items`,
+   `ingredients`) — owner okayed losing that data. v2 doesn't need them.
+5. Tag `v1-mvp` and `v2`. The MVP code stays in `backend/` for history until a later cleanup.
 
 ---
 
@@ -463,3 +481,4 @@ Tag `v1-mvp`; run the fresh Drizzle migrations on the production Supabase DB (dr
 | 2026-06-15 | **v2 maturity rewrite** planned (ADR-015/016). Same repo, same infra (Deno Deploy + Supabase); new stack Hono + SvelteKit + Drizzle + Zod, single service. Data model re-framed as **8 typed per-domain entities** (R-DOM-1) replacing the unified event log; clean-slate DB at cutover. Added phases v2-1 (Foundation + Subjective State — mood/energy/focus, built first), v2-2…v2-8 (remaining domains, documented), v2-A (cross-domain analysis), v2-X (cutover). MVP stages A–G retained as history. |
 | 2026-06-15 | v2-1a review feedback (ADR-017): remodelled `subjective_state` as immutable `(kind, rating)` readings — single discriminator column (extensible enum), `recorded_at` only, create+read API (no edit/delete). Tests updated (7 pass). |
 | 2026-06-15 | Phase v2-1b implemented (in review): `web/` SvelteKit PWA — check-in card + Today day chart over the v2 `/api/checkins`, responsive (single column ↔ two-pane, R-VIEW-7), light/dark (R-VIEW-6); served as one Deno service. Vitest unit tests + svelte-check + production build; a third CI job covers `web/`. Browser-verified end to end. |
+| 2026-06-15 | Phase v2-1 approved (PRs #35 + #36 merged) → ☑; R-DOM-1/R-DOM-2 → Built. Production-hardened the v2 service for cutover (`unhandledrejection` guard + startup DB warm in `server/main.ts`; open `/health` + `/api/health` with `?warm=1` → `select 1`). Phase v2-X (cutover to v2) → ◐ with the dashboard/migration checklist. |

@@ -5,10 +5,21 @@
  * CORS. Production secrets (DATABASE_URL, INGEST_TOKEN) come from the Deploy env.
  */
 import { serveStatic } from "hono/deno";
+import { sql } from "drizzle-orm";
 import { connect } from "../db/client.ts";
 import { createApp } from "./app.ts";
 
+// On Deno Deploy an uncaught rejection crashes the isolate (the v1 crash-loop —
+// see ADR-011's consequences). Keep the isolate alive and just log instead.
+globalThis.addEventListener("unhandledrejection", (e) => {
+  console.error("unhandled rejection (kept alive):", e.reason);
+  e.preventDefault();
+});
+
 const { db } = connect();
+// Warm the pooled DB connection at startup so the first request isn't cold.
+db.execute(sql`select 1`).catch(() => {});
+
 const app = createApp(db, { token: Deno.env.get("INGEST_TOKEN") });
 
 const WEB_ROOT = "./web/build";

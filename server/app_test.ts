@@ -18,8 +18,13 @@ Deno.test({
     try {
       await sql`truncate subjective_state`;
 
-      // Health is open (no token needed — used by warmup pings).
+      // Health is open (no token needed) at both / and /api, and ?warm=1 succeeds
+      // (it runs a tiny DB query to keep the pooled connection warm).
+      assertEquals((await app.request("/health")).status, 200);
       assertEquals((await app.request("/api/health")).status, 200);
+      const warm = await app.request("/api/health?warm=1");
+      assertEquals(warm.status, 200);
+      assertEquals((await warm.json()).ok, true);
 
       // Auth is enforced on writes.
       const noAuth = await app.request("/api/checkins", {

@@ -7,7 +7,8 @@
  * Subjective State readings are immutable (ADR-017): create + read only — there
  * are no edit or delete routes by design.
  */
-import { Hono } from "hono";
+import { type Context, Hono } from "hono";
+import { sql } from "drizzle-orm";
 import { createCheckinSchema, kindSchema } from "../shared/subjective_state.ts";
 import type { Db } from "../db/client.ts";
 import { createCheckin, listCheckins, type ListRange, toCheckin } from "../db/checkins.ts";
@@ -21,8 +22,19 @@ export function createApp(db: Db, opts: AppOptions = {}): Hono {
   const app = new Hono();
   const api = new Hono();
 
-  // Health stays open (warmup pings); everything else is token-guarded.
-  api.get("/health", (c) => c.json({ ok: true }));
+  // Health stays open (the warmup workflow pings it); `?warm=1` also runs a tiny
+  // query to keep the pooled DB connection — and the free-tier Supabase project —
+  // warm. Registered on both / and /api before the auth guard.
+  const health = async (c: Context) => {
+    if (c.req.query("warm")) {
+      try {
+        await db.execute(sql`select 1`);
+      } catch { /* keep health green even if the DB is briefly unreachable */ }
+    }
+    return c.json({ ok: true });
+  };
+  app.get("/health", health);
+  api.get("/health", health);
 
   if (opts.token) {
     api.use("*", async (c, next) => {

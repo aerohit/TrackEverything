@@ -86,8 +86,8 @@ requirements above are unchanged; this is how the data is **modelled and stored*
 
 | ID       | Requirement                                                                                                                                                                                                    | Status   |
 | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| R-DOM-1  | Capture is modelled as **8 domains, each its own typed entity** (typed columns + Postgres enums + a shared Zod schema), not a single `events` table with untyped `fields`. Supersedes the unified-log model.   | Designed |
-| R-DOM-2  | **Subjective State** entity (domain 5): **immutable readings** — one row per `(kind, rating)` where `kind` ∈ {mood, energy, focus} (a single discriminator column, extensible to more states) and `rating` is 1–5; optional note; `recorded_at` only; **no edit/delete** (ADR-017). A check-in rates one or more states at once. First built. | Designed |
+| R-DOM-1  | Capture is modelled as **8 domains, each its own typed entity** (typed columns + Postgres enums + a shared Zod schema), not a single `events` table with untyped `fields`. Supersedes the unified-log model.   | Built    |
+| R-DOM-2  | **Subjective State** entity (domain 5): **immutable readings** — one row per `(kind, rating)` where `kind` ∈ {mood, energy, focus} (a single discriminator column, extensible to more states) and `rating` is 1–5; optional note; `recorded_at` only; **no edit/delete** (ADR-017). A check-in rates one or more states at once. First built. | Built |
 | R-DOM-3  | The other seven domains (Inputs, Behaviors & Interventions, Exposures, Body Signals, Performance Outputs, Events/Stressors/Wins, Context) are each their own entity, delivered as later phases.                 | Proposed |
 
 ## 6. Real-time analysis
