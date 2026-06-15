@@ -157,3 +157,31 @@ export interface DailyTotal {
   amount: number;
   unit: SubstanceUnit;
 }
+
+export interface InputItemSummary {
+  id: string;
+  name: string;
+  kind: InputKind;
+  primaryType: InputPrimaryType;
+  roles: string[];
+  brand: string | null;
+  defaultDisplayQuantity: number | null;
+  defaultDisplayUnit: string | null;
+  defaultCanonicalQuantity: number | null;
+  defaultCanonicalUnit: string | null;
+}
+
+export interface ItemComponentDTO {
+  substance: string | null;
+  childItemId: string | null;
+  amount: number;
+  unit: string;
+  position: number;
+  prepState: string | null;
+}
+
+export interface InputItemDetail extends InputItemSummary {
+  notes: string | null;
+  version: number;
+  components: ItemComponentDTO[];
+}

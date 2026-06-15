@@ -4,18 +4,28 @@
  * edits/soft-deletes events (mutable), lists events with their resolution, and rolls
  * a day up into per-substance totals.
  */
-import { and, desc, eq, gte, inArray, isNull, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, ilike, inArray, isNull, lt, sql } from "drizzle-orm";
 import type {
   Confidence,
   CreateIntakeEvent,
   CreateItem,
   DailyTotal,
+  InputItemDetail,
+  InputItemSummary,
   IntakeEvent,
+  Substance,
   SubstanceUnit,
   UpdateIntakeEvent,
 } from "../shared/inputs.ts";
 import type { Db } from "./client.ts";
-import { inputItem, intakeEvent, itemComponent, resolvedAmount, substance } from "./schema.ts";
+import {
+  inputItem,
+  type InputItemRow,
+  intakeEvent,
+  itemComponent,
+  resolvedAmount,
+  substance,
+} from "./schema.ts";
 import { convert, type ResolveGraph, type ResolveItem, resolveItem } from "./resolve.ts";
 
 interface SubstanceMeta {
@@ -300,7 +310,14 @@ export async function listIntakeEvents(db: Db, range: ListRange = {}): Promise<I
     byEvent.set(r.eventId, list);
   }
 
-  return events.map((e) => ({
+  return events.map((e) => eventDto(e, byEvent.get(e.id) ?? []));
+}
+
+function eventDto(
+  e: typeof intakeEvent.$inferSelect,
+  resolved: IntakeEvent["resolved"],
+): IntakeEvent {
+  return {
     id: e.id,
     occurredAt: e.occurredAt.toISOString(),
     displayName: e.displayName,
@@ -312,8 +329,90 @@ export async function listIntakeEvents(db: Db, range: ListRange = {}): Promise<I
     confidence: e.confidence,
     contextTags: e.contextTags,
     notes: e.notes,
-    resolved: byEvent.get(e.id) ?? [],
+    resolved,
+  };
+}
+
+/** A single live intake event with its resolution, or null. */
+export async function getIntakeEvent(db: Db, id: string): Promise<IntakeEvent | null> {
+  const [e] = await db.select().from(intakeEvent).where(
+    and(eq(intakeEvent.id, id), isNull(intakeEvent.deletedAt)),
+  );
+  if (!e) return null;
+  const resolved = await db.select({
+    substance: substance.name,
+    amount: resolvedAmount.amount,
+    unit: resolvedAmount.unit,
+    confidence: resolvedAmount.confidence,
+    source: resolvedAmount.source,
+  })
+    .from(resolvedAmount)
+    .innerJoin(substance, eq(resolvedAmount.substanceId, substance.id))
+    .where(eq(resolvedAmount.eventId, id));
+  return eventDto(e, resolved);
+}
+
+// ---- reference reads (for the UI: pick substances / items) ----
+
+export async function listSubstances(db: Db): Promise<Substance[]> {
+  const rows = await db.select().from(substance).orderBy(asc(substance.name));
+  return rows.map((s) => ({
+    id: s.id,
+    name: s.name,
+    substanceType: s.substanceType,
+    canonicalUnit: s.canonicalUnit,
+    aliases: s.aliases,
   }));
+}
+
+function itemSummary(r: InputItemRow): InputItemSummary {
+  return {
+    id: r.id,
+    name: r.name,
+    kind: r.kind,
+    primaryType: r.primaryType,
+    roles: r.roles,
+    brand: r.brand,
+    defaultDisplayQuantity: r.defaultDisplayQuantity,
+    defaultDisplayUnit: r.defaultDisplayUnit,
+    defaultCanonicalQuantity: r.defaultCanonicalQuantity,
+    defaultCanonicalUnit: r.defaultCanonicalUnit,
+  };
+}
+
+export async function listItems(
+  db: Db,
+  opts: { search?: string; limit?: number } = {},
+): Promise<InputItemSummary[]> {
+  const conds = [isNull(inputItem.deletedAt)];
+  if (opts.search) conds.push(ilike(inputItem.name, `%${opts.search}%`));
+  const limit = Math.min(Math.max(opts.limit ?? 100, 1), 500);
+  const rows = await db.select().from(inputItem)
+    .where(and(...conds))
+    .orderBy(asc(inputItem.name))
+    .limit(limit);
+  return rows.map(itemSummary);
+}
+
+/** An item with its components (substances by name / child items by id). */
+export async function getItemDetail(db: Db, id: string): Promise<InputItemDetail | null> {
+  const [it] = await db.select().from(inputItem).where(
+    and(eq(inputItem.id, id), isNull(inputItem.deletedAt)),
+  );
+  if (!it) return null;
+  const comps = await db.select({
+    substance: substance.name,
+    childItemId: itemComponent.childItemId,
+    amount: itemComponent.amount,
+    unit: itemComponent.unit,
+    position: itemComponent.position,
+    prepState: itemComponent.prepState,
+  })
+    .from(itemComponent)
+    .leftJoin(substance, eq(itemComponent.substanceId, substance.id))
+    .where(eq(itemComponent.parentItemId, id))
+    .orderBy(asc(itemComponent.position));
+  return { ...itemSummary(it), notes: it.notes, version: it.version, components: comps };
 }
 
 /** Per-substance totals across live events in [from, to). */
