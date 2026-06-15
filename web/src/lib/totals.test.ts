@@ -1,13 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { orderTotals } from "./totals";
+import { groupTotals } from "./totals";
 import type { DailyTotal } from "$lib/types";
 
 function t(substance: string, substanceType: string): DailyTotal {
   return { substance, substanceType, amount: 1, unit: "g" };
 }
 
-describe("orderTotals", () => {
-  it("orders calories → macros → vitamins → minerals/electrolytes → rest", () => {
+function shape(totals: DailyTotal[]) {
+  return groupTotals(totals).map((g) => [g.label, g.items.map((i) => i.substance)]);
+}
+
+describe("groupTotals", () => {
+  it("splits into Macros / Micros / Others with the right ordering", () => {
     const input: DailyTotal[] = [
       t("water", "water"),
       t("magnesium", "mineral"),
@@ -18,37 +22,18 @@ describe("orderTotals", () => {
       t("sodium", "electrolyte"),
       t("carbohydrate", "macronutrient"),
       t("caffeine", "stimulant"),
-      t("fiber", "macronutrient"),
+      t("fiber", "macronutrient"), // a macronutrient, but not one of the 4 → Others
     ];
-    expect(orderTotals(input).map((x) => x.substance)).toEqual([
-      "calories",
-      "protein",
-      "carbohydrate",
-      "fat",
-      "vitamin_d",
-      "magnesium",
-      "sodium",
-      // "rest" tier, alphabetical: caffeine, fiber, water
-      "caffeine",
-      "fiber",
-      "water",
+    expect(shape(input)).toEqual([
+      ["Macros", ["calories", "protein", "carbohydrate", "fat"]],
+      ["Micros", ["vitamin_d", "magnesium", "sodium"]], // vitamins first, then minerals/electrolytes
+      ["Others", ["caffeine", "fiber", "water"]], // alphabetical
     ]);
   });
 
-  it("is alphabetical within the vitamins/minerals and 'rest' tiers", () => {
-    const input: DailyTotal[] = [
-      t("zinc", "mineral"),
-      t("calcium", "mineral"),
-      t("vitamin_c", "vitamin"),
-      t("alcohol", "psychoactive"),
-      t("creatine", "supplement_compound"),
-    ];
-    expect(orderTotals(input).map((x) => x.substance)).toEqual([
-      "vitamin_c", // vitamins (rank 10)
-      "calcium", // minerals (rank 11), alphabetical
-      "zinc",
-      "alcohol", // rest (rank 20), alphabetical
-      "creatine",
+  it("drops empty groups", () => {
+    expect(shape([t("calories", "energy"), t("protein", "macronutrient")])).toEqual([
+      ["Macros", ["calories", "protein"]],
     ]);
   });
 });

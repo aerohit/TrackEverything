@@ -1,24 +1,46 @@
 /**
- * Order daily totals for display: calories first, then the macros (protein, carbs,
- * fat), then vitamins, then minerals/electrolytes, then everything else — each tier
- * alphabetical within itself. Pure, so it's unit-tested.
+ * Group daily totals for display under sub-headers:
+ *   - Macros:  calories, protein, carbohydrate, fat (in that order)
+ *   - Micros:  vitamins, then minerals/electrolytes (alphabetical within)
+ *   - Others:  everything else (alphabetical)
+ * Empty groups are dropped. Pure, so it's unit-tested.
  */
 import type { DailyTotal } from "$lib/types";
 
-const NAMED_RANK: Record<string, number> = {
-  calories: 0,
-  protein: 1,
-  carbohydrate: 2,
-  fat: 3,
-};
-
-function rank(t: DailyTotal): number {
-  if (t.substance in NAMED_RANK) return NAMED_RANK[t.substance];
-  if (t.substanceType === "vitamin") return 10;
-  if (t.substanceType === "mineral" || t.substanceType === "electrolyte") return 11;
-  return 20;
+export interface TotalGroup {
+  label: string;
+  items: DailyTotal[];
 }
 
-export function orderTotals(totals: DailyTotal[]): DailyTotal[] {
-  return totals.slice().sort((a, b) => rank(a) - rank(b) || a.substance.localeCompare(b.substance));
+const MACRO_ORDER = ["calories", "protein", "carbohydrate", "fat"];
+
+function isMicro(t: DailyTotal): boolean {
+  return t.substanceType === "vitamin" || t.substanceType === "mineral" ||
+    t.substanceType === "electrolyte";
+}
+
+export function groupTotals(totals: DailyTotal[]): TotalGroup[] {
+  const macros = totals
+    .filter((t) => MACRO_ORDER.includes(t.substance))
+    .sort((a, b) => MACRO_ORDER.indexOf(a.substance) - MACRO_ORDER.indexOf(b.substance));
+
+  const byName = (a: DailyTotal, b: DailyTotal) => a.substance.localeCompare(b.substance);
+
+  const micros = totals
+    .filter((t) => !MACRO_ORDER.includes(t.substance) && isMicro(t))
+    // vitamins before minerals/electrolytes, alphabetical within each.
+    .sort((a, b) =>
+      (a.substanceType === "vitamin" ? 0 : 1) - (b.substanceType === "vitamin" ? 0 : 1) ||
+      byName(a, b)
+    );
+
+  const others = totals
+    .filter((t) => !MACRO_ORDER.includes(t.substance) && !isMicro(t))
+    .sort(byName);
+
+  return [
+    { label: "Macros", items: macros },
+    { label: "Micros", items: micros },
+    { label: "Others", items: others },
+  ].filter((g) => g.items.length > 0);
 }

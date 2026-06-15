@@ -3,7 +3,7 @@
   import Chart from "$lib/Chart.svelte";
   import { intakeTotals, listCheckins, listIntake } from "$lib/api";
   import { iconForInput } from "$lib/icons";
-  import { orderTotals } from "$lib/totals";
+  import { groupTotals } from "$lib/totals";
   import type { Checkin, DailyTotal, IntakeEvent } from "$lib/types";
 
   let day = $state(startOfToday());
@@ -84,8 +84,11 @@
     <details class="card collapse">
       <summary>Totals</summary>
       {#if totals.length}
-        {#each orderTotals(totals) as t}
-          <div class="totrow"><span>{t.substance}</span><b>{t.amount} {t.unit}</b></div>
+        {#each groupTotals(totals) as g}
+          <div class="totgroup">{g.label}</div>
+          {#each g.items as t}
+            <div class="totrow"><span>{t.substance}</span><b>{t.amount} {t.unit}</b></div>
+          {/each}
         {/each}
       {:else}
         <p class="mut">Nothing with a breakdown on this day.</p>
