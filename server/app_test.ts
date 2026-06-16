@@ -1,4 +1,5 @@
 import { assert, assertEquals } from "@std/assert";
+import type { Db } from "../db/client.ts";
 import { connect } from "../db/client.ts";
 import { migrate } from "../db/migrate.ts";
 import { createApp } from "./app.ts";
@@ -6,6 +7,29 @@ import { createApp } from "./app.ts";
 const DATABASE_URL = Deno.env.get("DATABASE_URL");
 const TOKEN = "test-token";
 const auth = { authorization: "Bearer " + TOKEN, "content-type": "application/json" };
+
+Deno.test("API namespace always speaks JSON — unknown /api paths are a JSON 404, not the SPA shell", async () => {
+  // No DB needed: the catch-all and auth never touch it.
+  const app = createApp(null as unknown as Db, { token: TOKEN });
+
+  for (
+    const [method, path] of [["GET", "/api/bogus"], ["POST", "/api/nope"], [
+      "DELETE",
+      "/api/x/y",
+    ]] as const
+  ) {
+    const res = await app.request(path, { method, headers: auth });
+    assertEquals(res.status, 404, `${method} ${path}`);
+    assert(
+      res.headers.get("content-type")?.includes("application/json"),
+      `${method} ${path} should be JSON`,
+    );
+    assertEquals((await res.json()).error, "not found");
+  }
+
+  // Auth still runs first: an unknown /api path without a token is 401, not 404.
+  assertEquals((await app.request("/api/bogus")).status, 401);
+});
 
 Deno.test({
   // Needs a real Postgres; auto-skips locally without DATABASE_URL (runs in CI).
