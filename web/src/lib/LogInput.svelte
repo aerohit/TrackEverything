@@ -3,11 +3,11 @@
   import { createItem, logIntake, recentItems, recognizeIntake, searchItems } from "$lib/api";
   import type { CreateItemBody, RecentItem } from "$lib/types";
   import { unitOptions } from "$lib/units";
+  import { type Match, selectedName } from "$lib/log";
 
   // One way to log: snap/upload a photo, speak or type a phrase, or tap a recent
   // item. The result is reviewed in a confirm card before it's saved (ADR-020),
   // where it's matched against existing items so it can attach to one or save anew.
-  type Match = { id: string; name: string; kind?: string };
 
   type Confirm = {
     name: string;
@@ -17,6 +17,8 @@
     query: string; // catalog search text
     results: Match[]; // existing items matching the query
     sel: string; // "item:<id>" | "new" | "freeform"
+    touched: boolean; // the user manually chose a target (stop auto-selecting a match)
+    recognizedName: string; // the transcribed/recent name, used for "new" / freeform
     draft: CreateItemBody | null; // present when recognized (enables "save as new")
     hint?: string; // the spoken/typed phrase, shown for context
   };
@@ -77,10 +79,24 @@
       query: o.name,
       results: [],
       sel: o.draft ? "new" : "freeform",
+      touched: false,
+      recognizedName: o.name,
       draft: o.draft,
       hint: o.hint,
     };
     await runSearch(o.preferItemId ?? null);
+  }
+
+  // Point the confirm at a target and set the display name to match: a matched
+  // item logs under the item's own name, not the transcribed text (ADR-020).
+  function applySel(c: Confirm, s: string) {
+    c.sel = s;
+    c.name = selectedName(s, c.results, c.recognizedName);
+  }
+  function selectTarget(s: string) {
+    if (!confirm) return;
+    confirm.touched = true;
+    applySel(confirm, s);
   }
 
   // Look up existing items for the current query; keep a sensible selection.
@@ -97,14 +113,21 @@
       }
     }
     if (prefer && !results.some((r) => r.id === prefer)) {
-      results = [{ id: prefer, name: c.name }, ...results];
+      results = [{ id: prefer, name: c.recognizedName }, ...results];
     }
     if (confirm !== c) return; // card closed / replaced while awaiting
     c.results = results;
     const valid = (s: string) =>
       (s === "new" && !!c.draft) || s === "freeform" || results.some((r) => "item:" + r.id === s);
-    if (prefer) c.sel = "item:" + prefer;
-    else if (!valid(c.sel)) c.sel = results.length ? "item:" + results[0].id : c.draft ? "new" : "freeform";
+    // A recent item's own item wins; otherwise, until the user picks a target,
+    // default to the best catalog match (so a recognized name logs against an
+    // existing item rather than silently creating a duplicate).
+    if (prefer) {
+      c.touched = true;
+      applySel(c, "item:" + prefer);
+    } else if (!c.touched || !valid(c.sel)) {
+      applySel(c, results.length ? "item:" + results[0].id : c.draft ? "new" : "freeform");
+    }
   }
 
   function onQuery() {
@@ -289,18 +312,28 @@
     <div class="opts" style="margin-top:6px">
       {#each confirm.results as m}
         <label class="opt" class:sel={confirm.sel === "item:" + m.id}>
-          <input type="radio" name="target" value={"item:" + m.id} bind:group={confirm.sel} />
+          <input
+            type="radio"
+            name="target"
+            checked={confirm.sel === "item:" + m.id}
+            onchange={() => selectTarget("item:" + m.id)}
+          />
           <span>Log <b>{m.name}</b>{m.kind ? " · " + m.kind : ""}</span>
         </label>
       {/each}
       {#if confirm.draft}
         <label class="opt" class:sel={confirm.sel === "new"}>
-          <input type="radio" name="target" value="new" bind:group={confirm.sel} />
+          <input type="radio" name="target" checked={confirm.sel === "new"} onchange={() => selectTarget("new")} />
           <span>Save as a new item</span>
         </label>
       {/if}
       <label class="opt" class:sel={confirm.sel === "freeform"}>
-        <input type="radio" name="target" value="freeform" bind:group={confirm.sel} />
+        <input
+          type="radio"
+          name="target"
+          checked={confirm.sel === "freeform"}
+          onchange={() => selectTarget("freeform")}
+        />
         <span>Just log the name (no breakdown)</span>
       </label>
     </div>
