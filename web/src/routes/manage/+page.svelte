@@ -43,7 +43,9 @@
   }
 
   async function onFile(e: Event) {
-    const file = (e.target as HTMLInputElement).files?.[0];
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = ""; // allow re-picking the same file (and keep both inputs independent)
     if (!file) return;
     if (preview) URL.revokeObjectURL(preview);
     preview = URL.createObjectURL(file);
@@ -139,14 +141,20 @@
     <p class="mut">Take or upload a photo of the label — the ingredients are scanned and shown
       below for you to correct, then save.</p>
 
-    <label class="photo-pick">
-      <input type="file" accept="image/*" capture="environment" onchange={onFile} />
-      {#if preview}
-        <img src={preview} alt="label preview" />
-      {:else}
-        <span>📷 Take / choose a photo</span>
-      {/if}
-    </label>
+    <div class="modes">
+      <label class="modebtn">
+        <input type="file" accept="image/*" capture="environment" onchange={onFile} />
+        <span class="ico">📷</span><span>Camera</span>
+      </label>
+      <label class="modebtn">
+        <input type="file" accept="image/*" onchange={onFile} />
+        <span class="ico">🖼️</span><span>Upload</span>
+      </label>
+    </div>
+
+    {#if preview}
+      <div class="photo-pick"><img src={preview} alt="label preview" /></div>
+    {/if}
 
     <button class="primary" disabled={!imageBase64 || scanning} onclick={scan}>
       {scanning ? "Scanning…" : "Scan label"}
