@@ -1,5 +1,6 @@
 <script lang="ts">
   import { askLlm } from "$lib/api";
+  import { renderMarkdown } from "$lib/markdown";
 
   // Ask the LLM about everything logged in the last 48h (inputs + feelings). The
   // server gathers the data, builds the prompt, and Claude answers (ADR-023).
@@ -11,7 +12,7 @@
 
   let question = $state("");
   let asking = $state(false);
-  let answer = $state<string | null>(null);
+  let answerHtml = $state<string | null>(null); // the answer, Markdown rendered to sanitized HTML
   let error = $state<string | null>(null);
   let asked = $state(""); // the question the current answer is for
 
@@ -20,11 +21,11 @@
     if (!text || asking) return;
     question = q;
     asking = true;
-    answer = null;
+    answerHtml = null;
     error = null;
     asked = text;
     try {
-      answer = await askLlm(text);
+      answerHtml = renderMarkdown(await askLlm(text));
     } catch (e) {
       error = (e as Error).message || "Couldn't get an answer.";
     } finally {
@@ -61,15 +62,16 @@
     </button>
   </section>
 
-  {#if asking || answer || error}
+  {#if asking || answerHtml || error}
     <section class="card">
       {#if asked}<div class="fieldlabel">“{asked}”</div>{/if}
       {#if asking}
         <p class="mut" aria-live="polite">Looking over your last 48 hours…</p>
       {:else if error}
         <p class="mut err-text">{error}</p>
-      {:else if answer}
-        <div class="answer">{answer}</div>
+      {:else if answerHtml}
+        <!-- eslint-disable-next-line svelte/no-at-html-tags -- sanitized by renderMarkdown -->
+        <div class="answer">{@html answerHtml}</div>
         <p class="mut" style="margin-top:10px">General wellness reflection, not medical advice.</p>
       {/if}
     </section>
