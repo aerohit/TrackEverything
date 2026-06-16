@@ -10,6 +10,7 @@ import { connect } from "../db/client.ts";
 import { createApp } from "./app.ts";
 import { AnthropicItemScanner } from "./scan_anthropic.ts";
 import { AnthropicIntakeRecognizer } from "./recognize_anthropic.ts";
+import { AnthropicAdvisor } from "./advise_anthropic.ts";
 
 // On Deno Deploy an uncaught rejection crashes the isolate (the v1 crash-loop —
 // see ADR-011's consequences). Keep the isolate alive and just log instead.
@@ -28,11 +29,13 @@ db.execute(sql`select 1`).catch(() => {});
 const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
 const scanner = anthropicKey ? new AnthropicItemScanner(anthropicKey) : undefined;
 const recognizer = anthropicKey ? new AnthropicIntakeRecognizer(anthropicKey) : undefined;
+const advisor = anthropicKey ? new AnthropicAdvisor(anthropicKey) : undefined;
 
 const app = createApp(db, {
   token: Deno.env.get("INGEST_TOKEN"),
   scanner,
   recognizer,
+  advisor,
 });
 
 const WEB_ROOT = "./web/build";

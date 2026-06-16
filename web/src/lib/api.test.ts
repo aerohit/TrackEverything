@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   ApiError,
+  askLlm,
   createCheckin,
   createItem,
   intakeTotals,
@@ -157,5 +158,22 @@ describe("api client", () => {
     const out = await recentItems(10, { fetch, token: "t" });
     expect(out[0].displayName).toBe("Banana");
     expect(String(fetch.mock.calls[0][0])).toBe("/api/intake/recent-items?limit=10");
+  });
+
+  it("askLlm POSTs the question and returns the answer", async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>(async () => jsonResponse({ answer: "Likely the late caffeine." }));
+    const answer = await askLlm("Why is my energy low?", { fetch, token: "t" });
+    expect(answer).toBe("Likely the late caffeine.");
+    const [url, init] = fetch.mock.calls[0];
+    expect(String(url)).toBe("/api/ask");
+    expect(init?.method).toBe("POST");
+    expect(JSON.parse(init?.body as string)).toEqual({ question: "Why is my energy low?" });
+  });
+
+  it("askLlm surfaces a 503 when ask is unconfigured", async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>(async () =>
+      jsonResponse({ error: "ask is not configured" }, false, 503)
+    );
+    await expect(askLlm("x", { fetch, token: "t" })).rejects.toThrow("not configured");
   });
 });

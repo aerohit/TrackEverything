@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-16 (ADR-022: fuzzy item search via pg_trgm — recognized/typed names match stored items despite punctuation/mishears)
+> **Last updated:** 2026-06-16 (ADR-023: "Ask LLM" — answer questions over the last 48h of logs; first cut of v2-A)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -389,6 +389,35 @@ the owner verifies. No phase starts before the prior one is approved.
 **Consequences:** Slower nominal throughput but continuous verification and low
 risk of building the wrong thing. Requires keeping ROADMAP.md in sync with the
 two core docs.
+
+### ADR-023
+**Title:** "Ask LLM" — answer free-form/preset questions over the last 48h of logs, with the prompt built server-side.
+**Status:** Accepted (2026-06-16). Realizes the MVP's real-time questions (R-RT-1..6) on the v2 typed
+entities and is the first cut of phase **v2-A** (cross-domain analysis); reuses the SDK-isolated seam
+pattern of ADR-019/020.
+**Context:** The point of logging inputs + feelings is to ask "why is my energy low?", "what can I do?",
+"anything I should be careful with?" — and arbitrary follow-ups. We want one screen that reasons over the
+recent log, keeping the Anthropic key and prompt construction server-side, and not requiring the client to
+ship data.
+**Decision:** A new **Ask LLM** screen (`/ask`) offers three preset questions and a free-text box (typed,
+or dictated with the OS keyboard mic — same on-device voice approach as ADR-021, so no new key/route). It
+calls **`POST /api/ask`** with just `{ question }`. The route gathers the **last 48 hours** server-side —
+check-ins, intake events (with resolved substances), and per-substance totals — and hands them to an
+**`Advisor`** seam ([`server/advise.ts`](../server/advise.ts)). A pure `buildAdvicePrompt`/`summarizeContext`
+turns the context + question into a system+user prompt (unit-tested, SDK-free); the concrete
+**`AnthropicAdvisor`** ([`server/advise_anthropic.ts`](../server/advise_anthropic.ts)) calls Claude
+(`CLAUDE_MODEL`, `max_tokens` 1024) and returns the answer text, shown on screen. The system prompt scopes
+the model to the provided data, asks for concise actionable suggestions citing the logged items/times, and
+frames it as **general wellness reflection, not medical advice**. The route is optional: `503` when
+`ANTHROPIC_API_KEY` is unset (the UI shows a friendly message); the 48h window is a constant
+(`ADVICE_WINDOW_HOURS`). The route lives in `app.ts` (cross-domain: subjective + inputs).
+**Consequences:** the existing prod Anthropic key (already used by scan/recognize) powers this too — **no
+new secret**. Server-side gathering keeps the client thin and the prompt one place to tune. Trade-offs: a
+fixed 48h window (not user-selectable yet) and a single-turn Q&A (no conversation memory); answer quality
+rides on the model and on how much has been logged; the summary is plain text, not the full correlation
+analysis envisioned for v2-A (this is the first cut). Pure prompt building is unit-tested; the route is
+integration-tested with a mock advisor (gathers the right window); the screen + 503 fallback are
+browser-verified; live answers are device-verified.
 
 ### ADR-022
 **Title:** Fuzzy item search with pg_trgm — match a recognized name to a stored item despite punctuation, word order, and mishears.

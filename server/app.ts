@@ -10,11 +10,17 @@
 import { type Context, Hono } from "hono";
 import { sql } from "drizzle-orm";
 import { createCheckinSchema, kindSchema } from "../shared/subjective_state.ts";
+import { askRequestSchema } from "../shared/advice.ts";
 import type { Db } from "../db/client.ts";
 import { createCheckin, listCheckins, type ListRange, toCheckin } from "../db/checkins.ts";
+import { dailyTotals, listIntakeEvents } from "../db/inputs.ts";
 import { type InputDeps, registerInputRoutes } from "./inputs_routes.ts";
 import type { ItemScanner } from "./scan.ts";
 import type { IntakeRecognizer } from "./recognize.ts";
+import type { Advisor } from "./advise.ts";
+
+/** How far back the "Ask LLM" advisor looks (ADR-023). */
+const ADVICE_WINDOW_HOURS = 48;
 
 export interface AppOptions {
   /** When set, every /api request must present this as a Bearer / x-ingest-token. */
@@ -23,6 +29,8 @@ export interface AppOptions {
   scanner?: ItemScanner;
   /** Meal-photo / phrase recognizer (Claude). When absent, /api/intake/recognize returns 503. */
   recognizer?: IntakeRecognizer;
+  /** "Ask LLM" advisor (Claude). When absent, /api/ask returns 503. */
+  advisor?: Advisor;
 }
 
 export function createApp(db: Db, opts: AppOptions = {}): Hono {
@@ -85,6 +93,36 @@ export function createApp(db: Db, opts: AppOptions = {}): Hono {
     }
     const rows = await listCheckins(db, range);
     return c.json({ checkins: rows.map(toCheckin) });
+  });
+
+  // Ask LLM (ADR-023): gather the last 48h of check-ins + intake, build a prompt,
+  // and let Claude answer the user's question. Cross-domain, so it lives here.
+  api.post("/ask", async (c) => {
+    if (!opts.advisor) return c.json({ error: "ask is not configured" }, 503);
+    const parsed = askRequestSchema.safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) return c.json({ error: "invalid", issues: parsed.error.issues }, 400);
+    const to = new Date();
+    const from = new Date(to.getTime() - ADVICE_WINDOW_HOURS * 60 * 60 * 1000);
+    try {
+      const [checkins, events, totals] = await Promise.all([
+        listCheckins(db, { from, to }),
+        listIntakeEvents(db, { from, to }),
+        dailyTotals(db, from, to),
+      ]);
+      const answer = await opts.advisor.answer({
+        question: parsed.data.question,
+        context: {
+          now: to.toISOString(),
+          windowHours: ADVICE_WINDOW_HOURS,
+          checkins: checkins.map(toCheckin),
+          events,
+          totals,
+        },
+      });
+      return c.json({ answer });
+    } catch (e) {
+      return c.json({ error: "ask failed", detail: (e as Error).message }, 502);
+    }
   });
 
   // Inputs domain (v2-2b) routes.

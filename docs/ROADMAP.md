@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-16 (R-CAP-17: Add Item offers Camera + Upload photo sources, matching the Log screen)
+> **Status:** Living document. **Last updated:** 2026-06-16 (v2-A started: "Ask LLM" screen — answer questions over the last 48h of logs)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -60,8 +60,8 @@ One phase per domain; each adds its own typed entity (Drizzle + Zod + enums), ca
 - **v2-8 — Context** — time, place, day type, season, current goal, experiment phase.
 - **Expand Subjective State** (small) — add the remaining dimensions (stress, confidence, motivation, calmness, playfulness) as columns when the owner wants them.
 
-### Phase v2-A — Cross-domain analysis ☐ (documented)
-Re-frames MVP Stage C (real-time questions) and Phase 10 (correlation) over the typed entities: assemble a cross-domain timeline by unioning the entities, compute correlations (inputs/behaviors/exposures → subjective/performance outcomes), and have the LLM interpret. Carries forward R-RT-* and R-PAT-*.
+### Phase v2-A — Cross-domain analysis ◐ (started)
+Re-frames MVP Stage C (real-time questions) and Phase 10 (correlation) over the typed entities: assemble a cross-domain timeline by unioning the entities, compute correlations (inputs/behaviors/exposures → subjective/performance outcomes), and have the LLM interpret. Carries forward R-RT-* and R-PAT-*. **First cut shipped — the "Ask LLM" screen (R-RT-7, [ADR-023](ARCHITECTURE.md#adr-023)):** `POST /api/ask` gathers the last 48h of check-ins + intake server-side and Claude answers preset/free-text questions on the `/ask` screen. Still to come: statistical correlation/lagged analysis and a user-selectable window.
 
 ### Phase v2-X — Cutover to v2 ☑
 **Done (2026-06-15).** v2 is live at the production URL (entrypoint `server/main.ts`,
@@ -505,3 +505,4 @@ keeps the Supabase project awake. CI builds + tests `web/` and the Deno service.
 | 2026-06-16 | Slice v2-2h (fuzzy item search): ADR-022. `listItems` search moves from strict `ILIKE` to **pg_trgm trigram word-similarity** (`word_similarity(q,name) > 0.3` OR substring fallback, ranked best-first) so recognized/typed names match stored items despite punctuation, word order, and small mishears (e.g. "pre workout" → "Dope-Max Pre-Workout"). Migration `0003_item_search_trgm.sql` enables `pg_trgm` + a GIN trigram index on `input_item.name`. **Note:** originally PR #53, which merged into its stacked base instead of `main` and never landed — re-landed directly on `main`. Run `deno task migrate` on the deployed DB. Integration test + verified. |
 | 2026-06-16 | Log confirm-card refinement (R-CAP-18): a found catalog match is **selected by default**, and logging against an existing item sets the intake `displayName` to **the item's own name** (not the transcribed text) — e.g. "pre workout" → "Dope-Max Pre-Workout". Pure helper `web/src/lib/log.ts` (`selectedName`) + unit tests; browser-verified end to end. Web-only. |
 | 2026-06-16 | Add Item photo parity (R-CAP-17): the Add Item screen gains **Camera** + **Upload** photo sources (two file inputs, like the Log screen) in place of the single camera-only picker. Web-only; browser-verified. |
+| 2026-06-16 | Phase v2-A started (R-RT-7, ADR-023): **"Ask LLM"** screen (`/ask`) + `POST /api/ask`. Preset + free-text questions (typed or OS-keyboard-dictated) answered by Claude over the **last 48h** of check-ins + intake, gathered server-side; SDK-isolated `Advisor` seam (pure prompt builder + `AnthropicAdvisor`). Optional (503 without a key; prod already has one). Server + web tests; Postman updated; browser-verified (screen, 503 fallback, answer render); live answers device-verified. |

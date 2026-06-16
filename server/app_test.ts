@@ -1,8 +1,9 @@
-import { assert, assertEquals } from "@std/assert";
+import { assert, assertEquals, assertStringIncludes } from "@std/assert";
 import type { Db } from "../db/client.ts";
 import { connect } from "../db/client.ts";
 import { migrate } from "../db/migrate.ts";
 import { createApp } from "./app.ts";
+import type { AdviceContext } from "../shared/advice.ts";
 
 const DATABASE_URL = Deno.env.get("DATABASE_URL");
 const TOKEN = "test-token";
@@ -29,6 +30,78 @@ Deno.test("API namespace always speaks JSON — unknown /api paths are a JSON 40
 
   // Auth still runs first: an unknown /api path without a token is 401, not 404.
   assertEquals((await app.request("/api/bogus")).status, 401);
+});
+
+Deno.test({
+  name: "ask API: 503 unconfigured, 400 bad body, else answers over the last-48h context",
+  ignore: !DATABASE_URL,
+  async fn() {
+    await migrate(DATABASE_URL);
+    const { sql, db } = connect(DATABASE_URL);
+    try {
+      await sql`truncate resolved_amount, intake_event, item_component, input_item, subjective_state cascade`;
+
+      // No advisor configured → 503.
+      const noAdvisor = createApp(db, { token: TOKEN });
+      assertEquals(
+        (await noAdvisor.request("/api/ask", {
+          method: "POST",
+          headers: auth,
+          body: JSON.stringify({ question: "why?" }),
+        })).status,
+        503,
+      );
+
+      // A mock advisor that reports what context the route gathered.
+      let captured: AdviceContext | null = null;
+      const advisor = {
+        answer: (a: { question: string; context: AdviceContext }) => {
+          captured = a.context;
+          return Promise.resolve(
+            `Q:${a.question} checkins:${a.context.checkins.length} events:${a.context.events.length} window:${a.context.windowHours}`,
+          );
+        },
+      };
+      const app = createApp(db, { token: TOKEN, advisor });
+
+      // Bad payload → 400.
+      assertEquals(
+        (await app.request("/api/ask", { method: "POST", headers: auth, body: "{}" })).status,
+        400,
+      );
+
+      // Seed recent data (within the 48h window — use now-relative timestamps).
+      await app.request("/api/checkins", {
+        method: "POST",
+        headers: auth,
+        body: JSON.stringify({ readings: [{ kind: "energy", rating: 2 }] }),
+      });
+      await app.request("/api/intake", {
+        method: "POST",
+        headers: auth,
+        body: JSON.stringify({
+          displayName: "Cold brew",
+          quantity: 1,
+          unit: "cup",
+          occurredAt: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+          resolved: [{ substance: "caffeine", amount: 200, unit: "mg" }],
+        }),
+      });
+
+      const res = await app.request("/api/ask", {
+        method: "POST",
+        headers: auth,
+        body: JSON.stringify({ question: "Why is my energy low?" }),
+      });
+      assertEquals(res.status, 200);
+      const { answer } = await res.json();
+      assertStringIncludes(answer, "checkins:1");
+      assertStringIncludes(answer, "events:1");
+      assert(captured !== null && (captured as AdviceContext).windowHours === 48);
+    } finally {
+      await sql.end();
+    }
+  },
 });
 
 Deno.test({

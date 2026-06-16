@@ -623,3 +623,14 @@ select.field {
   border-color: var(--accent);
   background: var(--accent-soft);
 }
+
+/* Ask LLM (ADR-023): the answer block. */
+.answer {
+  white-space: pre-wrap;
+  line-height: 1.5;
+  font-size: 14px;
+  color: var(--fg);
+}
+.err-text {
+  color: var(--danger);
+}

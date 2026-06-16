@@ -44,6 +44,7 @@
     { href: "/", label: "Log" },
     { href: "/overview", label: "Overview" },
     { href: "/manage", label: "Add Item" },
+    { href: "/ask", label: "Ask LLM" },
   ];
   const path = $derived($page.url.pathname);
 
