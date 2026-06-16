@@ -148,6 +148,21 @@ export async function recentItems(limit = 10, ctx: ApiCtx = {}): Promise<RecentI
   return (await res.json()).items as RecentItem[];
 }
 
+/** Ask the LLM a question about your last 48h of logs (POST /api/ask) → the answer text. */
+export async function askLlm(question: string, ctx: ApiCtx = {}): Promise<string> {
+  const { f, token } = resolve(ctx);
+  const res = await f("/api/ask", {
+    method: "POST",
+    headers: headers(token, true),
+    body: JSON.stringify({ question }),
+  });
+  if (!res.ok) {
+    const msg = await res.json().then((b) => b?.error).catch(() => null);
+    throw new ApiError(res.status, msg || "Ask failed");
+  }
+  return (await res.json()).answer as string;
+}
+
 export async function createItem(body: CreateItemBody, ctx: ApiCtx = {}): Promise<InputItemSummary> {
   const { f, token } = resolve(ctx);
   const res = await f("/api/items", {

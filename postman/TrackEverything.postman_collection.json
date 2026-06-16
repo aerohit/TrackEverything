@@ -108,6 +108,29 @@
       ]
     },
     {
+      "name": "Ask LLM",
+      "item": [
+        {
+          "name": "Ask a question over the last 48h",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"question\": \"Why is my energy low today?\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ask",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ask"]
+            },
+            "description": "Gathers your check-ins + intake from the last 48 hours, builds a prompt, and Claude answers `question`. Returns { answer: string }. 503 when ANTHROPIC_API_KEY is unset; 502 on model failure."
+          }
+        }
+      ]
+    },
+    {
       "name": "Items",
       "item": [
         {
