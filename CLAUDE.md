@@ -35,3 +35,19 @@ If a requested change conflicts with an existing requirement or ADR, surface the
 conflict before implementing — don't silently diverge from the docs.
 
 At the start of a work session, skim both docs so the work reflects current scope.
+
+## API collection (binding)
+
+[`postman/TrackEverything.postman_collection.json`](postman/TrackEverything.postman_collection.json)
+is a Postman collection for the backend HTTP API and MUST stay in sync with the code.
+On **any** change to a route in `server/` (adding, removing, or changing a path, method,
+request body, query params, or auth), update the collection in the **same change**:
+
+- Add/rename/remove the matching request; keep the example body and query params
+  aligned with the Zod schema in `shared/`.
+- Use the `{{baseUrl}}` and `{{token}}` collection variables; never hard-code a host
+  or a real token.
+
+[`server/postman_test.ts`](server/postman_test.ts) enforces the route↔request mapping
+(it fails CI if a registered route is missing from the collection, or vice-versa), but
+it does **not** check bodies/params — keep those current by hand.
