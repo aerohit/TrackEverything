@@ -4,7 +4,7 @@
  * edits/soft-deletes events (mutable), lists events with their resolution, and rolls
  * a day up into per-substance totals.
  */
-import { and, asc, desc, eq, gte, ilike, inArray, isNull, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNull, lt, sql } from "drizzle-orm";
 import type {
   Confidence,
   CreateIntakeEvent,
@@ -455,15 +455,33 @@ function itemSummary(r: InputItemRow): InputItemSummary {
   };
 }
 
+/** Minimum trigram word-similarity for a fuzzy name match (0–1; lower = more lenient). */
+const SEARCH_SIMILARITY = 0.3;
+
 export async function listItems(
   db: Db,
   opts: { search?: string; limit?: number } = {},
 ): Promise<InputItemSummary[]> {
-  const conds = [isNull(inputItem.deletedAt)];
-  if (opts.search) conds.push(ilike(inputItem.name, `%${opts.search}%`));
   const limit = Math.min(Math.max(opts.limit ?? 100, 1), 500);
+  const search = opts.search?.trim();
+
+  if (search) {
+    // Fuzzy match (pg_trgm, ADR-022): word-similarity tolerates punctuation, word
+    // order, and minor mishears (e.g. "pre workout" → "Dope-Max Pre-Workout");
+    // an ILIKE substring catches the rest. Ranked best-match first.
+    const sim = sql<number>`word_similarity(${search}, ${inputItem.name})`;
+    const rows = await db.select().from(inputItem)
+      .where(and(
+        isNull(inputItem.deletedAt),
+        sql`(${sim} > ${SEARCH_SIMILARITY} or ${inputItem.name} ilike ${"%" + search + "%"})`,
+      ))
+      .orderBy(sql`${sim} desc`, asc(inputItem.name))
+      .limit(limit);
+    return rows.map(itemSummary);
+  }
+
   const rows = await db.select().from(inputItem)
-    .where(and(...conds))
+    .where(isNull(inputItem.deletedAt))
     .orderBy(asc(inputItem.name))
     .limit(limit);
   return rows.map(itemSummary);

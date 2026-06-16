@@ -334,3 +334,41 @@ Deno.test({
     }
   },
 });
+
+Deno.test({
+  name: "inputs API: item search is fuzzy (pg_trgm) — tolerates punctuation/word order",
+  ignore: !DATABASE_URL,
+  async fn() {
+    await migrate(DATABASE_URL);
+    const { sql, db } = connect(DATABASE_URL);
+    const app = createApp(db, { token: TOKEN });
+    try {
+      await sql`truncate resolved_amount, intake_event, item_component, input_item cascade`;
+      for (const name of ["Dope-Max Pre-Workout", "Magnesium Glycinate", "Greek Yogurt"]) {
+        await app.request("/api/items", {
+          method: "POST",
+          headers: auth,
+          body: JSON.stringify({ name, kind: "product", primaryType: "supplement" }),
+        });
+      }
+
+      const search = async (q: string) =>
+        (await (await app.request("/api/items?search=" + encodeURIComponent(q), { headers: auth }))
+          .json()).items as { name: string }[];
+
+      // The reported case: a multi-word, un-hyphenated query finds the hyphenated item.
+      assertEquals((await search("pre workout"))[0]?.name, "Dope-Max Pre-Workout");
+      // And the longer phrase, single words, and a misspelling.
+      assertEquals((await search("dope max pre workout"))[0]?.name, "Dope-Max Pre-Workout");
+      assert((await search("pre")).some((i) => i.name === "Dope-Max Pre-Workout"));
+      assert((await search("workout")).some((i) => i.name === "Dope-Max Pre-Workout"));
+      assert((await search("magnesium")).some((i) => i.name === "Magnesium Glycinate"));
+      assert((await search("yoghurt")).some((i) => i.name === "Greek Yogurt")); // minor misspelling
+
+      // An unrelated query does not match.
+      assertEquals((await search("zzzquil tablets")).length, 0);
+    } finally {
+      await sql.end();
+    }
+  },
+});
