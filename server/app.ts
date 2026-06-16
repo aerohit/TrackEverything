@@ -94,6 +94,10 @@ export function createApp(db: Db, opts: AppOptions = {}): Hono {
   };
   registerInputRoutes(api, db, deps);
 
+  // Any unmatched /api/* path is a JSON 404 — never fall through to the SPA's
+  // index.html static fallback (main.ts), so the API namespace always speaks JSON.
+  api.all("*", (c) => c.json({ error: "not found" }, 404));
+
   app.route("/api", api);
   return app;
 }

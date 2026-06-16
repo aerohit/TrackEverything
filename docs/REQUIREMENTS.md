@@ -1,8 +1,8 @@
 # TrackEverything — Requirements
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this
-> stays current. **Last updated:** 2026-06-15 (ADR-021: refine Log capture —
-> camera/upload photo, OS keyboard dictation, live catalog search, unit dropdown) **Owner:** aerohit
+> stays current. **Last updated:** 2026-06-16 (R-NFR-7: the /api namespace always
+> responds JSON — unknown /api paths are a JSON 404, never the SPA shell) **Owner:** aerohit
 > **Companion doc:** [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each requirement has a stable ID (`R-<area>-<n>`) so it can be referenced from
@@ -140,6 +140,7 @@ moment.
 | R-NFR-4 | Data is durable and backed up; the event log is the system of record.                                                                                                                      | Proposed |
 | R-NFR-5 | LLM/API cost should be tracked and kept reasonable for a single user.                                                                                                                      | Proposed |
 | R-NFR-6 | iPhone is the primary capture surface.                                                                                                                                                     | Built    |
+| R-NFR-7 | **The `/api` namespace always responds JSON.** Success and every error (400/401/404/502/503) are JSON; an unmatched `/api/*` path returns a JSON `404 {"error":"not found"}` and never falls through to the SPA's `index.html`. (Non-API paths still serve the PWA shell.) | Built |
 
 ## 10. Testing & quality
 
@@ -233,3 +234,4 @@ This document is kept current by an explicit process, not by hope. See
 | 2026-06-15 | v2-2e (Add Item by label photo, in review): added R-CAP-17 + ADR-019. "Manage" → **Add Item**; the manual item form is replaced by photo capture/upload → `POST /api/items/scan` (Claude vision via `ItemScanner`/`AnthropicItemScanner`, SDK-isolated; tolerant pure parser) → an **editable draft** → Save. Unknown actives **auto-create** a `substance` (normalized name, coerced canonical unit, `type: other`). Scanning optional (503 → manual fallback). Supersedes R-CAP-15 on v2. Server + web tests added; scan→edit→save + auto-create browser-verified. |
 | 2026-06-15 | v2-2f (Log capture overhaul, in review): added R-CAP-18/19 + ADR-020; R-CAP-16 → Built. The Log screen replaces the freeform manual form with three capture modes — **photo**, **voice**, and **recent items** (`GET /api/intake/recent-items`). Photo/phrase → `POST /api/intake/recognize` (Claude behind an `IntakeRecognizer` seam) → recognized name/qty/unit + estimated nutrients **matched** against the catalog → a quick-confirm to log against a match, **save as a new item**, or log by name. **Voice is transcribed on-device (Web Speech API)** and arrives as text, so Anthropic stays the only API key. Recognition optional (503 + graceful UI). Server (parser + recognize/recent routes, mocked seam) + web client tests; recent→confirm→log + 503 fallback browser-verified; live photo/voice device-verified. |
 | 2026-06-15 | v2-2g (Log capture refinements, in review): ADR-021 refines R-CAP-18 from phone-use feedback. Photo splits into **Camera** (`capture`) + **Upload** (album/files); **voice** drops the Web Speech API for the **OS keyboard's own dictation** (a focused "Speak / type" field — also a typing fallback) sent to recognize as text; the confirm card gains a **live catalog search** (`GET /api/items?search=`) to attach to any existing item or save as new; the **unit** field becomes a dropdown of common display units (`web/src/lib/units.ts`). Web `unitOptions` test added; camera/upload, dictation field, live search, unit dropdown browser-verified; live photo/voice device-verified. |
+| 2026-06-16 | Added R-NFR-7: the `/api` namespace always responds JSON. An unmatched `/api/*` path used to fall through to the SPA static fallback and return `index.html` (HTML 200); added a `api.all("*")` JSON `404 {"error":"not found"}` catch-all in `server/app.ts` (after auth, before the SPA fallback). Non-API paths still serve the PWA shell. DB-free `app_test.ts` test. |
