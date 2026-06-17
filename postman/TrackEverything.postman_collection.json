@@ -7,11 +7,25 @@
   },
   "auth": {
     "type": "bearer",
-    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:8000", "type": "string" },
-    { "key": "token", "value": "", "type": "string" }
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
   ],
   "item": [
     {
@@ -20,13 +34,19 @@
         {
           "name": "Health check",
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/health",
-              "host": ["{{baseUrl}}"],
-              "path": ["health"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
             },
             "description": "Open health probe. Add `?warm=1` to also run a tiny query that keeps the pooled DB connection (and the free-tier Supabase project) warm."
           }
@@ -34,13 +54,20 @@
         {
           "name": "Health check (API-prefixed)",
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/health",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "health"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "health"
+              ]
             },
             "description": "Same health probe mounted under /api (before the auth guard)."
           }
@@ -54,16 +81,30 @@
           "name": "Create check-in",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "options": { "raw": { "language": "json" } },
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
               "raw": "{\n  \"readings\": [\n    { \"kind\": \"mood\", \"rating\": 4 },\n    { \"kind\": \"energy\", \"rating\": 3 },\n    { \"kind\": \"focus\", \"rating\": 4 }\n  ],\n  \"note\": \"after lunch\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/checkins",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "checkins"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "checkins"
+              ]
             },
             "description": "Record one or more immutable readings (mood/energy/focus, rating 1–5) sharing one recorded_at. At least one reading; no kind repeated. Returns 201 { checkins: [...] }."
           }
@@ -75,13 +116,37 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/checkins?from=2026-06-15T00:00:00Z&to=2026-06-16T00:00:00Z&limit=50&kind=mood",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "checkins"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "checkins"
+              ],
               "query": [
-                { "key": "from", "value": "2026-06-15T00:00:00Z", "description": "ISO start (inclusive)", "disabled": true },
-                { "key": "to", "value": "2026-06-16T00:00:00Z", "description": "ISO end (exclusive)", "disabled": true },
-                { "key": "limit", "value": "50", "disabled": true },
-                { "key": "kind", "value": "mood", "description": "mood | energy | focus", "disabled": true }
+                {
+                  "key": "from",
+                  "value": "2026-06-15T00:00:00Z",
+                  "description": "ISO start (inclusive)",
+                  "disabled": true
+                },
+                {
+                  "key": "to",
+                  "value": "2026-06-16T00:00:00Z",
+                  "description": "ISO end (exclusive)",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "disabled": true
+                },
+                {
+                  "key": "kind",
+                  "value": "mood",
+                  "description": "mood | energy | focus",
+                  "disabled": true
+                }
               ]
             },
             "description": "Readings newest first. All query params optional."
@@ -99,8 +164,13 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/substances",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "substances"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "substances"
+              ]
             },
             "description": "The analytical vocabulary (seeded + any auto-created). Returns { substances: [...] }."
           }
@@ -114,16 +184,30 @@
           "name": "Ask a question over the last 48h",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "options": { "raw": { "language": "json" } },
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
               "raw": "{\n  \"question\": \"Why is my energy low today?\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/ask",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "ask"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ask"
+              ]
             },
             "description": "Gathers your check-ins + intake from the last 48 hours, builds a prompt, and Claude answers `question`. Returns { answer: string }. 503 when ANTHROPIC_API_KEY is unset; 502 on model failure."
           }
@@ -140,11 +224,25 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/items?search=pre&limit=20",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "items"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "items"
+              ],
               "query": [
-                { "key": "search", "value": "pre", "description": "Fuzzy (pg_trgm) match on name; omit to list all.", "disabled": true },
-                { "key": "limit", "value": "20", "disabled": true }
+                {
+                  "key": "search",
+                  "value": "pre",
+                  "description": "Fuzzy (pg_trgm) match on name; omit to list all.",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
               ]
             },
             "description": "Reusable item summaries. `search` is a fuzzy trigram match (tolerates punctuation/word-order)."
@@ -157,9 +255,21 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/items/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "items", ":id"],
-              "variable": [{ "key": "id", "value": "", "description": "Item UUID" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "items",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "Item UUID"
+                }
+              ]
             },
             "description": "One item plus its components (substances by name / child items by id). 404 if unknown."
           }
@@ -168,16 +278,30 @@
           "name": "Create item",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "options": { "raw": { "language": "json" } },
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
               "raw": "{\n  \"name\": \"My Pre-Workout\",\n  \"kind\": \"product\",\n  \"primaryType\": \"supplement\",\n  \"roles\": [\"stimulant\"],\n  \"brand\": \"Acme\",\n  \"defaultServing\": {\n    \"displayQuantity\": 1,\n    \"displayUnit\": \"scoop\",\n    \"canonicalQuantity\": 12,\n    \"canonicalUnit\": \"g\"\n  },\n  \"components\": [\n    { \"substance\": \"caffeine\", \"amount\": 200, \"unit\": \"mg\" },\n    { \"substance\": \"creatine\", \"amount\": 5, \"unit\": \"g\" }\n  ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/items",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "items"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "items"
+              ]
             },
             "description": "Create a product/recipe/simple item. `kind` ∈ product|recipe|simple; `primaryType` ∈ food|drink|supplement|medication|meal|other. Each component is exactly one of `substance` (name; auto-created if unknown) or `childItemId` (uuid). Returns 201 with the item + resolved components."
           }
@@ -186,18 +310,66 @@
           "name": "Scan label photo → draft item",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "options": { "raw": { "language": "json" } },
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
               "raw": "{\n  \"imageBase64\": \"<base64 of a label photo, no data: prefix>\",\n  \"mediaType\": \"image/jpeg\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/items/scan",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "items", "scan"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "items",
+                "scan"
+              ]
             },
             "description": "Claude-vision scan of a supplement/food label → an editable draft item (not saved). `mediaType` ∈ image/jpeg|png|webp|heic|heif|gif. 503 when ANTHROPIC_API_KEY is unset; 502 on scan failure."
+          }
+        },
+        {
+          "name": "Look up barcode → draft item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"barcode\": \"5000112637939\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/items/barcode",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "items",
+                "barcode"
+              ]
+            },
+            "description": "Look up a product barcode (8-14 digits, EAN/UPC) against Open Food Facts → an editable draft item (not saved; POST /api/items to save). 404 when the barcode is unknown; 502 on an upstream failure. Needs no API key."
           }
         }
       ]
@@ -209,16 +381,30 @@
           "name": "Log intake",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "options": { "raw": { "language": "json" } },
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
               "raw": "{\n  \"displayName\": \"Pre-workout\",\n  \"itemId\": \"<item uuid, optional>\",\n  \"quantity\": 1,\n  \"unit\": \"scoop\",\n  \"occurredAt\": \"2026-06-16T08:00:00.000Z\",\n  \"contextTags\": [\"pre_workout\"],\n  \"confidence\": \"high\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/intake",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "intake"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "intake"
+              ]
             },
             "description": "Log one intake. With `itemId`, it resolves the item's components and freezes a per-event snapshot. Freeform (no item) is allowed and may carry manual substance amounts, e.g.:\n{ \"displayName\": \"Coffee\", \"quantity\": 1, \"unit\": \"cup\", \"resolved\": [{ \"substance\": \"caffeine\", \"amount\": 120, \"unit\": \"mg\" }] }\n`occurredAt` defaults to now; `confidence` ∈ high|medium|low|unknown. Returns 201 with the event + resolved amounts."
           }
@@ -227,16 +413,31 @@
           "name": "Recognize intake (photo or phrase)",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "options": { "raw": { "language": "json" } },
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
               "raw": "{\n  \"source\": \"text\",\n  \"text\": \"a coffee at 10am\",\n  \"now\": \"2026-06-17T14:30\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/intake/recognize",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "intake", "recognize"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "intake",
+                "recognize"
+              ]
             },
             "description": "Recognize an intake from a meal photo or a spoken/typed phrase, and match it against the catalog. Exactly one source:\n- text: { \"source\": \"text\", \"text\": \"...\" }\n- photo: { \"source\": \"photo\", \"imageBase64\": \"<base64>\", \"mediaType\": \"image/jpeg\" }\nReturns { recognized, matches }. 503 when ANTHROPIC_API_KEY is unset."
           }
@@ -248,12 +449,29 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/intake?from=2026-06-15T00:00:00Z&to=2026-06-16T00:00:00Z&limit=200",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "intake"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "intake"
+              ],
               "query": [
-                { "key": "from", "value": "2026-06-15T00:00:00Z", "disabled": true },
-                { "key": "to", "value": "2026-06-16T00:00:00Z", "disabled": true },
-                { "key": "limit", "value": "200", "disabled": true }
+                {
+                  "key": "from",
+                  "value": "2026-06-15T00:00:00Z",
+                  "disabled": true
+                },
+                {
+                  "key": "to",
+                  "value": "2026-06-16T00:00:00Z",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "200",
+                  "disabled": true
+                }
               ]
             },
             "description": "Live intake events, newest first, each with its resolved substance amounts."
@@ -266,11 +484,25 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/intake/totals?from=2026-06-15T00:00:00Z&to=2026-06-16T00:00:00Z",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "intake", "totals"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "intake",
+                "totals"
+              ],
               "query": [
-                { "key": "from", "value": "2026-06-15T00:00:00Z", "description": "ISO start (required)" },
-                { "key": "to", "value": "2026-06-16T00:00:00Z", "description": "ISO end (required)" }
+                {
+                  "key": "from",
+                  "value": "2026-06-15T00:00:00Z",
+                  "description": "ISO start (required)"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-06-16T00:00:00Z",
+                  "description": "ISO end (required)"
+                }
               ]
             },
             "description": "Per-substance daily totals over [from, to). Both params required (400 otherwise)."
@@ -283,9 +515,21 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/intake/recent-items?limit=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "intake", "recent-items"],
-              "query": [{ "key": "limit", "value": "10", "disabled": true }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "intake",
+                "recent-items"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "disabled": true
+                }
+              ]
             },
             "description": "Top-N distinct recently-logged items (deduped by item, or by name for freeform logs), newest first."
           }
@@ -294,17 +538,38 @@
           "name": "Edit intake event",
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "options": { "raw": { "language": "json" } },
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
               "raw": "{\n  \"quantity\": 2,\n  \"unit\": \"scoop\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/intake/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "intake", ":id"],
-              "variable": [{ "key": "id", "value": "", "description": "Intake event UUID" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "intake",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "Intake event UUID"
+                }
+              ]
             },
             "description": "Patch an existing (mutable) intake event — any subset of the create fields. Re-resolves the snapshot. 404 if unknown."
           }
@@ -316,9 +581,21 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/intake/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "intake", ":id"],
-              "variable": [{ "key": "id", "value": "", "description": "Intake event UUID" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "intake",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "Intake event UUID"
+                }
+              ]
             },
             "description": "Soft-delete an intake event (drops from totals). 204 on success; 404 if already gone."
           }

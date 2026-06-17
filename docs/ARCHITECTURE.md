@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-16 (ADR-023: "Ask LLM" — answer questions over the last 48h of logs; first cut of v2-A)
+> **Last updated:** 2026-06-17 (ADR-024: Add Item by barcode via Open Food Facts)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -389,6 +389,36 @@ the owner verifies. No phase starts before the prior one is approved.
 **Consequences:** Slower nominal throughput but continuous verification and low
 risk of building the wrong thing. Requires keeping ROADMAP.md in sync with the
 two core docs.
+
+### ADR-024
+**Title:** Add Item by barcode — look products up against Open Food Facts behind a key-less seam.
+**Status:** Accepted (2026-06-17). Realizes R-CAP-21; reuses the SDK/seam + pure-parser pattern of
+[ADR-019](#adr-019) and feeds the same draft-item editor and `POST /api/items` save path.
+**Context:** Most packaged foods/drinks carry a barcode, and their nutrition is already in the open
+[Open Food Facts](https://world.openfoodfacts.org) database. Typing or photographing the facts panel
+(ADR-019) is avoidable for these: scanning the barcode is faster and less error-prone, and — unlike the
+Claude-vision scan — needs **no API key**, so it works on a bare deploy.
+**Decision:** A new **`ProductLookup`** seam ([`server/barcode.ts`](../server/barcode.ts)) with a pure
+`parseOffProduct(raw, barcode)` that maps an Open Food Facts product into an editable `CreateItem` (the same
+draft the label scan returns), unit-tested with no network. The concrete **`OpenFoodFactsLookup`**
+([`server/barcode_off.ts`](../server/barcode_off.ts)) fetches `GET /api/v2/product/{barcode}` (a `fetch` is
+injected so tests stub the network) and returns `null` on a 404 (unknown barcode). Route **`POST
+/api/items/barcode`** validates an 8–14-digit barcode (Zod, [`shared/inputs.ts`](../shared/inputs.ts)),
+returns the draft, `404` when not found, `502` on upstream failure, `503` if the seam is absent. Because it
+needs no key, **`main.ts` always wires it** (the Claude seams stay key-gated). Mapping: macros that Open
+Food Facts stores reliably — calories (kcal), protein, carbohydrate, sugar, fat, sodium (g; the resolver
+converts to mg) — preferring per-serving figures, else per-100 g; the product's `serving_quantity` becomes
+the item's **canonical gram serving** (ADR-019/R-CAP-17) when known; beverages (by category) map to
+`drink`. On the client the Add Item screen gains a barcode field plus a live **`BarcodeDetector`** camera
+scan where supported (progressive enhancement; manual entry is the universal fallback), then the existing
+draft-edit + **Save** flow persists it.
+**Consequences:** barcode capture works with no secret and no model cost; the pure parser is unit-tested and
+the route integration-tested with a stub lookup (no DB), the live lookup is checked against real barcodes,
+and the type→lookup→edit→save flow is browser-verified. Trade-offs: coverage and data quality ride on Open
+Food Facts (crowd-sourced; some products missing or sparse); vitamins/minerals are deliberately **not**
+mapped (their units there are inconsistent and would risk wrong frozen snapshots); the live camera scan
+depends on `BarcodeDetector` (Chromium/Android today), so iOS/Safari falls back to manual entry; an
+outbound call to a third party is introduced (no PII sent — just the barcode).
 
 ### ADR-023
 **Title:** "Ask LLM" — answer free-form/preset questions over the last 48h of logs, with the prompt built server-side.

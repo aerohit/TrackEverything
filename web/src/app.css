@@ -558,6 +558,55 @@ select.field {
   border-radius: 10px;
 }
 
+/* Barcode lookup on the Add-item screen (ADR-024). */
+.or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0 12px;
+  color: var(--mut);
+  font-size: 12px;
+}
+.or::before,
+.or::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--line);
+}
+.barcode-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.barcode-row .field {
+  flex: 1;
+}
+.barcode-row .bc-go {
+  margin-top: 0;
+  width: auto;
+  white-space: nowrap;
+}
+.linkbtn {
+  display: inline-block;
+  margin-top: 10px;
+  background: none;
+  border: none;
+  padding: 4px 0;
+  color: var(--accent);
+  font: inherit;
+  cursor: pointer;
+}
+.cam {
+  margin: 10px 0;
+  text-align: center;
+}
+.cam video {
+  width: 100%;
+  max-height: 280px;
+  border-radius: 12px;
+  background: #000;
+}
+
 /* Log capture (ADR-020): photo / voice mode buttons, recent chips, save-as options. */
 .modes {
   display: flex;

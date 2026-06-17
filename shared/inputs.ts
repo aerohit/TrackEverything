@@ -126,6 +126,15 @@ export const scanRequestSchema = z.object({
 export type ScanRequest = z.infer<typeof scanRequestSchema>;
 
 /**
+ * Look up a product barcode (EAN-8/UPC-A/EAN-13) against an open food database,
+ * returning a draft item the user reviews then saves (POST /api/items/barcode).
+ */
+export const barcodeLookupRequestSchema = z.object({
+  barcode: z.string().regex(/^\d{8,14}$/, "barcode must be 8-14 digits"),
+});
+export type BarcodeLookupRequest = z.infer<typeof barcodeLookupRequestSchema>;
+
+/**
  * Recognize an intake from a meal photo or a spoken/typed phrase, then match the
  * catalog (POST /api/intake/recognize). Exactly one source is supplied. Voice is
  * transcribed on-device (Web Speech API) and arrives here as `text` (ADR-020).

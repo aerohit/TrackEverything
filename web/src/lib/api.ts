@@ -128,6 +128,27 @@ export async function scanItem(
 }
 
 /**
+ * Look up a product barcode against Open Food Facts; returns an editable draft
+ * item (POST /api/items/barcode). A 404 ApiError means the barcode is unknown.
+ */
+export async function lookupBarcode(
+  barcode: string,
+  ctx: ApiCtx = {},
+): Promise<CreateItemBody> {
+  const { f, token } = resolve(ctx);
+  const res = await f("/api/items/barcode", {
+    method: "POST",
+    headers: headers(token, true),
+    body: JSON.stringify({ barcode }),
+  });
+  if (!res.ok) {
+    const msg = await res.json().then((b) => b?.error).catch(() => null);
+    throw new ApiError(res.status, msg || "Barcode lookup failed");
+  }
+  return await res.json() as CreateItemBody;
+}
+
+/**
  * Recognize an intake from a meal photo or a phrase, and get catalog matches
  * (POST /api/intake/recognize). Exactly one source is supplied.
  */
