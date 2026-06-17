@@ -153,23 +153,30 @@ body {
 }
 
 .dim {
-  margin: 14px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0;
 }
 .dim-head {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 8px;
+  /* Fixed width so the three scales line up; nowrap keeps each label on one line. */
+  flex: 0 0 76px;
   font-weight: 600;
+  white-space: nowrap;
 }
 .dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
+  flex: none;
 }
 .scale {
   display: flex;
   gap: 8px;
+  flex: 1;
 }
 .scale button {
   flex: 1;
