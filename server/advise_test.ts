@@ -22,6 +22,7 @@ const ctx: AdviceContext = {
       confidence: "medium",
       contextTags: ["afternoon"],
       notes: null,
+      source: "voice",
       resolved: [{
         substance: "caffeine",
         amount: 200,

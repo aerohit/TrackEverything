@@ -46,6 +46,11 @@ export type InputPrimaryType = (typeof INPUT_PRIMARY_TYPES)[number];
 export const CONFIDENCE_LEVELS = ["high", "medium", "low", "unknown"] as const;
 export type Confidence = (typeof CONFIDENCE_LEVELS)[number];
 
+/** How an intake was captured (provenance, R-CAP-12). */
+export const INTAKE_SOURCES = ["quick", "recent", "photo", "voice", "manual", "api"] as const;
+export type IntakeSource = (typeof INTAKE_SOURCES)[number];
+export const intakeSourceSchema = z.enum(INTAKE_SOURCES);
+
 export const substanceUnitSchema = z.enum(SUBSTANCE_UNITS);
 export const confidenceSchema = z.enum(CONFIDENCE_LEVELS);
 
@@ -122,6 +127,8 @@ export const createIntakeEventSchema = z.object({
   confidence: confidenceSchema.optional(),
   contextTags: z.array(z.string()).optional(),
   notes: z.string().optional(),
+  // How this was captured (provenance, R-CAP-12); defaults to "manual" server-side.
+  source: intakeSourceSchema.optional(),
   // Freeform logs (no item) can attach known substance amounts directly.
   resolved: z.array(manualResolvedSchema).optional(),
 });
@@ -227,7 +234,13 @@ export interface IntakeEvent {
   confidence: Confidence;
   contextTags: string[];
   notes: string | null;
+  source: IntakeSource;
   resolved: ResolvedAmount[];
+}
+
+/** An item logged often enough to suggest pinning to Quick Capture (v2-C0). */
+export interface FavoriteSuggestion extends InputItemSummary {
+  count: number;
 }
 
 /** One substance's total across a day (canonical unit). */

@@ -1,11 +1,13 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { deleteIntake, logIntake, quickItems } from "$lib/api";
+  import { deleteIntake, favoriteSuggestions, logIntake, quickItems, setQuickLog } from "$lib/api";
   import { iconForInput } from "$lib/icons";
   import { defaultAmountLabel, quickLogPayload } from "$lib/quickcapture";
-  import type { QuickItem, QuickPreset } from "$lib/types";
+  import type { FavoriteSuggestion, QuickItem, QuickPreset } from "$lib/types";
 
   let items = $state<QuickItem[]>([]);
+  let suggestions = $state<FavoriteSuggestion[]>([]);
+  let pinningId = $state<string | null>(null);
   let loading = $state(true);
   let busyId = $state<string | null>(null);
   // Toast doubles as the Undo affordance: it holds the just-logged event id.
@@ -20,11 +22,24 @@
 
   async function load() {
     try {
-      items = await quickItems();
+      [items, suggestions] = await Promise.all([quickItems(), favoriteSuggestions()]);
     } catch {
       flash("Couldn't load — check your token.", { err: true });
     } finally {
       loading = false;
+    }
+  }
+
+  async function pin(s: FavoriteSuggestion) {
+    pinningId = s.id;
+    try {
+      await setQuickLog(s.id, { quickLog: true });
+      flash(`Pinned ${s.name} ✓`);
+      await load();
+    } catch {
+      flash(`Couldn't pin ${s.name}.`, { err: true });
+    } finally {
+      pinningId = null;
     }
   }
 
@@ -96,6 +111,21 @@
       </p>
     {/if}
   </section>
+
+  {#if suggestions.length}
+    <section class="card">
+      <h2>You log these a lot</h2>
+      <p class="mut">Pin one for one-tap logging.</p>
+      {#each suggestions as s}
+        <div class="itemrow">
+          <span><span class="chipicon" aria-hidden="true">{iconForInput(s.name)}</span> {s.name}</span>
+          <button class="ghostbtn" disabled={pinningId === s.id} onclick={() => pin(s)}>
+            {pinningId === s.id ? "Pinning…" : `Pin · ${s.count}×`}
+          </button>
+        </div>
+      {/each}
+    </section>
+  {/if}
 </main>
 
 {#if toast}

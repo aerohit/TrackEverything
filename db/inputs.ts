@@ -10,6 +10,7 @@ import type {
   CreateIntakeEvent,
   CreateItem,
   DailyTotal,
+  FavoriteSuggestion,
   InputItemDetail,
   InputItemSummary,
   IntakeEvent,
@@ -252,6 +253,7 @@ export async function createIntakeEvent(db: Db, input: CreateIntakeEvent): Promi
     confidence: input.confidence ?? "medium",
     contextTags: input.contextTags ?? [],
     notes: input.notes ?? null,
+    source: input.source ?? "manual",
   }).returning();
   if (resolution.rows.length) {
     await db.insert(resolvedAmount).values(resolution.rows.map((r) => ({ eventId: ev.id, ...r })));
@@ -407,6 +409,7 @@ function eventDto(
     confidence: e.confidence,
     contextTags: e.contextTags,
     notes: e.notes,
+    source: e.source,
     resolved,
   };
 }
@@ -573,6 +576,61 @@ export async function setItemQuickLog(db: Db, id: string, input: SetQuickLog): P
     );
   }
   return true;
+}
+
+/**
+ * Items logged often (>= `minCount` times in the last `days`) that aren't pinned
+ * yet — the basis for "you log this a lot, pin it?" suggestions on Quick Capture.
+ */
+export async function favoriteSuggestions(
+  db: Db,
+  opts: { minCount?: number; days?: number; limit?: number } = {},
+): Promise<FavoriteSuggestion[]> {
+  const minCount = Math.max(opts.minCount ?? 3, 2);
+  const days = opts.days ?? 30;
+  const limit = Math.min(Math.max(opts.limit ?? 6, 1), 20);
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const count = sql<number>`count(*)`;
+
+  const rows = await db.select({
+    id: inputItem.id,
+    name: inputItem.name,
+    kind: inputItem.kind,
+    primaryType: inputItem.primaryType,
+    roles: inputItem.roles,
+    brand: inputItem.brand,
+    defaultDisplayQuantity: inputItem.defaultDisplayQuantity,
+    defaultDisplayUnit: inputItem.defaultDisplayUnit,
+    defaultCanonicalQuantity: inputItem.defaultCanonicalQuantity,
+    defaultCanonicalUnit: inputItem.defaultCanonicalUnit,
+    count,
+  })
+    .from(intakeEvent)
+    .innerJoin(inputItem, eq(intakeEvent.itemId, inputItem.id))
+    .where(and(
+      isNull(intakeEvent.deletedAt),
+      isNull(inputItem.deletedAt),
+      eq(inputItem.quickLog, false),
+      gte(intakeEvent.recordedAt, since),
+    ))
+    .groupBy(inputItem.id)
+    .having(sql`count(*) >= ${minCount}`)
+    .orderBy(desc(count), asc(inputItem.name))
+    .limit(limit);
+
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    kind: r.kind,
+    primaryType: r.primaryType,
+    roles: r.roles,
+    brand: r.brand,
+    defaultDisplayQuantity: r.defaultDisplayQuantity,
+    defaultDisplayUnit: r.defaultDisplayUnit,
+    defaultCanonicalQuantity: r.defaultCanonicalQuantity,
+    defaultCanonicalUnit: r.defaultCanonicalUnit,
+    count: Number(r.count),
+  }));
 }
 
 /** Per-substance totals across live events in [from, to). */

@@ -34,6 +34,7 @@ import {
   createIntakeEvent,
   createItem,
   dailyTotals,
+  favoriteSuggestions,
   getIntakeEvent,
   getItemDetail,
   listIntakeEvents,
@@ -165,6 +166,11 @@ export function registerInputRoutes(api: Hono, db: Db, deps: InputDeps = {}) {
 
   // The pinned Quick Capture favorites (ordered), each with its amount presets.
   api.get("/intake/quick-items", async (c) => c.json({ items: await listQuickItems(db) }));
+
+  // Items logged often but not yet pinned — "you log this a lot, pin it?" (v2-C0).
+  api.get("/intake/favorite-suggestions", async (c) => {
+    return c.json({ items: await favoriteSuggestions(db) });
+  });
 
   api.post("/intake", async (c) => {
     const parsed = createIntakeEventSchema.safeParse(await c.req.json().catch(() => null));

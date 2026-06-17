@@ -52,6 +52,7 @@ describe("substanceContributions", () => {
       confidence: "medium",
       contextTags: [],
       notes: null,
+      source: "manual",
       resolved: resolved.map((r) => ({ ...r, confidence: "medium", source: "item" })),
     } as IntakeEvent;
   }

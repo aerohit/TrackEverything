@@ -51,6 +51,7 @@ export interface IntakeEvent {
   confidence: Confidence;
   contextTags: string[];
   notes: string | null;
+  source: IntakeSource;
   resolved: ResolvedAmount[];
 }
 
@@ -122,6 +123,15 @@ export interface CreateIntake {
   occurredAt?: string;
   contextTags?: string[];
   notes?: string;
+  source?: IntakeSource;
+}
+
+/** How an intake was captured (provenance, mirrors shared/inputs.ts). */
+export type IntakeSource = "quick" | "recent" | "photo" | "voice" | "manual" | "api";
+
+/** An item logged often enough to suggest pinning to Quick Capture. */
+export interface FavoriteSuggestion extends InputItemSummary {
+  count: number;
 }
 
 export interface Substance {

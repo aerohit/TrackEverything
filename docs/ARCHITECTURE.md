@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-17 (ADR-027: Quick Capture — capture-first screen of one-tap favorites)
+> **Last updated:** 2026-06-17 (ADR-028: capture provenance + 'log it often → pin' suggestions, v2-C0)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -389,6 +389,29 @@ the owner verifies. No phase starts before the prior one is approved.
 **Consequences:** Slower nominal throughput but continuous verification and low
 risk of building the wrong thing. Requires keeping ROADMAP.md in sync with the
 two core docs.
+
+### ADR-028
+**Title:** Capture provenance + "log it often → suggest pinning" (Quick Capture foundations).
+**Status:** Accepted (2026-06-17). Phase **v2-C0** of the Capture Seamlessness track; foundations under
+[ADR-027](#adr-027). Realizes R-CAP-12 (properly) and R-CAP-28.
+**Context:** R-CAP-12 asked every event to record its **provenance**, but the v2 `intake_event` had no
+`source` column — so the requirement was only nominally met. We also want frequent items to *graduate* into
+one-tap favorites instead of relying on the owner to remember to pin them.
+**Decision:** (1) **Provenance** — add an `intake_source` enum (`quick`, `recent`, `photo`, `voice`,
+`manual`, `api`) and a non-null `intake_event.source` column (default `manual`, so historical rows and bare
+posts are valid). Every capture path stamps it: Quick Capture → `quick`, recent-chip re-log → `recent`,
+meal photo → `photo`, spoken/typed phrase → `voice`; a direct API ingest is `api`. It rides on the existing
+`POST /api/intake` body (optional, validated) and is returned on reads. (2) **Suggestions** — a pure-SQL
+`favoriteSuggestions` (items with ≥3 logs in the last 30 days, not already pinned, by count) behind
+`GET /api/intake/favorite-suggestions`; the Quick Capture screen shows them with a one-tap **Pin**
+(`PATCH …/quick-log`). **Precision (rough/precise) and confidence-aware ranges are deliberately deferred to
+v2-C4**, where photo-portion sizing makes them useful.
+**Consequences:** provenance is now real and queryable (enables "does logging by photo correlate with…",
+and powers future suggestions/analysis); favorites curate themselves over time. Additive migration with a
+default, so no backfill. Trade-offs: the `source` taxonomy is coarse (one enum, not a full event-history);
+suggestion thresholds (3 logs / 30 days) are constants for now. Pure payload logic + the suggestion query
+are tested (route test: log ×3 → suggested → pin → drops off); the suggest→pin and per-source logging are
+browser-verified across all capture paths.
 
 ### ADR-027
 **Title:** Quick Capture — a capture-first screen of one-tap favorites, beside the existing Log screen.

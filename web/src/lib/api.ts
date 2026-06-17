@@ -10,6 +10,7 @@ import type {
   CreateIntake,
   CreateItemBody,
   DailyTotal,
+  FavoriteSuggestion,
   InputItemDetail,
   InputItemSummary,
   IntakeEvent,
@@ -109,6 +110,14 @@ export async function quickItems(ctx: ApiCtx = {}): Promise<QuickItem[]> {
   const res = await f("/api/intake/quick-items", { headers: headers(token) });
   if (!res.ok) throw new ApiError(res.status, "Failed to load quick items");
   return (await res.json()).items as QuickItem[];
+}
+
+/** Items logged often but not yet pinned — "pin this?" suggestions (GET /api/intake/favorite-suggestions). */
+export async function favoriteSuggestions(ctx: ApiCtx = {}): Promise<FavoriteSuggestion[]> {
+  const { f, token } = resolve(ctx);
+  const res = await f("/api/intake/favorite-suggestions", { headers: headers(token) });
+  if (!res.ok) throw new ApiError(res.status, "Failed to load suggestions");
+  return (await res.json()).items as FavoriteSuggestion[];
 }
 
 /** Pin/unpin an item as a Quick Capture favorite (PATCH /api/items/:id/quick-log). */
