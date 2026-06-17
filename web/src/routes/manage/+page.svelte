@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy, onMount, tick } from "svelte";
+  import { onMount } from "svelte";
   import { createItem, getItem, listItems, listSubstances, lookupBarcode, scanItem } from "$lib/api";
   import type { CreateItemBody, InputItemDetail, InputItemSummary, Substance } from "$lib/types";
   import ItemDraftForm from "$lib/ItemDraftForm.svelte";
@@ -11,11 +11,10 @@
   let mediaType = $state("");
   let scanning = $state(false);
 
-  // barcode-lookup state (camera scan → Open Food Facts → draft item). Decoding is
-  // done in JS by ZXing so it works on iOS too (WebKit has no BarcodeDetector).
-  let camScanning = $state(false);
-  let videoEl = $state<HTMLVideoElement | null>(null);
-  let scannerControls: { stop: () => void } | null = null;
+  // barcode state: the user photographs the barcode; ZXing decodes the still in JS
+  // (works on iOS too — WebKit has no BarcodeDetector) → Open Food Facts → draft.
+  // A still photo (autofocused, full-res) decodes far more reliably than live video.
+  let decodingBarcode = $state(false);
 
   // editable draft (shown after a scan)
   let hasDraft = $state(false);
@@ -111,12 +110,16 @@
     }
   }
 
-  async function startCamScan() {
+  // Decode a barcode from a photo the user just took, then look it up.
+  async function onBarcodePhoto(e: Event) {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = ""; // allow re-taking the same shot
+    if (!file) return;
+    decodingBarcode = true;
+    const url = URL.createObjectURL(file);
     try {
-      camScanning = true;
-      await tick(); // let the <video> mount before ZXing attaches the camera stream
-      if (!videoEl) return;
-      // Load ZXing on demand (heavy dep, only needed when actually scanning).
+      // Load ZXing on demand (heavy dep, only needed for a barcode scan).
       const [{ BrowserMultiFormatReader }, { BarcodeFormat, DecodeHintType }] = await Promise.all([
         import("@zxing/browser"),
         import("@zxing/library"),
@@ -128,35 +131,16 @@
         BarcodeFormat.UPC_A,
         BarcodeFormat.UPC_E,
       ]);
+      hints.set(DecodeHintType.TRY_HARDER, true);
       const reader = new BrowserMultiFormatReader(hints);
-      scannerControls = await reader.decodeFromConstraints(
-        { video: { facingMode: "environment" } },
-        videoEl,
-        (result) => {
-          // Called per frame; `result` is set only when a barcode is decoded.
-          if (!result) return;
-          const text = result.getText();
-          stopCamScan();
-          lookup(text);
-        },
-      );
-    } catch (e) {
-      flash(
-        (e as Error)?.name === "NotAllowedError"
-          ? "Camera access was denied — allow it to scan a barcode."
-          : "Couldn't open the camera for scanning.",
-        true,
-      );
-      stopCamScan();
+      const result = await reader.decodeFromImageUrl(url); // throws if no barcode found
+      await lookup(result.getText());
+    } catch {
+      flash("Couldn't read the barcode — retake the photo up close, with the barcode filling the frame.", true);
+    } finally {
+      URL.revokeObjectURL(url);
+      decodingBarcode = false;
     }
-  }
-
-  function stopCamScan() {
-    camScanning = false;
-    try {
-      scannerControls?.stop(); // stops decoding and releases the camera stream
-    } catch { /* already stopped */ }
-    scannerControls = null;
   }
 
   async function load() {
@@ -192,7 +176,6 @@
   }
 
   onMount(load);
-  onDestroy(stopCamScan); // release the camera if we navigate away mid-scan
 </script>
 
 <main class="layout">
@@ -222,16 +205,10 @@
 
     <div class="or"><span>or scan a barcode</span></div>
 
-    {#if camScanning}
-      <div class="cam">
-        <!-- svelte-ignore a11y_media_has_caption -->
-        <video bind:this={videoEl} playsinline muted></video>
-        <p class="mut">Point the rear camera at the barcode…</p>
-        <button class="linkbtn" onclick={stopCamScan}>Cancel</button>
-      </div>
-    {:else}
-      <button class="primary" onclick={startCamScan}>📷 Scan barcode with camera</button>
-    {/if}
+    <label class="primary bc-photo" class:busy={decodingBarcode}>
+      <input type="file" accept="image/*" capture="environment" onchange={onBarcodePhoto} />
+      {decodingBarcode ? "Reading barcode…" : "📷 Scan barcode (take a photo)"}
+    </label>
 
     {#if hasDraft}
       <ItemDraftForm bind:draft {substances} />

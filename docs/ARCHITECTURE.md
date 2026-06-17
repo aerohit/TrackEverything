@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-17 (ADR-025: decode barcodes with ZXing so scanning works on iOS)
+> **Last updated:** 2026-06-17 (ADR-026: scan the barcode from a still photo, not live video)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -390,10 +390,36 @@ the owner verifies. No phase starts before the prior one is approved.
 risk of building the wrong thing. Requires keeping ROADMAP.md in sync with the
 two core docs.
 
+### ADR-026
+**Title:** Scan the barcode from a still photo, not a live video stream.
+**Status:** Accepted (2026-06-17). Supersedes the capture mode in [ADR-025](#adr-025) (keeping its ZXing
+decoder + format hints); the server seam/route/mapping in [ADR-024](#adr-024) are unchanged.
+**Context:** [ADR-025](#adr-025) decoded a **live** camera stream
+(`BrowserMultiFormatReader.decodeFromConstraints`). On the phone it opened the camera but wouldn't lock onto
+the barcode: live preview frames are low-resolution and frequently out of focus, which ZXing can't read. A
+**still photo** taken by the native camera is full-resolution and autofocused, so it decodes far more
+reliably — and the owner already preferred "just take a picture" (the same reason Add Item is photo-first).
+**Decision:** Replace the live scanner with a **photo capture**. "📷 Scan barcode (take a photo)" is a
+`<label class="primary">` wrapping a hidden `<input type="file" accept="image/*" capture="environment">`, so
+tapping it opens the OS camera. On `change`, the still is decoded with
+`reader.decodeFromImageUrl(objectURL)` (ZXing, same EAN-13/8 + UPC-A/E hints, plus `TRY_HARDER`); a hit
+flows into the existing Open Food Facts lookup → editable draft → **Save**, a miss shows a "retake up close,
+filling the frame" message. ZXing is still **dynamically imported** on first use. This drops all live-stream
+machinery (`getUserMedia`, the `<video>`, the per-frame loop, scanner-stop on destroy), so the code is
+simpler with no camera-stream lifecycle to manage.
+**Consequences:** scanning is reliable on the phone (a sharp, autofocused still vs. a shaky low-res frame),
+and the implementation is smaller. Trade-off: a couple extra taps per scan (open camera → shoot → use photo)
+versus point-and-it-reads — acceptable, and the only thing that actually works on the device. Verified
+end-to-end here by generating a real EAN-13 barcode image (Nutella `3017620422003`), feeding it to the photo
+input, and confirming it decodes → looks up → fills the draft; the not-found path shows the retake message.
+
 ### ADR-025
 **Title:** Decode barcodes with ZXing (in-JS), not the native `BarcodeDetector`.
 **Status:** Accepted (2026-06-17). Supersedes the client-decoder choice in [ADR-024](#adr-024); the server
 seam/route/mapping there are unchanged.
+**Capture mode (live video) superseded by [ADR-026](#adr-026)** — live-video decode struggled to lock on
+(low-res, unfocused frames on the phone); the barcode is now read from a still photo. The ZXing choice and
+format hints below still stand; only `decodeFromConstraints` (live) → `decodeFromImageUrl` (still) changed.
 **Context:** ADR-024 read the barcode from the camera with the native **`BarcodeDetector`** API. On the
 owner's iPhone (Chrome) it reported "barcode scanning isn't supported" — because **all iOS browsers are
 WebKit under the hood, and WebKit doesn't implement `BarcodeDetector`**. With no manual-entry fallback (a
