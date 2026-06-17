@@ -428,6 +428,11 @@ textarea:focus {
 .stackitem .mut {
   margin-left: auto;
 }
+.roughtag {
+  color: var(--mut);
+  font-weight: 700;
+  margin: 0 2px;
+}
 .stacktag {
   display: inline-block;
   padding: 1px 6px;

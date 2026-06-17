@@ -78,7 +78,16 @@ For a favorite that isn't a stack and has no amount presets (e.g. a meal like
 - **Tap ½×** → half a serving; **tap 2×** → a double. (It scales the item's
   default serving.)
 
-### 5. Stacks — log a whole routine in one tap
+### 5. Rough estimates & portions (photo / voice)
+
+When you log by **photo** or **voice**, it's an estimate — so the confirm card
+shows a **Light / Medium / Large** portion picker that sets a smaller/normal/larger
+amount in one tap, and the entry is marked **rough**. On the Overview, rough
+entries get a small **`~`** next to them so you can tell estimates from measured
+logs at a glance. (Logging by a measured item, a quick favorite, or a barcode is
+treated as precise.)
+
+### 6. Stacks — log a whole routine in one tap
 
 A **stack** is a routine made of several items — e.g. a *Morning Stack* of your
 supplements, or a meal of a few foods. Tap it once and the whole thing is logged.
@@ -123,9 +132,9 @@ updated with how-to steps as each ships.
 - **Per-log ingredient modifier (part of v2-C3, deferred)** — on a saved meal,
   *+ avocado* for one log without editing the recipe. (The size scaler below
   shipped; this part is still to come.)
-- **Photo portions + honest ranges (v2-C4)** — for restaurant/photo meals, pick
-  *Light / Medium / Large*; totals show ranges ("protein 145–165 g") instead of
-  fake-precise numbers.
+- **Honest ranges in totals (rest of v2-C4, deferred)** — daily totals showing a
+  range ("protein 145–165 g") for rough days, instead of a fake-precise number.
+  (Rough flagging + the portion picker below already shipped.)
 - **Smart suggestions (v2-C5)** — quiet prompts like *"It's 08:15 — log Morning
   Stack?"* based on your routine.
 - **Daily reconstruction (v2-C6)** — an end-of-day "anything missing?" and a way

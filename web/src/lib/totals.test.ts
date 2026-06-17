@@ -53,6 +53,7 @@ describe("substanceContributions", () => {
       contextTags: [],
       notes: null,
       source: "manual",
+      precision: "precise",
       stackItems: [],
       resolved: resolved.map((r) => ({ ...r, confidence: "medium", source: "item" })),
     } as IntakeEvent;

@@ -123,6 +123,7 @@
             <summary>
               <span class="tlicon">{iconForInput(e.displayName)}</span>
               <span class="when">{fmtTime(e.occurredAt)}</span>{e.displayName}
+              {#if e.precision === "rough"}<span class="roughtag" title="estimated portion">~</span>{/if}
               <span class="qty">{e.quantity} {e.unit}</span>
             </summary>
             <div class="res">

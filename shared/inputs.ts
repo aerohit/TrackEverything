@@ -51,6 +51,11 @@ export const INTAKE_SOURCES = ["quick", "recent", "photo", "voice", "manual", "a
 export type IntakeSource = (typeof INTAKE_SOURCES)[number];
 export const intakeSourceSchema = z.enum(INTAKE_SOURCES);
 
+/** How exact an intake is — a measured/known log vs an estimated portion (R-CAP-25). */
+export const INTAKE_PRECISIONS = ["precise", "rough"] as const;
+export type IntakePrecision = (typeof INTAKE_PRECISIONS)[number];
+export const intakePrecisionSchema = z.enum(INTAKE_PRECISIONS);
+
 export const substanceUnitSchema = z.enum(SUBSTANCE_UNITS);
 export const confidenceSchema = z.enum(CONFIDENCE_LEVELS);
 
@@ -129,6 +134,8 @@ export const createIntakeEventSchema = z.object({
   notes: z.string().optional(),
   // How this was captured (provenance, R-CAP-12); defaults to "manual" server-side.
   source: intakeSourceSchema.optional(),
+  // How exact it is (R-CAP-25); defaults from source server-side (photo/voice → rough).
+  precision: intakePrecisionSchema.optional(),
   // Freeform logs (no item) can attach known substance amounts directly.
   resolved: z.array(manualResolvedSchema).optional(),
 });
@@ -235,6 +242,7 @@ export interface IntakeEvent {
   contextTags: string[];
   notes: string | null;
   source: IntakeSource;
+  precision: IntakePrecision;
   resolved: ResolvedAmount[];
   /** When this event logged a **stack** as a single entry: its member items (else empty). */
   stackItems: StackChild[];
