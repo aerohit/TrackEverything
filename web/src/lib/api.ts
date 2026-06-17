@@ -132,7 +132,7 @@ export async function scanItem(
  * (POST /api/intake/recognize). Exactly one source is supplied.
  */
 export async function recognizeIntake(
-  source: { imageBase64: string; mediaType: string } | { text: string },
+  source: { imageBase64: string; mediaType: string; now?: string } | { text: string; now?: string },
   ctx: ApiCtx = {},
 ): Promise<RecognizeResult> {
   const { f, token } = resolve(ctx);

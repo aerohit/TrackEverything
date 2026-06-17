@@ -135,8 +135,10 @@ export const recognizeRequestSchema = z.discriminatedUnion("source", [
     source: z.literal("photo"),
     imageBase64: z.string().min(1),
     mediaType: z.string().regex(/^image\/(jpeg|png|webp|heic|heif|gif)$/, "unsupported image type"),
+    // Client's current local time ("YYYY-MM-DDTHH:MM"), to resolve any spoken time.
+    now: z.string().optional(),
   }),
-  z.object({ source: z.literal("text"), text: z.string().min(1) }),
+  z.object({ source: z.literal("text"), text: z.string().min(1), now: z.string().optional() }),
 ]);
 export type RecognizeRequest = z.infer<typeof recognizeRequestSchema>;
 
@@ -152,6 +154,8 @@ export interface RecognizedIntake {
   unit: string;
   primaryType: InputPrimaryType;
   draft: CreateItem;
+  /** A time the user stated ("at 10am", "an hour ago"), as a local "YYYY-MM-DDTHH:MM"; else absent. */
+  when?: string;
 }
 
 /** Recognition + catalog match returned by POST /api/intake/recognize. */

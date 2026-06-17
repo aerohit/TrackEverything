@@ -24,6 +24,7 @@ export class AnthropicIntakeRecognizer implements IntakeRecognizer {
   }
 
   async recognize(input: RecognizeInput): Promise<RecognizedIntake> {
+    const nowLine = input.now ? `Current local time: ${input.now}.\n` : "";
     const content: Anthropic.ContentBlockParam[] = input.kind === "photo"
       ? [
         {
@@ -34,9 +35,9 @@ export class AnthropicIntakeRecognizer implements IntakeRecognizer {
             data: input.imageBase64,
           },
         },
-        { type: "text", text: "Identify what is being consumed. Return JSON only." },
+        { type: "text", text: `${nowLine}Identify what is being consumed. Return JSON only.` },
       ]
-      : [{ type: "text", text: `Consumed: ${input.text}\nReturn JSON only.` }];
+      : [{ type: "text", text: `${nowLine}Consumed: ${input.text}\nReturn JSON only.` }];
 
     const msg = await this.#client.messages.create({
       model: this.#model,

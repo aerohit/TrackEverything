@@ -8,8 +8,8 @@ import type { CreateItem, InputPrimaryType, RecognizedIntake } from "../shared/i
 
 /** Either a photo to look at, or a phrase (typed or transcribed) to read. */
 export type RecognizeInput =
-  | { kind: "photo"; imageBase64: string; mediaType: string }
-  | { kind: "text"; text: string };
+  | { kind: "photo"; imageBase64: string; mediaType: string; now?: string }
+  | { kind: "text"; text: string; now?: string };
 
 export interface IntakeRecognizer {
   recognize(input: RecognizeInput): Promise<RecognizedIntake>;
@@ -20,10 +20,13 @@ export const RECOGNIZE_SYSTEM_PROMPT =
 they spoke or typed (e.g. "two cups of coffee", "a bowl of oatmeal with banana"). Return JSON
 ONLY (no prose):
 {"name": string, "primaryType": "food"|"drink"|"supplement"|"medication"|"meal"|"other",
- "quantity": number, "unit": string,
+ "quantity": number, "unit": string, "when": string|null,
  "components": [{"substance": string, "amount": number, "unit": "mg"|"g"|"mcg"|"iu"|"ml"|"kcal"}]}.
 "name" is a short, human, lowercase-ish label ("banana", "chicken salad", "latte"). "quantity"
 and "unit" are how much was consumed in display terms ("1" + "bowl", "2" + "cup", "1" + "serving").
+"when": if the user states a time ("at 10am", "an hour ago", "this morning", "yesterday at 8"),
+resolve it against the provided current local time and return a local wall-clock timestamp
+"YYYY-MM-DDTHH:MM"; otherwise return null. Don't invent a time.
 "components" estimates the nutrition of ONE unit: use "kcal" for energy and "g" for protein,
 carbohydrate, fat, fiber, sugar; include caffeine/alcohol/sodium where relevant. Keep substance
 names short and lowercase ("calories", "protein", "carbohydrate", "fat", "caffeine"). Omit a
@@ -58,6 +61,10 @@ export function parseRecognized(raw: unknown): RecognizedIntake {
   const name = typeof o.name === "string" ? o.name.trim() : "";
   const quantity = positive(o.quantity) ?? 1;
   const unit = typeof o.unit === "string" && o.unit.trim() ? o.unit.trim() : "serving";
+  // A local wall-clock "YYYY-MM-DDTHH:MM" the model resolved from a stated time, else absent.
+  const when = typeof o.when === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(o.when.trim())
+    ? o.when.trim()
+    : undefined;
 
   const components = (Array.isArray(o.components) ? o.components : []).flatMap((c) => {
     if (!c || typeof c !== "object") return [];
@@ -80,5 +87,5 @@ export function parseRecognized(raw: unknown): RecognizedIntake {
     components,
   };
 
-  return { name, quantity, unit, primaryType, draft };
+  return { name, quantity, unit, primaryType, draft, when };
 }

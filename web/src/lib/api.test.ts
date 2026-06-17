@@ -152,6 +152,18 @@ describe("api client", () => {
     expect(JSON.parse(fetch.mock.calls[0][1]?.body as string)).toEqual({ source: "text", text: "a coffee" });
   });
 
+  it("recognizeIntake forwards the client's local time for resolving spoken times", async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>(async () =>
+      jsonResponse({ recognized: { name: "coffee", quantity: 1, unit: "cup", primaryType: "drink", draft: {} }, matches: [] })
+    );
+    await recognizeIntake({ text: "coffee at 10am", now: "2026-06-17T14:30" }, { fetch, token: "t" });
+    expect(JSON.parse(fetch.mock.calls[0][1]?.body as string)).toEqual({
+      source: "text",
+      text: "coffee at 10am",
+      now: "2026-06-17T14:30",
+    });
+  });
+
   it("recentItems requests the recent list with a limit", async () => {
     const fetch = vi.fn<typeof globalThis.fetch>(async () =>
       jsonResponse({ items: [{ itemId: "i1", displayName: "Banana", quantity: 2, unit: "piece", lastLoggedAt: "x" }] })

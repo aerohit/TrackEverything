@@ -231,7 +231,7 @@
             "body": {
               "mode": "raw",
               "options": { "raw": { "language": "json" } },
-              "raw": "{\n  \"source\": \"text\",\n  \"text\": \"a bowl of oatmeal and a coffee\"\n}"
+              "raw": "{\n  \"source\": \"text\",\n  \"text\": \"a coffee at 10am\",\n  \"now\": \"2026-06-17T14:30\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/intake/recognize",
