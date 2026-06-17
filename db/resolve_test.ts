@@ -9,6 +9,10 @@ Deno.test("convert: normalizes within a dimension, rejects across", () => {
   assertEquals(convert(2, "scoop", "scoop"), 2); // same unit passes through
   assertEquals(convert(1, "g", "ml"), null); // mass↔volume not convertible
   assertEquals(convert(1, "scoop", "g"), null); // unknown unit
+  // Count units tolerate a singular/plural difference (and surrounding space).
+  assertEquals(convert(1, "scoop", "scoops"), 1);
+  assertEquals(convert(2, "spoons", "spoon"), 2);
+  assertEquals(convert(1, " tablet ", "tablets"), 1);
 });
 
 function graph(
@@ -112,6 +116,86 @@ Deno.test("resolveItem: recipe recurses through child items and sums", () => {
   // Two glasses doubles everything downstream.
   const two = resolveItem("smoothie", 2, "glass", g);
   assertEquals(new Map(two.amounts.map((a) => [a.substanceId, a.amount])).get("protein"), 48);
+});
+
+Deno.test("resolveItem: 'serving' resolves against any serving unit name", () => {
+  // Electrolyte powder: 1 serving = 2 scoops; 1000 mg sodium per serving.
+  const g = graph([{
+    id: "lyte",
+    defaultDisplayQuantity: 2,
+    defaultDisplayUnit: "scoops",
+    defaultCanonicalQuantity: null,
+    defaultCanonicalUnit: null,
+    components: [{ substanceId: "sodium", childItemId: null, amount: 1000, unit: "mg" }],
+  }], { sodium: "mg" });
+
+  // Logged as "1 serving" — doesn't match "scoops", but a serving is one default serving.
+  const one = resolveItem("lyte", 1, "serving", g);
+  assert(one.complete);
+  assertEquals(one.amounts[0], { substanceId: "sodium", amount: 1000, unit: "mg" });
+  // Half a serving halves the actives ("servings" plural also accepted).
+  assertEquals(resolveItem("lyte", 0.5, "servings", g).amounts[0].amount, 500);
+
+  // A non-serving unit that still can't reconcile remains incomplete (unchanged).
+  assertEquals(resolveItem("lyte", 1, "tablet", g).complete, false);
+});
+
+Deno.test("resolveItem: partial serving — '2 spoon' equals '0.5 serving' (4-spoon serving)", () => {
+  // The user's example: serving size is 4 spoons; 800 mg magnesium per serving.
+  const g = graph([{
+    id: "mag",
+    defaultDisplayQuantity: 4,
+    defaultDisplayUnit: "spoon",
+    defaultCanonicalQuantity: null,
+    defaultCanonicalUnit: null,
+    components: [{ substanceId: "magnesium", childItemId: null, amount: 800, unit: "mg" }],
+  }], { magnesium: "mg" });
+
+  const amt = (q: number, u: string) => resolveItem("mag", q, u, g).amounts[0].amount;
+
+  // Taking 2 of the 4 spoons, or "half a serving", both = half the actives — and equal.
+  assertEquals(amt(2, "spoon"), 400);
+  assertEquals(amt(0.5, "serving"), 400);
+  assertEquals(amt(2, "spoon"), amt(0.5, "serving"));
+
+  // A full serving either way → the full amount (plural "spoons" tolerated).
+  assertEquals(amt(4, "spoons"), 800);
+  assertEquals(amt(1, "serving"), 800);
+});
+
+Deno.test("resolveItem: prod 'Bulk Electrolyte Powder' — half serving = half the electrolytes", () => {
+  // From production: serving = 2 scoops; per serving sodium 1034 / potassium 306 /
+  // calcium 184 / magnesium 30 (all mg).
+  const g = graph([{
+    id: "lyte",
+    defaultDisplayQuantity: 2,
+    defaultDisplayUnit: "scoops",
+    defaultCanonicalQuantity: null,
+    defaultCanonicalUnit: null,
+    components: [
+      { substanceId: "sodium", childItemId: null, amount: 1034, unit: "mg" },
+      { substanceId: "potassium", childItemId: null, amount: 306, unit: "mg" },
+      { substanceId: "calcium", childItemId: null, amount: 184, unit: "mg" },
+      { substanceId: "magnesium", childItemId: null, amount: 30, unit: "mg" },
+    ],
+  }], { sodium: "mg", potassium: "mg", calcium: "mg", magnesium: "mg" });
+
+  const amounts = (q: number, u: string) =>
+    new Map(resolveItem("lyte", q, u, g).amounts.map((a) => [a.substanceId, a.amount]));
+
+  // Full serving (2 scoops) → the label amounts.
+  const full = amounts(2, "scoops");
+  assertEquals(full.get("sodium"), 1034);
+  assertEquals(full.get("magnesium"), 30);
+
+  // "0.5 serving" and "1 scoop" (singular) are equivalent — exactly half of each active.
+  const byServing = amounts(0.5, "serving");
+  const byScoop = amounts(1, "scoop");
+  assertEquals([...byServing.entries()].sort(), [...byScoop.entries()].sort());
+  assertEquals(byScoop.get("sodium"), 517);
+  assertEquals(byScoop.get("potassium"), 153);
+  assertEquals(byScoop.get("calcium"), 92);
+  assertEquals(byScoop.get("magnesium"), 15);
 });
 
 Deno.test("resolveItem: unreconcilable serving marks the result incomplete", () => {

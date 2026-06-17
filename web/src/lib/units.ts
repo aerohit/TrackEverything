@@ -13,6 +13,7 @@ export const DISPLAY_UNITS: string[] = [
   "capsule",
   "softgel",
   "drop",
+  "spoon",
   "cup",
   "mug",
   "glass",

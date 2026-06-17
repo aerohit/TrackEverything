@@ -17,14 +17,22 @@ const MASS: Record<string, number> = { g: 1, mg: 1e-3, mcg: 1e-6, ug: 1e-6, "µg
 const VOLUME: Record<string, number> = { ml: 1, cl: 10, dl: 100, l: 1000 };
 const ENERGY: Record<string, number> = { kcal: 1 };
 
+/** Strip a simple trailing-"s" plural so "scoops" and "scoop" reconcile. */
+function singular(u: string): string {
+  return u.length > 1 && u.endsWith("s") ? u.slice(0, -1) : u;
+}
+
 /** Convert `amount` from one unit to another within the same dimension, else null. */
 export function convert(amount: number, from: string, to: string): number | null {
-  const f = from.toLowerCase();
-  const t = to.toLowerCase();
+  const f = from.trim().toLowerCase();
+  const t = to.trim().toLowerCase();
   if (f === t) return amount;
   for (const table of [MASS, VOLUME, ENERGY]) {
     if (f in table && t in table) return (amount * table[f]) / table[t];
   }
+  // Count units (scoop, tablet, drop, spoon…) only match themselves, but tolerate a
+  // singular/plural difference: "1 scoop" of a "2 scoops" serving = half a serving.
+  if (singular(f) === singular(t)) return amount;
   return null;
 }
 
@@ -72,6 +80,11 @@ function servingMultiplier(item: ResolveItem, quantity: number, unit: string): n
     const c = convert(quantity, unit, item.defaultCanonicalUnit);
     if (c !== null && item.defaultCanonicalQuantity > 0) return c / item.defaultCanonicalQuantity;
   }
+  // "serving"/"servings" is a universal reference to ONE default serving of the item,
+  // whatever its serving unit is named (scoop, tablet, "serving (22.5g)"…). So logging
+  // "1 serving" / "0.5 serving" resolves even when the unit strings don't reconcile.
+  const u = unit.trim().toLowerCase();
+  if (u === "serving" || u === "servings") return quantity;
   return null;
 }
 
