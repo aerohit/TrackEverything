@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-18 (ADR-031: soft-delete items; past logs keep showing)
+> **Last updated:** 2026-06-18 (ADR-032: rough/precise logging + portion picker, v2-C4)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -389,6 +389,26 @@ the owner verifies. No phase starts before the prior one is approved.
 **Consequences:** Slower nominal throughput but continuous verification and low
 risk of building the wrong thing. Requires keeping ROADMAP.md in sync with the
 two core docs.
+
+### ADR-032
+**Title:** Rough-vs-precise logging + a photo/voice portion picker (capture honesty).
+**Status:** Accepted (2026-06-18). Phase **v2-C4**; the precision flag is the bit deferred from C0
+([ADR-028](#adr-028)). Realizes the capture side of R-CAP-25. Migration `0007`.
+**Context:** Photo/voice logs are estimates; treating them as exact as a measured scoop is dishonest and
+will mislead analysis. We want to mark estimates and make portion-setting fast, without yet building the
+full confidence-aware totals.
+**Decision:** Add an `intake_precision` enum (`precise`, `rough`) + a non-null `intake_event.precision`
+(default `precise`). On create it **defaults from `source`** — `photo`/`voice` → `rough`, everything else
+→ `precise` — and an explicit `precision` on the request wins. The recognition confirm card gains a
+**Light / Medium / Large** portion picker that scales the recognized quantity (×0.7 / ×1 / ×1.4) from the
+recognized base. The Overview timeline marks rough events with a `~`. **Deferred:** the confidence-aware
+**ranges in totals** ("protein 145–165 g") — that's a separate analytics change to `dailyTotals` + the
+totals UI, tracked as a follow-up.
+**Consequences:** estimates are now flagged at the source and visible, and portioning a photo meal is two
+taps; the data is in place for range-based totals later. Additive migration with a default, so no backfill.
+Trade-offs: the rough/precise split is binary (no per-substance uncertainty yet); portion factors are fixed
+constants. Pure scaling is unit-tested; the source→precision defaulting is integration-tested; the rough tag
+is browser-verified.
 
 ### ADR-031
 **Title:** Soft-delete reusable items; past logs keep their frozen snapshot.

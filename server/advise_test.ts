@@ -24,6 +24,7 @@ const ctx: AdviceContext = {
       notes: null,
       source: "voice",
       stackItems: [],
+      precision: "rough",
       resolved: [{
         substance: "caffeine",
         amount: 200,

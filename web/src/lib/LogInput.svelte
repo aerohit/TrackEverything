@@ -33,7 +33,19 @@
     draft: CreateItemBody | null; // present when recognized (enables "save as new")
     hint?: string; // the spoken/typed phrase, shown for context
     source: IntakeSource; // how this intake was captured (provenance, R-CAP-12)
+    baseQuantity: number; // the recognized quantity, so portion buttons scale from it
   };
+
+  // Portion picker for photo/voice estimates (R-CAP-25): scales the recognized amount.
+  const PORTIONS = [
+    { label: "Light", factor: 0.7 },
+    { label: "Medium", factor: 1 },
+    { label: "Large", factor: 1.4 },
+  ];
+  function setPortion(factor: number) {
+    if (!confirm) return;
+    confirm.quantity = Math.round(confirm.baseQuantity * factor * 100) / 100;
+  }
 
   let busy = $state<string | null>(null); // a status label while recognition runs
   let phrasing = $state(false); // the "speak or type" field is open
@@ -101,6 +113,7 @@
       quantity: o.quantity,
       unit: o.unit,
       when: o.when ?? toLocalInput(new Date()),
+      baseQuantity: o.quantity,
       query: o.name,
       results: [],
       sel: o.draft ? "new" : "freeform",
@@ -353,6 +366,15 @@
     {#if confirm.sel !== "new"}
       <div class="fieldlabel">What</div>
       <input class="field" placeholder="Name" bind:value={confirm.name} />
+    {/if}
+
+    {#if confirm.source === "photo" || confirm.source === "voice"}
+      <div class="fieldlabel">Portion (rough estimate)</div>
+      <div class="chips">
+        {#each PORTIONS as p}
+          <button class="chip" type="button" onclick={() => setPortion(p.factor)}>{p.label}</button>
+        {/each}
+      </div>
     {/if}
 
     <div class="row" style="margin-top:8px">

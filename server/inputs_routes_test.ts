@@ -776,3 +776,47 @@ Deno.test({
     }
   },
 });
+
+Deno.test({
+  name: "inputs API: precision defaults from source — photo/voice rough, else precise (v2-C4)",
+  ignore: !DATABASE_URL,
+  async fn() {
+    await migrate(DATABASE_URL);
+    const { sql, db } = connect(DATABASE_URL);
+    try {
+      const app = createApp(db, { token: TOKEN });
+      const log = async (body: Record<string, unknown>) =>
+        await (await app.request("/api/intake", {
+          method: "POST",
+          headers: auth,
+          body: JSON.stringify(body),
+        })).json();
+
+      const photo = await log({
+        displayName: "Salad photo",
+        quantity: 1,
+        unit: "plate",
+        source: "photo",
+        resolved: [{ substance: "protein", amount: 30, unit: "g" }],
+      });
+      assertEquals(photo.source, "photo");
+      assertEquals(photo.precision, "rough"); // photo → rough by default
+
+      const quick = await log({ displayName: "Water", quantity: 1, unit: "cup", source: "quick" });
+      assertEquals(quick.precision, "precise");
+
+      const bare = await log({ displayName: "Note", quantity: 1, unit: "cup" });
+      assertEquals(bare.precision, "precise"); // default
+
+      const forced = await log({
+        displayName: "Manual rough",
+        quantity: 1,
+        unit: "bowl",
+        precision: "rough",
+      });
+      assertEquals(forced.precision, "rough"); // explicit wins
+    } finally {
+      await sql.end();
+    }
+  },
+});

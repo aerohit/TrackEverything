@@ -52,6 +52,7 @@ export interface IntakeEvent {
   contextTags: string[];
   notes: string | null;
   source: IntakeSource;
+  precision: IntakePrecision;
   resolved: ResolvedAmount[];
   /** When this event logged a stack as a single entry: its member items (else empty). */
   stackItems: StackChild[];
@@ -135,10 +136,14 @@ export interface CreateIntake {
   contextTags?: string[];
   notes?: string;
   source?: IntakeSource;
+  precision?: IntakePrecision;
 }
 
 /** How an intake was captured (provenance, mirrors shared/inputs.ts). */
 export type IntakeSource = "quick" | "recent" | "photo" | "voice" | "manual" | "api";
+
+/** How exact an intake is (mirrors shared/inputs.ts). */
+export type IntakePrecision = "precise" | "rough";
 
 /** An item logged often enough to suggest pinning to Quick Capture. */
 export interface FavoriteSuggestion extends InputItemSummary {
