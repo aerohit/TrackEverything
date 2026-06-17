@@ -2,7 +2,15 @@
   import { onMount } from "svelte";
   import { deleteIntake, favoriteSuggestions, logIntake, quickItems, setQuickLog } from "$lib/api";
   import { iconForInput } from "$lib/icons";
-  import { defaultAmountLabel, isStack, quickLogPayload, type StackMode, stackLogPlan } from "$lib/quickcapture";
+  import {
+    defaultAmountLabel,
+    isStack,
+    quickLogPayload,
+    SIZES,
+    sizeLogPayload,
+    type StackMode,
+    stackLogPlan,
+  } from "$lib/quickcapture";
   import type { FavoriteSuggestion, QuickItem, QuickPreset } from "$lib/types";
 
   let items = $state<QuickItem[]>([]);
@@ -77,6 +85,19 @@
         amt = preset ? preset.label : defaultAmountLabel(it);
       }
       flash(`Logged ${it.name} · ${amt}`, { eventIds: ids });
+    } catch {
+      flash(`Couldn't log ${it.name}.`, { err: true });
+    } finally {
+      busyId = null;
+    }
+  }
+
+  // Size scaler (v2-C3): log a multiple of the default serving.
+  async function logSize(it: QuickItem, size: { label: string; factor: number }) {
+    busyId = it.id;
+    try {
+      const ev = await logIntake(sizeLogPayload(it, size.factor));
+      flash(`Logged ${it.name} · ${size.label}`, { eventIds: [ev.id] });
     } catch {
       flash(`Couldn't log ${it.name}.`, { err: true });
     } finally {
@@ -161,6 +182,15 @@
                 {#each it.quickPresets as p}
                   <button class="qpreset" disabled={busyId === it.id} onclick={() => log(it, p)}>
                     {p.label}
+                  </button>
+                {/each}
+              </div>
+            {:else}
+              <!-- Size scaler: tap the card for 1×; these log a smaller/larger portion. -->
+              <div class="qpresets">
+                {#each SIZES as sz}
+                  <button class="qpreset" disabled={busyId === it.id} onclick={() => logSize(it, sz)}>
+                    {sz.label}
                   </button>
                 {/each}
               </div>

@@ -26,6 +26,24 @@ export function defaultAmountLabel(item: QuickItem): string {
   return `${qty} ${unit}`;
 }
 
+/** Size scaler (v2-C3): log a multiple of the default serving — Small / Large etc. */
+export const SIZES: { label: string; factor: number }[] = [
+  { label: "½×", factor: 0.5 },
+  { label: "2×", factor: 2 },
+];
+
+/** The intake payload for a sized log (factor × the default serving), rounded to 3 dp. */
+export function sizeLogPayload(item: QuickItem, factor: number): CreateIntake {
+  const base = item.defaultDisplayQuantity ?? 1;
+  return {
+    displayName: item.name,
+    itemId: item.id,
+    quantity: Math.round(base * factor * 1000) / 1000,
+    unit: item.defaultDisplayUnit ?? "serving",
+    source: "quick",
+  };
+}
+
 /** Whether a favorite is a stack (a routine/recipe of member items). */
 export function isStack(item: QuickItem): boolean {
   return item.stack.length > 0;

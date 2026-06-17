@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-18 (R-CAP-29: soft-delete items; past logs keep showing)
+> **Status:** Living document. **Last updated:** 2026-06-18 (v2-C3: meal size scaler)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -79,8 +79,8 @@ owner-approved before the next. R-CAP-22…27, [ADR-027](ARCHITECTURE.md#adr-027
   Quick Capture logs a stack as **one entry** (tap) or **separate items**, with a skip checklist; a single
   stack entry **lists its members in the Overview**. Medication exact-dose = pin with dose presets.
   R-CAP-23, [ADR-029](ARCHITECTURE.md#adr-029), [ADR-030](ARCHITECTURE.md#adr-030).
-- **v2-C3 — Meal templates + quick modifiers** ☐ — size scaler + add/remove an ingredient for this log.
-  R-CAP-24.
+- **v2-C3 — Meal size scaler** ◐ (built, pending approval) — ½×/2× quick-log chips on a non-stack favorite
+  (`sizeLogPayload`); tap = 1×. R-CAP-24. The per-log add/remove-ingredient modifier is deferred.
 - **v2-C4 — Photo portion sizing + honest ranges** ☐ — Light/Medium/Large; confidence-aware ranges;
   rough/precise flag. R-CAP-25.
 - **v2-C5 — Smart suggestions** ☐ — quiet time/pattern prompts. R-CAP-26.

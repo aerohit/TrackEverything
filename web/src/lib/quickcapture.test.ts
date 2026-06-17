@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { defaultAmountLabel, isStack, quickLogPayload, stackLogPlan } from "./quickcapture";
+import { defaultAmountLabel, isStack, quickLogPayload, sizeLogPayload, stackLogPlan } from "./quickcapture";
 import type { QuickItem } from "$lib/types";
 
 function qi(over: Partial<QuickItem> = {}): QuickItem {
@@ -57,6 +57,22 @@ describe("quickLogPayload", () => {
       quantity: 1,
       unit: "serving",
     });
+  });
+});
+
+describe("sizeLogPayload", () => {
+  it("scales the default serving by the factor (Small / Large)", () => {
+    expect(sizeLogPayload(qi({ defaultDisplayQuantity: 1, defaultDisplayUnit: "serving" }), 0.5))
+      .toMatchObject({ quantity: 0.5, unit: "serving" });
+    expect(sizeLogPayload(qi({ defaultDisplayQuantity: 50, defaultDisplayUnit: "g" }), 2))
+      .toMatchObject({ quantity: 100, unit: "g" });
+  });
+
+  it("defaults the base to 1 serving and rounds", () => {
+    expect(sizeLogPayload(qi({ defaultDisplayQuantity: null, defaultDisplayUnit: null }), 0.5))
+      .toMatchObject({ quantity: 0.5, unit: "serving" });
+    expect(sizeLogPayload(qi({ defaultDisplayQuantity: 1, defaultDisplayUnit: "serving" }), 1 / 3).quantity)
+      .toBe(0.333);
   });
 });
 

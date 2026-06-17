@@ -70,7 +70,15 @@ straight into your favorites grid. It then disappears from the suggestions.
 > tap, a recent re-log, a photo, or voice). You won't see this — it's there so the
 > analysis and future smart suggestions can use it.
 
-### 4. Stacks — log a whole routine in one tap
+### 4. Smaller / larger portions (size scaler)
+
+For a favorite that isn't a stack and has no amount presets (e.g. a meal like
+*Chicken salad*), the card shows **½×** and **2×** chips:
+- **Tap the card** → logs your normal serving (1×).
+- **Tap ½×** → half a serving; **tap 2×** → a double. (It scales the item's
+  default serving.)
+
+### 5. Stacks — log a whole routine in one tap
 
 A **stack** is a routine made of several items — e.g. a *Morning Stack* of your
 supplements, or a meal of a few foods. Tap it once and the whole thing is logged.
@@ -112,8 +120,9 @@ supplements, or a meal of a few foods. Tap it once and the whole thing is logged
 These are the next phases of the Capture Seamlessness track. This doc will be
 updated with how-to steps as each ships.
 
-- **Meal modifiers (v2-C3)** — on a saved meal, tap *Small / Normal / Large* or
-  *+ avocado* without editing the recipe.
+- **Per-log ingredient modifier (part of v2-C3, deferred)** — on a saved meal,
+  *+ avocado* for one log without editing the recipe. (The size scaler below
+  shipped; this part is still to come.)
 - **Photo portions + honest ranges (v2-C4)** — for restaurant/photo meals, pick
   *Light / Medium / Large*; totals show ranges ("protein 145–165 g") instead of
   fake-precise numbers.
