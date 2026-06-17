@@ -27,6 +27,26 @@ describe("buildDayChart", () => {
   it("is empty when there are no readings", () => {
     expect(buildDayChart([], KINDS).empty).toBe(true);
   });
+
+  it("defaults the visible window to the waking hours (08:00–22:00) with sensible ticks", () => {
+    const chart = buildDayChart([ci("mood", 4, 9), ci("energy", 3, 20)], KINDS);
+    expect(chart.domain).toEqual({ min: 8 / 24, max: 22 / 24 });
+    expect(chart.ticks).toEqual([8, 12, 16, 20, 22]);
+  });
+
+  it("widens the window to whole hours around an out-of-window outlier (never clipped)", () => {
+    // A 06:30 reading pulls the start back to 06:00; a 23:15 one pushes the end to 24:00.
+    const chart = buildDayChart(
+      [ci("mood", 2, 9), { ...ci("energy", 5, 6), recordedAt: new Date(2026, 5, 15, 6, 30).toISOString() }, {
+        ...ci("focus", 1, 23),
+        recordedAt: new Date(2026, 5, 15, 23, 15).toISOString(),
+      }],
+      KINDS,
+    );
+    expect(chart.domain.min).toBeCloseTo(6 / 24);
+    expect(chart.domain.max).toBeCloseTo(24 / 24);
+    expect(chart.ticks).toEqual([6, 8, 12, 16, 20, 24]); // ends + interior multiples of 4
+  });
 });
 
 describe("seriesOffset", () => {

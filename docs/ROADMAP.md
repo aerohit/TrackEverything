@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-17 (R-CAP-17: every unit field in the item editor is a dropdown)
+> **Status:** Living document. **Last updated:** 2026-06-17 (R-VIEW-1: Overview chart zooms to waking hours, 08:00–22:00)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -520,3 +520,4 @@ keeps the Supabase project awake. CI builds + tests `web/` and the Deno service.
 | 2026-06-17 | R-CAP-21 (+ADR-026): barcode capture switched from live-video scan to **photographing** the barcode + decoding the still (ZXing), which locks on reliably on phones. |
 | 2026-06-17 | R-CAP-19: recent-item chips on the Log screen show an emoji icon (`iconForInput`, as on the Overview timeline). |
 | 2026-06-17 | R-CAP-17: the item editor's unit fields became **dropdowns** (serving / canonical-serving / ingredient units), matching the Log confirm card (R-CAP-20). |
+| 2026-06-17 | R-VIEW-1: the Overview chart **zooms to the waking hours (08:00–22:00)** (x-axis 8·12·16·20·22h), widening only for an out-of-window outlier so nothing is clipped. |
