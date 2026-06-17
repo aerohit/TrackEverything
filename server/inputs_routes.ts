@@ -18,6 +18,7 @@ import type { Hono } from "hono";
 import type { Context } from "hono";
 import { z } from "zod";
 import {
+  barcodeLookupRequestSchema,
   createIntakeEventSchema,
   createItemSchema,
   recognizeRequestSchema,
@@ -26,6 +27,7 @@ import {
 } from "../shared/inputs.ts";
 import type { Db } from "../db/client.ts";
 import type { ItemScanner } from "./scan.ts";
+import type { ProductLookup } from "./barcode.ts";
 import type { IntakeRecognizer } from "./recognize.ts";
 import {
   createIntakeEvent,
@@ -45,6 +47,7 @@ import {
 export interface InputDeps {
   scanner?: ItemScanner;
   recognizer?: IntakeRecognizer;
+  lookup?: ProductLookup;
 }
 
 const uuid = z.string().uuid();
@@ -63,9 +66,24 @@ function parseWindow(c: Context): { from?: Date; to?: Date } | { error: string }
 }
 
 export function registerInputRoutes(api: Hono, db: Db, deps: InputDeps = {}) {
-  const { scanner, recognizer } = deps;
+  const { scanner, recognizer, lookup } = deps;
 
   api.get("/substances", async (c) => c.json({ substances: await listSubstances(db) }));
+
+  // Look up a product barcode → a draft item (not saved; the client edits then POSTs
+  // /items). Open Food Facts backs this and needs no key, so it's normally always on.
+  api.post("/items/barcode", async (c) => {
+    if (!lookup) return c.json({ error: "barcode lookup is not configured" }, 503);
+    const parsed = barcodeLookupRequestSchema.safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) return c.json({ error: "invalid", issues: parsed.error.issues }, 400);
+    try {
+      const draft = await lookup.lookup(parsed.data.barcode);
+      if (!draft) return c.json({ error: "product not found" }, 404);
+      return c.json(draft);
+    } catch (e) {
+      return c.json({ error: "barcode lookup failed", detail: (e as Error).message }, 502);
+    }
+  });
 
   // Scan a label photo → a draft item (not saved; the client edits then POSTs /items).
   api.post("/items/scan", async (c) => {

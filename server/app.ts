@@ -16,6 +16,7 @@ import { createCheckin, listCheckins, type ListRange, toCheckin } from "../db/ch
 import { dailyTotals, listIntakeEvents } from "../db/inputs.ts";
 import { type InputDeps, registerInputRoutes } from "./inputs_routes.ts";
 import type { ItemScanner } from "./scan.ts";
+import type { ProductLookup } from "./barcode.ts";
 import type { IntakeRecognizer } from "./recognize.ts";
 import type { Advisor } from "./advise.ts";
 
@@ -27,6 +28,8 @@ export interface AppOptions {
   token?: string;
   /** Label-scan backend (Claude vision). When absent, /api/items/scan returns 503. */
   scanner?: ItemScanner;
+  /** Barcode → product lookup (Open Food Facts). When absent, /api/items/barcode returns 503. */
+  lookup?: ProductLookup;
   /** Meal-photo / phrase recognizer (Claude). When absent, /api/intake/recognize returns 503. */
   recognizer?: IntakeRecognizer;
   /** "Ask LLM" advisor (Claude). When absent, /api/ask returns 503. */
@@ -129,6 +132,7 @@ export function createApp(db: Db, opts: AppOptions = {}): Hono {
   const deps: InputDeps = {
     scanner: opts.scanner,
     recognizer: opts.recognizer,
+    lookup: opts.lookup,
   };
   registerInputRoutes(api, db, deps);
 

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { createItem, getItem, listItems, listSubstances, scanItem } from "$lib/api";
+  import { onDestroy, onMount, tick } from "svelte";
+  import { createItem, getItem, listItems, listSubstances, lookupBarcode, scanItem } from "$lib/api";
   import type { CreateItemBody, InputItemDetail, InputItemSummary, Substance } from "$lib/types";
   import ItemDraftForm from "$lib/ItemDraftForm.svelte";
   import { draftFromBody, draftToBody, emptyDraft, type ItemDraft } from "$lib/itemDraft";
@@ -10,6 +10,19 @@
   let imageBase64 = $state<string | null>(null);
   let mediaType = $state("");
   let scanning = $state(false);
+
+  // barcode-lookup state (Open Food Facts → draft item)
+  let barcode = $state("");
+  let looking = $state(false);
+  let camScanning = $state(false);
+  let barcodeSupported = $state(false);
+  let videoEl = $state<HTMLVideoElement | null>(null);
+  let stream: MediaStream | null = null;
+  let rafId = 0;
+  // BarcodeDetector isn't in the DOM lib types yet; describe just what we use.
+  type BarcodeDetectorLike = { detect(src: CanvasImageSource): Promise<{ rawValue: string }[]> };
+  type BarcodeDetectorCtor = new (opts?: { formats?: string[] }) => BarcodeDetectorLike;
+  let detector: BarcodeDetectorLike | null = null;
 
   // editable draft (shown after a scan)
   let hasDraft = $state(false);
@@ -86,6 +99,77 @@
     }
   }
 
+  // Look up a barcode → draft item. `code` defaults to the typed field but the
+  // camera scanner passes the detected code directly.
+  async function lookup(code = barcode) {
+    const digits = code.replace(/\D/g, "");
+    if (!/^\d{8,14}$/.test(digits)) {
+      flash("Enter a valid 8–14 digit barcode.", true);
+      return;
+    }
+    looking = true;
+    try {
+      applyDraft(await lookupBarcode(digits));
+      barcode = digits;
+      flash("Found it — review and save ✓");
+    } catch (e) {
+      const status = (e as { status?: number }).status;
+      flash(
+        status === 404 ? "No product found for that barcode." : (e as Error).message || "Lookup failed.",
+        true,
+      );
+    } finally {
+      looking = false;
+    }
+  }
+
+  async function startCamScan() {
+    if (!barcodeSupported) return;
+    try {
+      const Ctor =
+        (globalThis as unknown as { BarcodeDetector: BarcodeDetectorCtor }).BarcodeDetector;
+      detector = new Ctor({ formats: ["ean_13", "ean_8", "upc_a", "upc_e"] });
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      camScanning = true;
+      await tick(); // let the <video> mount before we attach the stream
+      if (videoEl) {
+        videoEl.srcObject = stream;
+        await videoEl.play();
+      }
+      detectLoop();
+    } catch {
+      flash("Couldn't open the camera — enter the barcode by hand.", true);
+      stopCamScan();
+    }
+  }
+
+  function detectLoop() {
+    if (!camScanning || !videoEl || !detector) return;
+    detector
+      .detect(videoEl)
+      .then((codes) => {
+        const hit = codes?.[0]?.rawValue;
+        if (hit) {
+          stopCamScan();
+          lookup(hit);
+        } else {
+          rafId = requestAnimationFrame(detectLoop);
+        }
+      })
+      .catch(() => {
+        rafId = requestAnimationFrame(detectLoop);
+      });
+  }
+
+  function stopCamScan() {
+    camScanning = false;
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = 0;
+    stream?.getTracks().forEach((t) => t.stop());
+    stream = null;
+    detector = null;
+  }
+
   async function load() {
     try {
       [substances, items] = await Promise.all([listSubstances(), listItems()]);
@@ -99,6 +183,7 @@
     if (preview) URL.revokeObjectURL(preview);
     preview = null;
     imageBase64 = null;
+    barcode = "";
     draft = emptyDraft();
   }
 
@@ -118,14 +203,19 @@
     }
   }
 
-  onMount(load);
+  onMount(() => {
+    barcodeSupported = typeof (globalThis as { BarcodeDetector?: unknown }).BarcodeDetector ===
+      "function";
+    load();
+  });
+  onDestroy(stopCamScan); // release the camera if we navigate away mid-scan
 </script>
 
 <main class="layout">
   <section class="card">
     <h2>Add item</h2>
-    <p class="mut">Take or upload a photo of the label — the ingredients are scanned and shown
-      below for you to correct, then save.</p>
+    <p class="mut">Take or upload a photo of the label, or scan a barcode — the details are
+      fetched and shown below for you to correct, then save.</p>
 
     <div class="modes">
       <label class="modebtn">
@@ -145,6 +235,35 @@
     <button class="primary" disabled={!imageBase64 || scanning} onclick={scan}>
       {scanning ? "Scanning…" : "Scan label"}
     </button>
+
+    <div class="or"><span>or scan a barcode</span></div>
+
+    {#if camScanning}
+      <div class="cam">
+        <!-- svelte-ignore a11y_media_has_caption -->
+        <video bind:this={videoEl} playsinline muted></video>
+        <p class="mut">Point the rear camera at the barcode…</p>
+        <button class="linkbtn" onclick={stopCamScan}>Cancel</button>
+      </div>
+    {/if}
+
+    <div class="barcode-row">
+      <input
+        class="field"
+        type="text"
+        inputmode="numeric"
+        autocomplete="off"
+        placeholder="Barcode number (EAN / UPC)"
+        bind:value={barcode}
+        onkeydown={(e) => e.key === "Enter" && lookup()}
+      />
+      <button class="primary bc-go" disabled={!barcode.trim() || looking} onclick={() => lookup()}>
+        {looking ? "Looking…" : "Look up"}
+      </button>
+    </div>
+    {#if barcodeSupported && !camScanning}
+      <button class="linkbtn" onclick={startCamScan}>📷 Scan barcode with camera</button>
+    {/if}
 
     {#if hasDraft}
       <ItemDraftForm bind:draft {substances} />

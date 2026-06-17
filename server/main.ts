@@ -9,6 +9,7 @@ import { sql } from "drizzle-orm";
 import { connect } from "../db/client.ts";
 import { createApp } from "./app.ts";
 import { AnthropicItemScanner } from "./scan_anthropic.ts";
+import { OpenFoodFactsLookup } from "./barcode_off.ts";
 import { AnthropicIntakeRecognizer } from "./recognize_anthropic.ts";
 import { AnthropicAdvisor } from "./advise_anthropic.ts";
 
@@ -30,10 +31,13 @@ const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
 const scanner = anthropicKey ? new AnthropicItemScanner(anthropicKey) : undefined;
 const recognizer = anthropicKey ? new AnthropicIntakeRecognizer(anthropicKey) : undefined;
 const advisor = anthropicKey ? new AnthropicAdvisor(anthropicKey) : undefined;
+// Barcode lookup hits Open Food Facts and needs no API key, so it's always on.
+const lookup = new OpenFoodFactsLookup();
 
 const app = createApp(db, {
   token: Deno.env.get("INGEST_TOKEN"),
   scanner,
+  lookup,
   recognizer,
   advisor,
 });

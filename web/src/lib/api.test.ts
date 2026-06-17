@@ -9,6 +9,7 @@ import {
   listCheckins,
   listSubstances,
   logIntake,
+  lookupBarcode,
   recentItems,
   recognizeIntake,
   scanItem,
@@ -123,6 +124,26 @@ describe("api client", () => {
       jsonResponse({ error: "label scanning is not configured" }, false, 503)
     );
     await expect(scanItem("x", "image/png", { fetch, token: "t" })).rejects.toThrow("not configured");
+  });
+
+  it("lookupBarcode POSTs the barcode and returns the draft", async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>(async () =>
+      jsonResponse({ name: "Greek Yogurt", kind: "product", primaryType: "food", components: [] })
+    );
+    const draft = await lookupBarcode("5000112637939", { fetch, token: "t" });
+    expect(draft.name).toBe("Greek Yogurt");
+    const [url, init] = fetch.mock.calls[0];
+    expect(String(url)).toBe("/api/items/barcode");
+    expect(init?.method).toBe("POST");
+    expect(JSON.parse(init?.body as string)).toEqual({ barcode: "5000112637939" });
+  });
+
+  it("lookupBarcode surfaces a 404 as an ApiError for an unknown barcode", async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>(async () =>
+      jsonResponse({ error: "product not found" }, false, 404)
+    );
+    await expect(lookupBarcode("0000000000000", { fetch, token: "t" }))
+      .rejects.toMatchObject({ status: 404, message: "product not found" });
   });
 
   it("recognizeIntake posts a photo source and returns recognition + matches", async () => {

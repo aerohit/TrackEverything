@@ -1,7 +1,9 @@
 import { assert, assertEquals } from "@std/assert";
 import { connect } from "../db/client.ts";
+import type { Db } from "../db/client.ts";
 import { migrate } from "../db/migrate.ts";
 import { createApp } from "./app.ts";
+import type { ProductLookup } from "./barcode.ts";
 
 const DATABASE_URL = Deno.env.get("DATABASE_URL");
 const TOKEN = "test-token";
@@ -209,6 +211,78 @@ Deno.test({
       await sql.end();
     }
   },
+});
+
+// The barcode route never touches the DB, so it runs without a Postgres.
+Deno.test("inputs API: barcode lookup returns a draft, 404 when unknown, 503 when unconfigured", async () => {
+  const noDb = null as unknown as Db;
+
+  // No lookup configured → 503.
+  const bare = createApp(noDb, { token: TOKEN });
+  assertEquals(
+    (await bare.request("/api/items/barcode", {
+      method: "POST",
+      headers: auth,
+      body: JSON.stringify({ barcode: "0123456789012" }),
+    })).status,
+    503,
+  );
+
+  const lookup: ProductLookup = {
+    // deno-lint-ignore require-await
+    lookup: async (barcode: string) =>
+      barcode === "0123456789012"
+        ? {
+          name: "Greek Yogurt",
+          kind: "product" as const,
+          primaryType: "food" as const,
+          roles: [],
+          defaultServing: { displayQuantity: 1, displayUnit: "serving" },
+          components: [{ substance: "protein", amount: 17, unit: "g" }],
+        }
+        : null,
+  };
+  const app = createApp(noDb, { token: TOKEN, lookup });
+
+  // Non-digit / wrong-length barcode → 400.
+  assertEquals(
+    (await app.request("/api/items/barcode", {
+      method: "POST",
+      headers: auth,
+      body: JSON.stringify({ barcode: "nope" }),
+    })).status,
+    400,
+  );
+
+  // Unknown barcode (lookup → null) → 404.
+  assertEquals(
+    (await app.request("/api/items/barcode", {
+      method: "POST",
+      headers: auth,
+      body: JSON.stringify({ barcode: "9999999999999" }),
+    })).status,
+    404,
+  );
+
+  // A missing token is rejected before the route runs.
+  assertEquals(
+    (await app.request("/api/items/barcode", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ barcode: "0123456789012" }),
+    })).status,
+    401,
+  );
+
+  const res = await app.request("/api/items/barcode", {
+    method: "POST",
+    headers: auth,
+    body: JSON.stringify({ barcode: "0123456789012" }),
+  });
+  assertEquals(res.status, 200);
+  const draft = await res.json();
+  assertEquals(draft.name, "Greek Yogurt");
+  assertEquals(draft.components[0].substance, "protein");
 });
 
 Deno.test({
