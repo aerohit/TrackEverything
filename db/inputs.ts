@@ -515,6 +515,20 @@ export async function listItems(
   return rows.map(itemSummary);
 }
 
+/**
+ * Soft-delete a reusable item: it drops out of the catalog, Quick Capture, and
+ * search, but past intake events that referenced it keep their frozen displayName +
+ * resolved snapshot, so the timeline/totals are unaffected. Resolution of items that
+ * still reference it as a member also keeps working (the graph loads by id).
+ */
+export async function softDeleteItem(db: Db, id: string): Promise<boolean> {
+  const rows = await db.update(inputItem)
+    .set({ deletedAt: new Date(), updatedAt: new Date() })
+    .where(and(eq(inputItem.id, id), isNull(inputItem.deletedAt)))
+    .returning({ id: inputItem.id });
+  return rows.length > 0;
+}
+
 /** An item with its components (substances by name / child items by id). */
 export async function getItemDetail(db: Db, id: string): Promise<InputItemDetail | null> {
   const [it] = await db.select().from(inputItem).where(

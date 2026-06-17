@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import {
     createItem,
+    deleteItem,
     getItem,
     listItems,
     listSubstances,
@@ -60,6 +61,7 @@
       detail = await getItem(it.id);
       qPinned = detail.quickLog;
       qPresets = detail.quickPresets.map((p) => ({ ...p }));
+      confirmingDelete = false;
     } catch {
       flash("Couldn't load that item.", true);
     } finally {
@@ -87,8 +89,26 @@
       qSaving = false;
     }
   }
+  // Two-step delete confirm within the popup (soft delete; past logs keep showing).
+  let confirmingDelete = $state(false);
+  let deleting = $state(false);
+  async function removeItem() {
+    if (!detail) return;
+    deleting = true;
+    try {
+      await deleteItem(detail.id);
+      flash(`Deleted ${detail.name}. Past logs still show it.`);
+      closeDetail();
+      await load();
+    } catch (e) {
+      flash((e as Error).message || "Couldn't delete item.", true);
+    } finally {
+      deleting = false;
+    }
+  }
   function closeDetail() {
     detail = null;
+    confirmingDelete = false;
   }
   function compLabel(c: { substance: string | null; childItemId: string | null }) {
     return c.substance ?? "linked item";
@@ -370,6 +390,23 @@
       <button class="primary" disabled={qSaving} onclick={saveQuick}>
         {qSaving ? "Saving…" : "Save Quick Capture"}
       </button>
+
+      <div class="danger-zone">
+        {#if confirmingDelete}
+          <p class="mut" style="margin:0 0 6px">
+            Delete <b>{detail.name}</b>? It leaves your items, but past logs that used it stay on the
+            timeline.
+          </p>
+          <div class="row">
+            <button class="dangerbtn" disabled={deleting} onclick={removeItem}>
+              {deleting ? "Deleting…" : "Delete item"}
+            </button>
+            <button class="ghostbtn" onclick={() => (confirmingDelete = false)}>Cancel</button>
+          </div>
+        {:else}
+          <button class="linklike danger" onclick={() => (confirmingDelete = true)}>Delete item…</button>
+        {/if}
+      </div>
     </div>
   </div>
 {/if}

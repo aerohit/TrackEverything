@@ -104,6 +104,16 @@ export async function getItem(id: string, ctx: ApiCtx = {}): Promise<InputItemDe
   return await res.json() as InputItemDetail;
 }
 
+/** Soft-delete a reusable item (DELETE /api/items/:id). Past logs that referenced it still display. */
+export async function deleteItem(id: string, ctx: ApiCtx = {}): Promise<void> {
+  const { f, token } = resolve(ctx);
+  const res = await f("/api/items/" + encodeURIComponent(id), {
+    method: "DELETE",
+    headers: headers(token),
+  });
+  if (!res.ok) throw new ApiError(res.status, "Failed to delete item");
+}
+
 /** The pinned Quick Capture favorites with their amount presets (GET /api/intake/quick-items). */
 export async function quickItems(ctx: ApiCtx = {}): Promise<QuickItem[]> {
   const { f, token } = resolve(ctx);

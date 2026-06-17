@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-17 (v2-C2: stack is its own kind; single-vs-individual capture)
+> **Status:** Living document. **Last updated:** 2026-06-18 (R-CAP-29: soft-delete items; past logs keep showing)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**

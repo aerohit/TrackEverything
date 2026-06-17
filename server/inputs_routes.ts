@@ -44,6 +44,7 @@ import {
   recentItems,
   setItemQuickLog,
   softDeleteIntakeEvent,
+  softDeleteItem,
   updateIntakeEvent,
 } from "../db/inputs.ts";
 
@@ -152,6 +153,14 @@ export function registerInputRoutes(api: Hono, db: Db, deps: InputDeps = {}) {
     } catch (e) {
       return c.json({ error: (e as Error).message }, 400);
     }
+  });
+
+  // Soft-delete an item (it leaves the catalog/Quick Capture/search; past logs that
+  // referenced it keep their frozen snapshot, so the timeline/totals are unchanged).
+  api.delete("/items/:id", async (c) => {
+    if (!uuid.safeParse(c.req.param("id")).success) return c.json({ error: "not found" }, 404);
+    const ok = await softDeleteItem(db, c.req.param("id"));
+    return ok ? c.body(null, 204) : c.json({ error: "not found" }, 404);
   });
 
   // Pin/unpin an item as a Quick Capture favorite (+ ordering + amount presets).

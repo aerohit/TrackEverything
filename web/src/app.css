@@ -382,6 +382,36 @@ textarea:focus {
   font-size: 14px;
   cursor: pointer;
 }
+.danger-zone {
+  margin-top: 16px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+.linklike {
+  background: none;
+  border: none;
+  padding: 4px 0;
+  font: inherit;
+  cursor: pointer;
+  color: var(--accent);
+}
+.linklike.danger {
+  color: var(--danger);
+}
+.dangerbtn {
+  padding: 10px 14px;
+  border: 1px solid var(--danger);
+  border-radius: 12px;
+  background: none;
+  color: var(--danger);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dangerbtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
 .stackitems {
   display: flex;
   flex-direction: column;
