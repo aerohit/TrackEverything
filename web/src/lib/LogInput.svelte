@@ -1,9 +1,18 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
-  import { createItem, logIntake, recentItems, recognizeIntake, searchItems } from "$lib/api";
-  import type { CreateItemBody, RecentItem } from "$lib/types";
+  import {
+    createItem,
+    listSubstances,
+    logIntake,
+    recentItems,
+    recognizeIntake,
+    searchItems,
+  } from "$lib/api";
+  import type { CreateItemBody, RecentItem, Substance } from "$lib/types";
   import { unitOptions } from "$lib/units";
   import { type Match, selectedName, servingUnitChoices } from "$lib/log";
+  import ItemDraftForm from "$lib/ItemDraftForm.svelte";
+  import { draftFromBody, draftToBody, emptyDraft, type ItemDraft } from "$lib/itemDraft";
 
   // One way to log: snap/upload a photo, speak or type a phrase, or tap a recent
   // item. The result is reviewed in a confirm card before it's saved (ADR-020),
@@ -30,6 +39,8 @@
   let phraseEl = $state<HTMLInputElement | null>(null);
   let confirm = $state<Confirm | null>(null);
   let recents = $state<RecentItem[]>([]);
+  let substances = $state<Substance[]>([]); // for the "save as a new item" editor
+  let newDraft = $state<ItemDraft>(emptyDraft()); // editable item when saving anew
   let saving = $state(false);
   let toast = $state<{ msg: string; err: boolean } | null>(null);
   let searchTimer: ReturnType<typeof setTimeout> | undefined;
@@ -95,6 +106,8 @@
       draft: o.draft,
       hint: o.hint,
     };
+    // Pre-fill the editable "save as a new item" form from the recognized draft.
+    newDraft = o.draft ? draftFromBody(o.draft) : emptyDraft();
     await runSearch(o.preferItemId ?? null);
   }
 
@@ -221,26 +234,30 @@
   }
 
   async function save() {
-    if (!confirm || !confirm.name.trim() || !(confirm.quantity > 0)) return;
+    if (!confirm || !(confirm.quantity > 0)) return;
     const sel = confirm.sel;
+    // When saving a new item, the editable draft's name is authoritative.
+    const newItemBody = sel === "new" ? draftToBody(newDraft) : null;
+    if (sel === "new" ? !newItemBody?.name : !confirm.name.trim()) return;
     saving = true;
     try {
       const base = {
-        displayName: confirm.name.trim(),
         quantity: confirm.quantity,
         unit: confirm.unit.trim() || "serving",
         occurredAt: new Date(confirm.when).toISOString(),
       };
       if (sel.startsWith("item:")) {
-        await logIntake({ ...base, itemId: sel.slice("item:".length) });
-      } else if (sel === "new" && confirm.draft) {
-        const item = await createItem({ ...confirm.draft, name: confirm.name.trim() });
-        await logIntake({ ...base, itemId: item.id });
+        await logIntake({ ...base, displayName: confirm.name.trim(), itemId: sel.slice("item:".length) });
+      } else if (sel === "new" && newItemBody) {
+        // Create the fully-detailed item (serving + ingredients), then log it.
+        const item = await createItem(newItemBody);
+        await logIntake({ ...base, displayName: newItemBody.name, itemId: item.id });
       } else {
-        await logIntake(base);
+        await logIntake({ ...base, displayName: confirm.name.trim() });
       }
       flash("Logged ✓");
       confirm = null;
+      newDraft = emptyDraft();
       await loadRecents();
     } catch (err) {
       flash((err as Error).message || "Couldn't log.", true);
@@ -249,7 +266,10 @@
     }
   }
 
-  onMount(loadRecents);
+  onMount(() => {
+    loadRecents();
+    listSubstances().then((s) => (substances = s)).catch(() => {});
+  });
 </script>
 
 <section class="card">
@@ -310,8 +330,10 @@
       <p class="mut">Heard: “{confirm.hint}”</p>
     {/if}
 
-    <div class="fieldlabel">What</div>
-    <input class="field" placeholder="Name" bind:value={confirm.name} />
+    {#if confirm.sel !== "new"}
+      <div class="fieldlabel">What</div>
+      <input class="field" placeholder="Name" bind:value={confirm.name} />
+    {/if}
 
     <div class="row" style="margin-top:8px">
       <div style="flex:1">
@@ -366,15 +388,24 @@
       </label>
     </div>
 
+    {#if confirm.sel === "new"}
+      <div class="fieldlabel" style="margin-top:14px">New item details</div>
+      <p class="mut" style="margin:0 0 4px">
+        Review the serving size and ingredients (auto-filled from the photo/voice), then save.
+      </p>
+      <ItemDraftForm bind:draft={newDraft} {substances} />
+    {/if}
+
     <div class="row" style="margin-top:12px">
       <button class="ghostbtn" onclick={() => (confirm = null)}>Cancel</button>
       <button
         class="primary"
         style="flex:1"
-        disabled={!confirm.name.trim() || !(confirm.quantity > 0) || saving}
+        disabled={(confirm.sel === "new" ? !newDraft.name.trim() : !confirm.name.trim()) ||
+          !(confirm.quantity > 0) || saving}
         onclick={save}
       >
-        {saving ? "Logging…" : "Log"}
+        {saving ? "Logging…" : confirm.sel === "new" ? "Save new item & log" : "Log"}
       </button>
     </div>
   {/if}
