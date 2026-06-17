@@ -87,7 +87,14 @@ entries get a small **`~`** next to them so you can tell estimates from measured
 logs at a glance. (Logging by a measured item, a quick favorite, or a barcode is
 treated as precise.)
 
-### 6. Stacks — log a whole routine in one tap
+### 6. "Around now you usually log…" (smart suggestions)
+
+The Capture screen watches your routine: if you tend to log something around the
+current time of day (e.g. coffee at ~8am), it shows an **"Around now you usually
+log"** row at the top with one-tap buttons. It's quiet — just on the screen, no
+notifications — and it hides items you've already logged today.
+
+### 7. Stacks — log a whole routine in one tap
 
 A **stack** is a routine made of several items — e.g. a *Morning Stack* of your
 supplements, or a meal of a few foods. Tap it once and the whole thing is logged.
@@ -135,8 +142,6 @@ updated with how-to steps as each ships.
 - **Honest ranges in totals (rest of v2-C4, deferred)** — daily totals showing a
   range ("protein 145–165 g") for rough days, instead of a fake-precise number.
   (Rough flagging + the portion picker below already shipped.)
-- **Smart suggestions (v2-C5)** — quiet prompts like *"It's 08:15 — log Morning
-  Stack?"* based on your routine.
 - **Daily reconstruction (v2-C6)** — an end-of-day "anything missing?" and a way
   to rebuild a forgotten day from one spoken sentence.
 
