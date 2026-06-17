@@ -46,3 +46,30 @@ export function unitOptions(current?: string): string[] {
   if (c && !DISPLAY_UNITS.includes(c)) return [c, ...DISPLAY_UNITS];
   return [...DISPLAY_UNITS];
 }
+
+/**
+ * Canonical analytical units an ingredient/substance amount can carry — the units
+ * the resolver normalizes to (mirrors `SUBSTANCE_UNITS` in shared/inputs.ts).
+ */
+export const SUBSTANCE_UNITS: string[] = ["g", "mg", "mcg", "ml", "kcal", "iu"];
+
+/**
+ * Units valid for a "serving in grams/ml" measurement — only mass/volume, since the
+ * resolver must convert a weight/volume log against it (g/mg/mcg, ml/l).
+ */
+export const SERVING_MEASURE_UNITS: string[] = ["g", "mg", "mcg", "ml", "l"];
+
+function withCurrent(list: string[], current?: string): string[] {
+  const c = (current ?? "").trim();
+  return c && !list.includes(c) ? [c, ...list] : [...list];
+}
+
+/** Ingredient-unit dropdown options (keeps an off-list `current` selectable). */
+export function substanceUnitOptions(current?: string): string[] {
+  return withCurrent(SUBSTANCE_UNITS, current);
+}
+
+/** Canonical-serving-unit dropdown options (keeps an off-list `current` selectable). */
+export function measureUnitOptions(current?: string): string[] {
+  return withCurrent(SERVING_MEASURE_UNITS, current);
+}
