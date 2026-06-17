@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildDayChart } from "./chart";
+import { buildDayChart, seriesOffset } from "./chart";
 import type { Checkin, SubjectiveKind } from "$lib/types";
 
 const KINDS: SubjectiveKind[] = ["mood", "energy", "focus"];
@@ -26,5 +26,21 @@ describe("buildDayChart", () => {
 
   it("is empty when there are no readings", () => {
     expect(buildDayChart([], KINDS).empty).toBe(true);
+  });
+});
+
+describe("seriesOffset", () => {
+  it("fans 3 series symmetrically around 0", () => {
+    expect(seriesOffset(0, 3)).toBeCloseTo(-3.5);
+    expect(seriesOffset(1, 3)).toBe(0);
+    expect(seriesOffset(2, 3)).toBeCloseTo(3.5);
+    // Offsets cancel out, so the cluster stays centered on its value.
+    const sum = [0, 1, 2].reduce((a, i) => a + seriesOffset(i, 3), 0);
+    expect(sum).toBeCloseTo(0);
+  });
+
+  it("returns 0 for a single series and respects a custom separation", () => {
+    expect(seriesOffset(0, 1)).toBe(0);
+    expect(seriesOffset(2, 3, 5)).toBeCloseTo(5);
   });
 });

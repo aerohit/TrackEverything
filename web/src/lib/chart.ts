@@ -18,6 +18,15 @@ export interface DayChart {
   empty: boolean;
 }
 
+/**
+ * A small vertical pixel offset that fans series apart so equal ratings (e.g.
+ * mood = energy = focus on a day) don't render as a single overlapping dot.
+ * Centered on 0 (offsets sum to 0), so the cluster stays visually on its value.
+ */
+export function seriesOffset(index: number, count: number, sep = 3.5): number {
+  return (index - (count - 1) / 2) * sep;
+}
+
 export function buildDayChart(checkins: Checkin[], kinds: SubjectiveKind[]): DayChart {
   const byKind = new Map<SubjectiveKind, Point[]>();
   for (const k of kinds) byKind.set(k, []);

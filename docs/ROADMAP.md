@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-16 (v2-A started: "Ask LLM" screen — answer questions over the last 48h of logs)
+> **Status:** Living document. **Last updated:** 2026-06-17 (Overview chart: fan mood/energy/focus dots so equal ratings don't overlap)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -506,3 +506,4 @@ keeps the Supabase project awake. CI builds + tests `web/` and the Deno service.
 | 2026-06-16 | Log confirm-card refinement (R-CAP-18): a found catalog match is **selected by default**, and logging against an existing item sets the intake `displayName` to **the item's own name** (not the transcribed text) — e.g. "pre workout" → "Dope-Max Pre-Workout". Pure helper `web/src/lib/log.ts` (`selectedName`) + unit tests; browser-verified end to end. Web-only. |
 | 2026-06-16 | Add Item photo parity (R-CAP-17): the Add Item screen gains **Camera** + **Upload** photo sources (two file inputs, like the Log screen) in place of the single camera-only picker. Web-only; browser-verified. |
 | 2026-06-16 | Phase v2-A started (R-RT-7, ADR-023): **"Ask LLM"** screen (`/ask`) + `POST /api/ask`. Preset + free-text questions (typed or OS-keyboard-dictated) answered by Claude over the **last 48h** of check-ins + intake, gathered server-side; SDK-isolated `Advisor` seam (pure prompt builder + `AnthropicAdvisor`). Optional (503 without a key; prod already has one). The answer renders as **sanitized Markdown** (`marked` + `DOMPurify`). Server + web tests; Postman updated; browser-verified (screen, 503 fallback, Markdown render); live answers device-verified. |
+| 2026-06-17 | Overview chart fix: fan the mood/energy/focus series by a small per-series vertical offset (`seriesOffset`, `web/src/lib/chart.ts`) + a card-colored dot halo, so equal ratings no longer overlap into a single dot. Unit-tested helper; browser-verified. Web-only. |
