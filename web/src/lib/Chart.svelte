@@ -11,7 +11,9 @@
   const chart = $derived(buildDayChart(checkins, KINDS.map((k) => k.kind)));
   const colorOf = (kind: string) => KINDS.find((k) => k.kind === kind)?.color ?? "var(--accent)";
 
-  const xpos = (x: number) => x0 + x * (x1 - x0);
+  // Map a day-fraction into the plot using the chart's (zoomed) time window.
+  const xpos = (x: number) =>
+    x0 + ((x - chart.domain.min) / (chart.domain.max - chart.domain.min)) * (x1 - x0);
   const ypos = (y: number) => yb + ((y - 1) / 4) * (yt - yb);
   // Fan the three series apart by a few px so equal ratings don't fully overlap.
   const dyOf = (kind: string) => seriesOffset(KINDS.findIndex((k) => k.kind === kind), KINDS.length);
@@ -27,7 +29,7 @@
       <line x1={x0} y1={ypos(r)} x2={x1} y2={ypos(r)} class="chartgrid" />
       <text x={x0 - 6} y={ypos(r) + 3} text-anchor="end" font-size="9" class="chartlabel">{r}</text>
     {/each}
-    {#each [0, 6, 12, 18, 24] as h}
+    {#each chart.ticks as h}
       <text x={xpos(h / 24)} y={H - 6} text-anchor="middle" font-size="8" class="chartlabel">
         {h}h
       </text>
