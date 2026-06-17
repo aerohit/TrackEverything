@@ -1,11 +1,15 @@
 <script lang="ts">
-  import type { Substance } from "$lib/types";
+  import type { InputItemSummary, Substance } from "$lib/types";
   import type { ItemDraft } from "$lib/itemDraft";
   import { measureUnitOptions, substanceUnitOptions, unitOptions } from "$lib/units";
 
   // Editable item fields (name, kind, type, serving, ingredient rows) shared by the
   // Add Item screen and the Log screen's "save as a new item" flow.
-  let { draft = $bindable(), substances = [] }: { draft: ItemDraft; substances?: Substance[] } = $props();
+  let { draft = $bindable(), substances = [], items = [] }: {
+    draft: ItemDraft;
+    substances?: Substance[];
+    items?: InputItemSummary[]; // catalog, for picking stack members (recipe kind)
+  } = $props();
 
   const KINDS = ["product", "recipe", "simple"] as const;
   const TYPES = ["food", "drink", "supplement", "medication", "meal", "other"];
@@ -15,6 +19,23 @@
   }
   function removeComp(i: number) {
     draft.comps = draft.comps.filter((_, idx) => idx !== i);
+  }
+
+  function addMember() {
+    draft.members = [...draft.members, { itemId: "", name: "", quantity: 1, unit: "serving" }];
+  }
+  function removeMember(i: number) {
+    draft.members = draft.members.filter((_, idx) => idx !== i);
+  }
+  // Resolve a typed member name to a catalog item; prefill its unit/qty when matched.
+  function onMemberName(i: number) {
+    const n = draft.members[i].name.trim().toLowerCase();
+    const it = items.find((x) => x.name.toLowerCase() === n);
+    draft.members[i].itemId = it?.id ?? "";
+    if (it) {
+      draft.members[i].unit = it.defaultDisplayUnit ?? "serving";
+      if (!(draft.members[i].quantity > 0)) draft.members[i].quantity = it.defaultDisplayQuantity ?? 1;
+    }
   }
 </script>
 
@@ -56,6 +77,38 @@
     {#each measureUnitOptions(draft.canonUnit) as u}<option value={u}>{u}</option>{/each}
   </select>
 </div>
+
+{#if draft.kind === "recipe"}
+  <div class="fieldlabel">Stack members (other items)</div>
+  <p class="mut" style="margin:0 0 4px">
+    Build a routine or recipe from items you've already added — e.g. a "Morning Stack" of your
+    supplements. One tap on the stack logs them all (and you can skip any on the day).
+  </p>
+  {#each draft.members as m, i}
+    <div class="row" style="margin-top:6px">
+      <input
+        class="field"
+        style="flex:2"
+        placeholder="item name"
+        list="df-items"
+        bind:value={m.name}
+        oninput={() => onMemberName(i)}
+      />
+      <input class="field" style="flex:1" type="number" min="0" step="any" placeholder="qty" bind:value={m.quantity} />
+      <select class="field" style="flex:1" aria-label="Member unit" bind:value={m.unit}>
+        {#each unitOptions(m.unit) as u}<option value={u}>{u}</option>{/each}
+      </select>
+      <button class="iconbtn" aria-label="Remove member" onclick={() => removeMember(i)}>✕</button>
+    </div>
+    {#if m.name.trim() && !m.itemId}
+      <p class="mut" style="margin:2px 0 0; color:var(--danger)">No item named "{m.name}" — add it first.</p>
+    {/if}
+  {/each}
+  <datalist id="df-items">
+    {#each items as it}<option value={it.name}></option>{/each}
+  </datalist>
+  <button class="ghostbtn" onclick={addMember}>+ Add member</button>
+{/if}
 
 <div class="fieldlabel">Ingredients (per serving)</div>
 {#each draft.comps as c, i}

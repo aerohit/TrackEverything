@@ -102,10 +102,19 @@ export interface QuickPreset {
   unit: string;
 }
 
-/** A pinned Quick Capture favorite: an item summary + its amount presets. */
+/** A member item of a stack (a recipe favorite's child item). */
+export interface StackChild {
+  itemId: string;
+  name: string;
+  quantity: number;
+  unit: string;
+}
+
+/** A pinned Quick Capture favorite: an item summary + presets + (for stacks) members. */
 export interface QuickItem extends InputItemSummary {
   quickOrder: number | null;
   quickPresets: QuickPreset[];
+  stack: StackChild[];
 }
 
 /** Body to pin/unpin an item as a Quick Capture favorite. */

@@ -4,10 +4,10 @@ A living guide to the **Quick Capture** workflow — the fast, "log it in one ta
 way to track. It's a **new screen that lives alongside the old Log screen** while
 we build it out; the old Log screen stays until Quick Capture fully replaces it.
 
-> **Status:** v2-C0 + v2-C1 shipped (one-tap favorites + amount presets, plus
-> auto-suggested favorites and behind-the-scenes capture provenance). Later phases
-> (stacks, meal modifiers, photo portions, daily reconstruction) are listed under
-> "Coming next" and this doc grows as each lands.
+> **Status:** v2-C0 + v2-C1 + v2-C2 shipped (one-tap favorites + amount presets,
+> auto-suggested favorites, capture provenance, and **stacks with a skip
+> checklist**). Later phases (meal modifiers, photo portions, daily
+> reconstruction) are under "Coming next"; this doc grows as each lands.
 
 ---
 
@@ -70,6 +70,28 @@ straight into your favorites grid. It then disappears from the suggestions.
 > tap, a recent re-log, a photo, or voice). You won't see this — it's there so the
 > analysis and future smart suggestions can use it.
 
+### 4. Stacks — log a whole routine in one tap
+
+A **stack** is a routine made of several items — e.g. a *Morning Stack* of your
+supplements, or a meal of a few foods. Tap it once and the whole thing is logged.
+
+**Create a stack:**
+1. Make sure the member items exist first (e.g. *Vitamin D*, *Magnesium*,
+   *Omega-3*) — scan/barcode/create each as its own item.
+2. On **Add Item**, tap **"✏️ Create an item or stack manually."**
+3. Give it a name (*Morning Stack*) and set **Kind → recipe**. A **Stack members**
+   section appears.
+4. Add each member by name (it autocompletes from your items), with how much of it
+   the stack contains. Save.
+5. Pin the stack to Quick Capture (same as any favorite — see step 1 above).
+
+**Log a stack:**
+- On **Capture**, the stack shows as one card ("Morning Stack · 3 items"). **Tap
+  it** → logs everything in one go.
+- **Skipping something today?** Tap **Skip items** to expand its checklist, untick
+  what you didn't take, then tap the card. Only the ticked items are logged.
+- **Undo** removes the whole tap (all the items it logged), as usual.
+
 ### Tips
 - **Curate ruthlessly.** Quick Capture is for the handful of things you log
   daily. Everything else still lives on the Log screen (voice, photo, barcode,
@@ -86,8 +108,6 @@ straight into your favorites grid. It then disappears from the suggestions.
 These are the next phases of the Capture Seamlessness track. This doc will be
 updated with how-to steps as each ships.
 
-- **Stacks & checklists (v2-C2)** — log a whole routine like *Morning Stack* in
-  one tap, with a checklist to skip an item on days you don't take it all.
 - **Meal modifiers (v2-C3)** — on a saved meal, tap *Small / Normal / Large* or
   *+ avocado* without editing the recipe.
 - **Photo portions + honest ranges (v2-C4)** — for restaurant/photo meals, pick
@@ -100,6 +120,6 @@ updated with how-to steps as each ships.
 
 ---
 
-*Maintained alongside the code. See `docs/REQUIREMENTS.md` (R-CAP-12, 22, 28),
+*Maintained alongside the code. See `docs/REQUIREMENTS.md` (R-CAP-12, 22, 23, 28),
 `docs/ROADMAP.md` (Capture Seamlessness track), and `docs/ARCHITECTURE.md`
-(ADR-027, ADR-028) for the engineering detail.*
+(ADR-027, ADR-028, ADR-029) for the engineering detail.*

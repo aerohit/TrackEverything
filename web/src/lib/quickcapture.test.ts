@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { defaultAmountLabel, quickLogPayload } from "./quickcapture";
+import { defaultAmountLabel, isStack, quickLogPayload, stackLogPlan } from "./quickcapture";
 import type { QuickItem } from "$lib/types";
 
 function qi(over: Partial<QuickItem> = {}): QuickItem {
@@ -16,9 +16,23 @@ function qi(over: Partial<QuickItem> = {}): QuickItem {
     defaultCanonicalUnit: null,
     quickOrder: 0,
     quickPresets: [],
+    stack: [],
     ...over,
   };
 }
+
+const STACK = qi({
+  id: "stack-1",
+  name: "Morning Stack",
+  kind: "recipe",
+  defaultDisplayQuantity: 1,
+  defaultDisplayUnit: "serving",
+  stack: [
+    { itemId: "vd", name: "Vitamin D", quantity: 1, unit: "tablet" },
+    { itemId: "mg", name: "Magnesium", quantity: 1, unit: "capsule" },
+    { itemId: "o3", name: "Omega-3", quantity: 2, unit: "softgel" },
+  ],
+});
 
 describe("quickLogPayload", () => {
   it("logs the item's default serving when no preset is chosen", () => {
@@ -50,5 +64,34 @@ describe("defaultAmountLabel", () => {
   it("formats the default amount, with a sensible fallback", () => {
     expect(defaultAmountLabel(qi())).toBe("500 ml");
     expect(defaultAmountLabel(qi({ defaultDisplayQuantity: null, defaultDisplayUnit: null }))).toBe("1 serving");
+  });
+});
+
+describe("stackLogPlan", () => {
+  const all = new Set(["vd", "mg", "o3"]);
+
+  it("flags stacks vs simple favorites", () => {
+    expect(isStack(STACK)).toBe(true);
+    expect(isStack(qi())).toBe(false);
+  });
+
+  it("logs the whole stack as ONE recipe event when every member is included", () => {
+    const plan = stackLogPlan(STACK, all);
+    expect(plan).toHaveLength(1);
+    expect(plan[0]).toMatchObject({ itemId: "stack-1", displayName: "Morning Stack", source: "quick" });
+  });
+
+  it("logs one event per included member when some are skipped", () => {
+    const plan = stackLogPlan(STACK, new Set(["vd", "o3"])); // skip Magnesium
+    expect(plan.map((p) => p.displayName)).toEqual(["Vitamin D", "Omega-3"]);
+    expect(plan[1]).toMatchObject({ itemId: "o3", quantity: 2, unit: "softgel", source: "quick" });
+  });
+
+  it("logs nothing when every member is skipped", () => {
+    expect(stackLogPlan(STACK, new Set())).toEqual([]);
+  });
+
+  it("falls back to a single quick log for a non-stack favorite", () => {
+    expect(stackLogPlan(qi(), new Set())).toHaveLength(1);
   });
 });

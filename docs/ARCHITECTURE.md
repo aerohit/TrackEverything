@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-17 (ADR-028: capture provenance + 'log it often → pin' suggestions, v2-C0)
+> **Last updated:** 2026-06-17 (ADR-029: stacks = recipe favorites; whole-stack vs partial logging, v2-C2)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -389,6 +389,36 @@ the owner verifies. No phase starts before the prior one is approved.
 **Consequences:** Slower nominal throughput but continuous verification and low
 risk of building the wrong thing. Requires keeping ROADMAP.md in sync with the
 two core docs.
+
+### ADR-029
+**Title:** Stacks = recipe favorites; log the whole stack as one event, a partial stack per included member.
+**Status:** Accepted (2026-06-17). Phase **v2-C2** of the Capture Seamlessness track; builds on Quick
+Capture ([ADR-027](#adr-027)). Realizes R-CAP-23. No migration — reuses the existing `item_component`
+child-item support.
+**Context:** A "Morning Stack" (take several supplements together) needs one-tap logging *and* a way to skip
+an item on a given day. The data model already represents a multi-item routine as a **recipe** item whose
+components are `childItemId`s, and the resolver already expands a recipe into all its members' substances —
+but (a) the item editor couldn't build one (components were substance-only) and (b) logging a recipe was
+all-or-nothing.
+**Decision:** A **stack is a `recipe` item whose components are child items.** Two parts:
+- **Build:** the item editor (`ItemDraftForm`) gains a *Stack members* section for `recipe` kind — pick
+  existing items by name (catalog datalist → resolved to `childItemId`), each with a qty/unit; `draftToBody`
+  emits child-item components. A *Create manually* entry on Add Item opens a blank editor (previously the
+  editor only appeared after a scan/barcode).
+- **Log (Quick Capture):** `quick-items` now returns a stack favorite's members. Tapping it logs by a
+  rule (`stackLogPlan`): **every member included → one `intake_event` against the recipe item** (a single
+  "Morning Stack" timeline entry that the resolver expands); **any member skipped → one event per included
+  member** (so the omitted ones simply aren't logged). An expandable checklist (all checked by default)
+  drives the inclusion set; Undo deletes every event the tap created.
+Medication "exact-dose one-tap" needs no new code — pin the med (its serving = the dose) with optional dose
+presets (C1); there is no rough mode for it to fall into.
+**Consequences:** one tap takes the whole routine with a clean single timeline entry, yet skipping is
+trivial; totals are identical either way (the resolver expands the recipe, or each member resolves itself).
+Trade-offs: a partial log produces N separate timeline entries rather than one grouped "Morning Stack minus
+X" entry (we don't recompute a reduced frozen snapshot — that would fight the per-event snapshot model);
+stack members are picked by exact name match in the editor (no fuzzy search there yet). Pure `stackLogPlan`
++ `draftToBody` member mapping are unit-tested; the quick-items members query is integration-tested; build →
+pin → log-all → skip-one is browser-verified.
 
 ### ADR-028
 **Title:** Capture provenance + "log it often → suggest pinning" (Quick Capture foundations).

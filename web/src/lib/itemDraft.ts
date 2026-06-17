@@ -7,6 +7,8 @@
 import type { CreateItemBody } from "$lib/types";
 
 export type CompRow = { substance: string; amount: number; unit: string };
+// A member of a stack/recipe: another item, by id (resolved from its name in the editor).
+export type MemberRow = { itemId: string; name: string; quantity: number; unit: string };
 
 export type ItemDraft = {
   name: string;
@@ -19,6 +21,8 @@ export type ItemDraft = {
   canonQty: number | null;
   canonUnit: string;
   comps: CompRow[];
+  // Stack/recipe members — other items this one is made of (childItemId components).
+  members: MemberRow[];
 };
 
 export function emptyDraft(): ItemDraft {
@@ -31,6 +35,7 @@ export function emptyDraft(): ItemDraft {
     canonQty: null,
     canonUnit: "",
     comps: [],
+    members: [],
   };
 }
 
@@ -47,14 +52,20 @@ export function draftFromBody(d: CreateItemBody): ItemDraft {
     comps: (d.components ?? [])
       .filter((c) => c.substance)
       .map((c) => ({ substance: c.substance as string, amount: c.amount, unit: c.unit })),
+    members: [], // built in the editor; recognized/scanned drafts have no member items
   };
 }
 
 /** Build the API body from the edited draft, dropping blank/zero ingredient rows. */
 export function draftToBody(d: ItemDraft): CreateItemBody {
-  const components = d.comps
+  const substanceComps = d.comps
     .filter((c) => c.substance.trim() && c.amount > 0 && c.unit.trim())
     .map((c) => ({ substance: c.substance.trim(), amount: c.amount, unit: c.unit.trim() }));
+  // Stack members become childItemId components (only those resolved to a real item).
+  const memberComps = d.members
+    .filter((m) => m.itemId && m.quantity > 0 && m.unit.trim())
+    .map((m) => ({ childItemId: m.itemId, amount: m.quantity, unit: m.unit.trim() }));
+  const components = [...substanceComps, ...memberComps];
   const serving: NonNullable<CreateItemBody["defaultServing"]> = {};
   if (d.dispQty != null && Number.isFinite(d.dispQty)) serving.displayQuantity = d.dispQty;
   if (d.dispUnit.trim()) serving.displayUnit = d.dispUnit.trim();

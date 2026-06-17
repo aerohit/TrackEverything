@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { deleteIntake, favoriteSuggestions, logIntake, quickItems, setQuickLog } from "$lib/api";
   import { iconForInput } from "$lib/icons";
-  import { defaultAmountLabel, quickLogPayload } from "$lib/quickcapture";
+  import { defaultAmountLabel, isStack, quickLogPayload, stackLogPlan } from "$lib/quickcapture";
   import type { FavoriteSuggestion, QuickItem, QuickPreset } from "$lib/types";
 
   let items = $state<QuickItem[]>([]);
@@ -10,23 +10,85 @@
   let pinningId = $state<string | null>(null);
   let loading = $state(true);
   let busyId = $state<string | null>(null);
-  // Toast doubles as the Undo affordance: it holds the just-logged event id.
-  let toast = $state<{ msg: string; eventId?: string; err: boolean } | null>(null);
+  // Per-stack member selection (id → set of included member ids) and expand state.
+  let included = $state<Record<string, Set<string>>>({});
+  let expanded = $state<Record<string, boolean>>({});
+  // Toast doubles as the Undo affordance: it holds the just-logged event ids.
+  let toast = $state<{ msg: string; eventIds?: string[]; err: boolean } | null>(null);
   let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
-  function flash(msg: string, opts: { eventId?: string; err?: boolean } = {}) {
+  function flash(msg: string, opts: { eventIds?: string[]; err?: boolean } = {}) {
     clearTimeout(toastTimer);
-    toast = { msg, eventId: opts.eventId, err: opts.err ?? false };
+    toast = { msg, eventIds: opts.eventIds, err: opts.err ?? false };
     toastTimer = setTimeout(() => (toast = null), 5000);
   }
 
   async function load() {
     try {
       [items, suggestions] = await Promise.all([quickItems(), favoriteSuggestions()]);
+      // Default every stack to "all members included".
+      const next: Record<string, Set<string>> = {};
+      for (const it of items) {
+        if (isStack(it)) next[it.id] = new Set(it.stack.map((m) => m.itemId));
+      }
+      included = next;
     } catch {
       flash("Couldn't load — check your token.", { err: true });
     } finally {
       loading = false;
+    }
+  }
+
+  function isIncluded(stackId: string, memberId: string): boolean {
+    return included[stackId]?.has(memberId) ?? false;
+  }
+  function toggleMember(stackId: string, memberId: string) {
+    const set = new Set(included[stackId] ?? []);
+    if (set.has(memberId)) set.delete(memberId);
+    else set.add(memberId);
+    included = { ...included, [stackId]: set };
+  }
+  function toggleExpand(id: string) {
+    expanded = { ...expanded, [id]: !expanded[id] };
+  }
+  function stackCountLabel(it: QuickItem): string {
+    const inc = included[it.id]?.size ?? it.stack.length;
+    return inc === it.stack.length ? `${it.stack.length} items` : `${inc} of ${it.stack.length} items`;
+  }
+
+  async function log(it: QuickItem, preset?: QuickPreset) {
+    busyId = it.id;
+    try {
+      const payloads = isStack(it) ? stackLogPlan(it, included[it.id] ?? new Set()) : [quickLogPayload(it, preset)];
+      if (!payloads.length) {
+        flash("Nothing selected to log.", { err: true });
+        return;
+      }
+      const ids: string[] = [];
+      for (const p of payloads) ids.push((await logIntake(p)).id);
+      let amt: string;
+      if (isStack(it)) {
+        const inc = included[it.id]?.size ?? it.stack.length;
+        amt = inc === it.stack.length ? "all" : `${inc} of ${it.stack.length}`;
+      } else {
+        amt = preset ? preset.label : defaultAmountLabel(it);
+      }
+      flash(`Logged ${it.name} · ${amt}`, { eventIds: ids });
+    } catch {
+      flash(`Couldn't log ${it.name}.`, { err: true });
+    } finally {
+      busyId = null;
+    }
+  }
+
+  async function undo() {
+    const ids = toast?.eventIds;
+    if (!ids?.length) return;
+    try {
+      await Promise.all(ids.map((id) => deleteIntake(id)));
+      flash(ids.length > 1 ? `Removed ${ids.length} entries.` : "Removed.");
+    } catch {
+      flash("Couldn't undo.", { err: true });
     }
   }
 
@@ -43,38 +105,14 @@
     }
   }
 
-  async function log(item: QuickItem, preset?: QuickPreset) {
-    busyId = item.id;
-    try {
-      const ev = await logIntake(quickLogPayload(item, preset));
-      const amt = preset ? preset.label : defaultAmountLabel(item);
-      flash(`Logged ${item.name} · ${amt}`, { eventId: ev.id });
-    } catch {
-      flash(`Couldn't log ${item.name}.`, { err: true });
-    } finally {
-      busyId = null;
-    }
-  }
-
-  async function undo() {
-    const id = toast?.eventId;
-    if (!id) return;
-    try {
-      await deleteIntake(id);
-      flash("Removed.");
-    } catch {
-      flash("Couldn't undo.", { err: true });
-    }
-  }
-
   onMount(load);
 </script>
 
 <main class="layout">
   <section class="card">
     <h2>Quick Capture</h2>
-    <p class="mut">Tap a favorite to log it instantly. Pick a preset amount, or tap the item for its
-      usual amount. Pin items from <a href="/manage">Add Item</a>.</p>
+    <p class="mut">Tap a favorite to log it instantly. A stack logs all its items in one tap — expand it
+      to skip any today. Pin items from <a href="/manage">Add Item</a>.</p>
 
     {#if loading}
       <p class="mut">Loading…</p>
@@ -82,17 +120,33 @@
       <div class="qgrid">
         {#each items as it}
           <div class="qcard">
-            <button
-              class="qmain"
-              disabled={busyId === it.id}
-              onclick={() => log(it)}
-              title="Log {defaultAmountLabel(it)}"
-            >
+            <button class="qmain" disabled={busyId === it.id} onclick={() => log(it)}>
               <span class="qicon" aria-hidden="true">{iconForInput(it.name)}</span>
               <span class="qname">{it.name}</span>
-              <span class="qamt">{defaultAmountLabel(it)}</span>
+              <span class="qamt">{isStack(it) ? stackCountLabel(it) : defaultAmountLabel(it)}</span>
             </button>
-            {#if it.quickPresets.length}
+            {#if isStack(it)}
+              <div class="qpresets">
+                <button class="qpreset" onclick={() => toggleExpand(it.id)}>
+                  {expanded[it.id] ? "Hide" : "Skip items"}
+                </button>
+              </div>
+              {#if expanded[it.id]}
+                <div class="stackitems">
+                  {#each it.stack as m}
+                    <label class="stackitem">
+                      <input
+                        type="checkbox"
+                        checked={isIncluded(it.id, m.itemId)}
+                        onchange={() => toggleMember(it.id, m.itemId)}
+                      />
+                      <span>{m.name}</span>
+                      <span class="mut">{m.quantity} {m.unit}</span>
+                    </label>
+                  {/each}
+                </div>
+              {/if}
+            {:else if it.quickPresets.length}
               <div class="qpresets">
                 {#each it.quickPresets as p}
                   <button class="qpreset" disabled={busyId === it.id} onclick={() => log(it, p)}>
@@ -131,7 +185,7 @@
 {#if toast}
   <div class="toast" class:err={toast.err}>
     <span>{toast.msg}</span>
-    {#if toast.eventId}
+    {#if toast.eventIds?.length}
       <button class="toast-undo" onclick={undo}>Undo</button>
     {/if}
   </div>

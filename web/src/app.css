@@ -382,6 +382,22 @@ textarea:focus {
   font-size: 14px;
   cursor: pointer;
 }
+.stackitems {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 12px 10px;
+}
+.stackitem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.stackitem .mut {
+  margin-left: auto;
+}
 
 /* Navigation: top nav on desktop, bottom tab bar on phones. */
 .topnav {
