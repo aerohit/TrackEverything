@@ -82,7 +82,7 @@
 
   <div style="display:flex; flex-direction:column; gap:16px">
     <details class="card collapse">
-      <summary>Totals</summary>
+      <summary>Today's Total Macros &amp; Micros</summary>
       {#if totals.length}
         {#each groupTotals(totals) as g}
           <div class="totgroup">{g.label}</div>
