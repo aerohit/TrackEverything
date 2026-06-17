@@ -3,7 +3,7 @@
   import { createItem, logIntake, recentItems, recognizeIntake, searchItems } from "$lib/api";
   import type { CreateItemBody, RecentItem } from "$lib/types";
   import { unitOptions } from "$lib/units";
-  import { type Match, selectedName } from "$lib/log";
+  import { type Match, selectedName, servingUnitChoices } from "$lib/log";
 
   // One way to log: snap/upload a photo, speak or type a phrase, or tap a recent
   // item. The result is reviewed in a confirm card before it's saved (ADR-020),
@@ -19,6 +19,7 @@
     sel: string; // "item:<id>" | "new" | "freeform"
     touched: boolean; // the user manually chose a target (stop auto-selecting a match)
     recognizedName: string; // the transcribed/recent name, used for "new" / freeform
+    recognizedUnit: string; // the recognized/recent unit, restored for "new" / freeform
     draft: CreateItemBody | null; // present when recognized (enables "save as new")
     hint?: string; // the spoken/typed phrase, shown for context
   };
@@ -32,6 +33,15 @@
   let saving = $state(false);
   let toast = $state<{ msg: string; err: boolean } | null>(null);
   let searchTimer: ReturnType<typeof setTimeout> | undefined;
+
+  // Units offered in the confirm card: an item-backed log is constrained to that
+  // item's serving / measurement unit; otherwise the full list (R-CAP-20).
+  const unitChoices = $derived.by(() => {
+    const c = confirm;
+    if (!c) return [] as string[];
+    const m = c.sel.startsWith("item:") ? c.results.find((r) => "item:" + r.id === c.sel) : null;
+    return m ? servingUnitChoices(m) : unitOptions(c.unit);
+  });
 
   function pad(n: number) {
     return String(n).padStart(2, "0");
@@ -81,6 +91,7 @@
       sel: o.draft ? "new" : "freeform",
       touched: false,
       recognizedName: o.name,
+      recognizedUnit: o.unit,
       draft: o.draft,
       hint: o.hint,
     };
@@ -92,6 +103,18 @@
   function applySel(c: Confirm, s: string) {
     c.sel = s;
     c.name = selectedName(s, c.results, c.recognizedName);
+    if (s.startsWith("item:")) {
+      // Constrain the unit to this item's serving / measurement unit (prevents
+      // logging e.g. a "2 scoops" supplement in "bowls"). Keep a still-valid unit;
+      // otherwise prefer the recognized unit when allowed, else "serving".
+      const m = c.results.find((r) => "item:" + r.id === s);
+      const choices = servingUnitChoices(m);
+      if (!choices.includes(c.unit)) {
+        c.unit = choices.includes(c.recognizedUnit) ? c.recognizedUnit : "serving";
+      }
+    } else {
+      c.unit = c.recognizedUnit; // new / freeform → back to the full unit list
+    }
   }
   function selectTarget(s: string) {
     if (!confirm) return;
@@ -107,13 +130,18 @@
     let results: Match[] = [];
     if (q.length >= 1) {
       try {
-        results = (await searchItems(q)).map((i) => ({ id: i.id, name: i.name, kind: i.kind }));
+        results = (await searchItems(q)).map((i) => ({
+          id: i.id,
+          name: i.name,
+          kind: i.kind,
+          unit: i.defaultDisplayUnit,
+        }));
       } catch {
         results = [];
       }
     }
     if (prefer && !results.some((r) => r.id === prefer)) {
-      results = [{ id: prefer, name: c.recognizedName }, ...results];
+      results = [{ id: prefer, name: c.recognizedName, unit: c.recognizedUnit }, ...results];
     }
     if (confirm !== c) return; // card closed / replaced while awaiting
     c.results = results;
@@ -293,7 +321,7 @@
       <div style="flex:1">
         <div class="fieldlabel">Unit</div>
         <select class="field" bind:value={confirm.unit}>
-          {#each unitOptions(confirm.unit) as u}<option value={u}>{u}</option>{/each}
+          {#each unitChoices as u}<option value={u}>{u}</option>{/each}
         </select>
       </div>
     </div>

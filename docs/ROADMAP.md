@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-17 (Resolver: log a partial serving — "0.5 serving" or "2 spoons" — and totals scale proportionally)
+> **Status:** Living document. **Last updated:** 2026-06-17 (R-CAP-20: item-aware unit choices — log a chosen item in servings or its own unit)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -510,3 +510,4 @@ keeps the Supabase project awake. CI builds + tests `web/` and the Deno service.
 | 2026-06-17 | Add Item: tappable "Your items" rows open a popup listing the item's ingredients (substance + amount + unit) via the existing `GET /api/items/:id`. New `getItem` client + test; modal closes on ✕/backdrop/Esc. Web-only; browser-verified. |
 | 2026-06-17 | Resolver fix (R-DOM-4): an item logged in **"serving"/"servings"** units now resolves its ingredients (→ breakdown + daily totals) even when the item's serving unit is named differently ("2 scoops", "serving (22.5g)"); a serving means one default serving (`db/resolve.ts`). Pure test added. Existing frozen events need a re-log to pick it up. |
 | 2026-06-17 | Resolver: **partial servings** scale proportionally — "0.5 serving" ≡ "1 scoop" of a "2 scoops" serving, each contributing **half** the actives to daily totals. `convert` tolerates singular/plural count units (`db/resolve.ts`). Pure resolver tests (incl. prod "Bulk Electrolyte Powder") + a DB integration test (two half-servings sum to one); "spoon" added to the unit dropdown. |
+| 2026-06-17 | R-CAP-20: the Log confirm card constrains the **unit dropdown** to a chosen item's serving / measurement unit (`serving` + the item's own unit) — log in servings or the item's unit, not an incompatible one; freeform keeps the full list. `servingUnitChoices` (`web/src/lib/log.ts`) + tests; browser-verified. Web-only. |
