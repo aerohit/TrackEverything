@@ -79,18 +79,22 @@ supplements, or a meal of a few foods. Tap it once and the whole thing is logged
 1. Make sure the member items exist first (e.g. *Vitamin D*, *Magnesium*,
    *Omega-3*) — scan/barcode/create each as its own item.
 2. On **Add Item**, tap **"✏️ Create an item or stack manually."**
-3. Give it a name (*Morning Stack*) and set **Kind → recipe**. A **Stack members**
+3. Give it a name (*Morning Stack*) and set **Kind → stack**. A **Stack members**
    section appears.
 4. Add each member by name (it autocompletes from your items), with how much of it
    the stack contains. Save.
 5. Pin the stack to Quick Capture (same as any favorite — see step 1 above).
 
-**Log a stack:**
-- On **Capture**, the stack shows as one card ("Morning Stack · 3 items"). **Tap
-  it** → logs everything in one go.
-- **Skipping something today?** Tap **Skip items** to expand its checklist, untick
-  what you didn't take, then tap the card. Only the ticked items are logged.
-- **Undo** removes the whole tap (all the items it logged), as usual.
+**Log a stack — you choose how it's stored:**
+- On **Capture**, the stack shows as one card ("Morning Stack · 3 items").
+- **Tap it** → logs the whole stack as **one entry**. In the timeline/Overview that
+  single entry is tagged *stack* and **lists the items it contained**.
+- Tap **Options** to expand. There you can:
+  - **untick** anything you skipped today, then
+  - tap the card to log the rest as **one entry**, or tap **"Log as separate
+    items"** to log **each item as its own entry** (handy if you want them to show
+    individually).
+- **Undo** removes the whole tap (every entry it created), as usual.
 
 ### Tips
 - **Curate ruthlessly.** Quick Capture is for the handful of things you log

@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { deleteIntake, favoriteSuggestions, logIntake, quickItems, setQuickLog } from "$lib/api";
   import { iconForInput } from "$lib/icons";
-  import { defaultAmountLabel, isStack, quickLogPayload, stackLogPlan } from "$lib/quickcapture";
+  import { defaultAmountLabel, isStack, quickLogPayload, type StackMode, stackLogPlan } from "$lib/quickcapture";
   import type { FavoriteSuggestion, QuickItem, QuickPreset } from "$lib/types";
 
   let items = $state<QuickItem[]>([]);
@@ -56,10 +56,12 @@
     return inc === it.stack.length ? `${it.stack.length} items` : `${inc} of ${it.stack.length} items`;
   }
 
-  async function log(it: QuickItem, preset?: QuickPreset) {
+  async function log(it: QuickItem, preset?: QuickPreset, mode: StackMode = "single") {
     busyId = it.id;
     try {
-      const payloads = isStack(it) ? stackLogPlan(it, included[it.id] ?? new Set()) : [quickLogPayload(it, preset)];
+      const payloads = isStack(it)
+        ? stackLogPlan(it, included[it.id] ?? new Set(), mode)
+        : [quickLogPayload(it, preset)];
       if (!payloads.length) {
         flash("Nothing selected to log.", { err: true });
         return;
@@ -69,7 +71,8 @@
       let amt: string;
       if (isStack(it)) {
         const inc = included[it.id]?.size ?? it.stack.length;
-        amt = inc === it.stack.length ? "all" : `${inc} of ${it.stack.length}`;
+        if (inc < it.stack.length) amt = `${inc} of ${it.stack.length}`;
+        else amt = mode === "single" ? "one entry" : `${inc} items`;
       } else {
         amt = preset ? preset.label : defaultAmountLabel(it);
       }
@@ -128,7 +131,7 @@
             {#if isStack(it)}
               <div class="qpresets">
                 <button class="qpreset" onclick={() => toggleExpand(it.id)}>
-                  {expanded[it.id] ? "Hide" : "Skip items"}
+                  {expanded[it.id] ? "Hide" : "Options"}
                 </button>
               </div>
               {#if expanded[it.id]}
@@ -144,6 +147,13 @@
                       <span class="mut">{m.quantity} {m.unit}</span>
                     </label>
                   {/each}
+                  <button
+                    class="qpreset"
+                    disabled={busyId === it.id}
+                    onclick={() => log(it, undefined, "separate")}
+                  >
+                    Log as separate items
+                  </button>
                 </div>
               {/if}
             {:else if it.quickPresets.length}

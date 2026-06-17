@@ -41,6 +41,10 @@
   function resolvedText(e: IntakeEvent): string {
     return e.resolved.map((r) => `${r.substance} ${r.amount}${r.unit}`).join(" · ");
   }
+  // A stack logged as a single entry lists its member items (ADR-030).
+  function stackText(e: IntakeEvent): string {
+    return e.stackItems.map((m) => `${m.name} ${m.quantity} ${m.unit}`).join(" · ");
+  }
   function flash(msg: string, err = false) {
     toast = { msg, err };
     setTimeout(() => (toast = null), 2600);
@@ -121,7 +125,13 @@
               <span class="when">{fmtTime(e.occurredAt)}</span>{e.displayName}
               <span class="qty">{e.quantity} {e.unit}</span>
             </summary>
-            <div class="res">{e.resolved.length ? resolvedText(e) : "no breakdown"}</div>
+            <div class="res">
+              {#if e.stackItems.length}
+                <span class="stacktag">stack</span> {stackText(e)}
+              {:else}
+                {e.resolved.length ? resolvedText(e) : "no breakdown"}
+              {/if}
+            </div>
           </details>
         {/each}
       {:else}

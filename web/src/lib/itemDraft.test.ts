@@ -92,7 +92,7 @@ describe("itemDraft converters", () => {
     const body = draftToBody({
       ...emptyDraft(),
       name: "Morning Stack",
-      kind: "recipe",
+      kind: "stack",
       members: [
         { itemId: "vd-id", name: "Vitamin D", quantity: 1, unit: "tablet" },
         { itemId: "mg-id", name: "Magnesium", quantity: 2, unit: "capsule" },
@@ -100,7 +100,7 @@ describe("itemDraft converters", () => {
         { itemId: "z-id", name: "Zinc", quantity: 0, unit: "tablet" }, // dropped (zero qty)
       ],
     });
-    expect(body.kind).toBe("recipe");
+    expect(body.kind).toBe("stack");
     expect(body.components).toEqual([
       { childItemId: "vd-id", amount: 1, unit: "tablet" },
       { childItemId: "mg-id", amount: 2, unit: "capsule" },

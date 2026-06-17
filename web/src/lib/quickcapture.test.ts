@@ -75,23 +75,28 @@ describe("stackLogPlan", () => {
     expect(isStack(qi())).toBe(false);
   });
 
-  it("logs the whole stack as ONE recipe event when every member is included", () => {
-    const plan = stackLogPlan(STACK, all);
+  it("single mode with all members → ONE event against the stack item", () => {
+    const plan = stackLogPlan(STACK, all, "single");
     expect(plan).toHaveLength(1);
     expect(plan[0]).toMatchObject({ itemId: "stack-1", displayName: "Morning Stack", source: "quick" });
   });
 
-  it("logs one event per included member when some are skipped", () => {
-    const plan = stackLogPlan(STACK, new Set(["vd", "o3"])); // skip Magnesium
+  it("separate mode → one event per member, even when all are included", () => {
+    const plan = stackLogPlan(STACK, all, "separate");
+    expect(plan.map((p) => p.displayName)).toEqual(["Vitamin D", "Magnesium", "Omega-3"]);
+  });
+
+  it("a skip always logs per included member (single can't represent a partial stack)", () => {
+    const plan = stackLogPlan(STACK, new Set(["vd", "o3"]), "single"); // skip Magnesium
     expect(plan.map((p) => p.displayName)).toEqual(["Vitamin D", "Omega-3"]);
     expect(plan[1]).toMatchObject({ itemId: "o3", quantity: 2, unit: "softgel", source: "quick" });
   });
 
   it("logs nothing when every member is skipped", () => {
-    expect(stackLogPlan(STACK, new Set())).toEqual([]);
+    expect(stackLogPlan(STACK, new Set(), "single")).toEqual([]);
   });
 
   it("falls back to a single quick log for a non-stack favorite", () => {
-    expect(stackLogPlan(qi(), new Set())).toHaveLength(1);
+    expect(stackLogPlan(qi(), new Set(), "single")).toHaveLength(1);
   });
 });

@@ -31,18 +31,21 @@ export function isStack(item: QuickItem): boolean {
   return item.stack.length > 0;
 }
 
+/** How a stack is stored when logged: one combined entry vs one entry per item. */
+export type StackMode = "single" | "separate";
+
 /**
- * The intake payload(s) for logging a stack given the set of *included* member ids.
- * Taking the whole stack → one event against the recipe item (a single timeline
- * entry that resolves all members). Skipping any member → one event per included
- * member instead, so the omitted ones simply aren't logged. Returns [] if nothing
- * is included. Non-stack favorites fall back to a single quick log.
+ * The intake payload(s) for logging a stack, given the *included* member ids and
+ * the chosen mode. **single** (only when every member is included) → one event
+ * against the stack item — a single timeline entry the resolver expands into its
+ * members. **separate** (or any skip) → one event per included member. Returns []
+ * if nothing is included; non-stack favorites fall back to a single quick log.
  */
-export function stackLogPlan(item: QuickItem, included: Set<string>): CreateIntake[] {
+export function stackLogPlan(item: QuickItem, included: Set<string>, mode: StackMode): CreateIntake[] {
   if (!isStack(item)) return [quickLogPayload(item)];
   const members = item.stack.filter((m) => included.has(m.itemId));
   if (members.length === 0) return [];
-  if (members.length === item.stack.length) return [quickLogPayload(item)];
+  if (mode === "single" && members.length === item.stack.length) return [quickLogPayload(item)];
   return members.map((m) => ({
     displayName: m.name,
     itemId: m.itemId,

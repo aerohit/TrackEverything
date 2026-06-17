@@ -642,13 +642,13 @@ Deno.test({
       const vd = await mk("Vitamin D", "supplement");
       const mg = await mk("Magnesium", "supplement");
 
-      // A "Morning Stack" recipe whose components are those items.
+      // A "Morning Stack" — a stack-kind item whose components are those items.
       const stack = await (await app.request("/api/items", {
         method: "POST",
         headers: auth,
         body: JSON.stringify({
           name: "Morning Stack",
-          kind: "recipe",
+          kind: "stack",
           primaryType: "supplement",
           components: [
             { childItemId: vd, amount: 1, unit: "tablet" },
@@ -672,6 +672,27 @@ Deno.test({
         me.stack.map((m: { quantity: number; unit: string }) => `${m.quantity}${m.unit}`),
         ["1tablet", "2capsule"],
       );
+
+      // Logging the stack as a single entry returns its member items on read (ADR-030),
+      // so the overview can list them.
+      await app.request("/api/intake", {
+        method: "POST",
+        headers: auth,
+        body: JSON.stringify({
+          displayName: "Morning Stack",
+          itemId: stack.id,
+          quantity: 1,
+          unit: "serving",
+          source: "quick",
+        }),
+      });
+      const events = (await (await app.request("/api/intake", { headers: auth })).json()).events;
+      const ev = events.find((e: { itemId: string }) => e.itemId === stack.id);
+      assert(ev, "the stack event should be listed");
+      assertEquals(ev.stackItems.map((m: { name: string }) => m.name), ["Vitamin D", "Magnesium"]);
+      // A non-stack event has no stackItems.
+      const plain = events.find((e: { itemId: string }) => e.itemId === vd);
+      if (plain) assertEquals(plain.stackItems, []);
     } finally {
       await sql.end();
     }

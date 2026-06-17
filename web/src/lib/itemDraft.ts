@@ -12,7 +12,7 @@ export type MemberRow = { itemId: string; name: string; quantity: number; unit: 
 
 export type ItemDraft = {
   name: string;
-  kind: "product" | "recipe" | "simple";
+  kind: "product" | "recipe" | "simple" | "stack";
   primaryType: string;
   dispQty: number | null;
   dispUnit: string;
