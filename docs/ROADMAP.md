@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-17 (R-CAP-21: Add Item by barcode via Open Food Facts)
+> **Status:** Living document. **Last updated:** 2026-06-17 (R-CAP-21/ADR-025: barcode scanning works on iOS via ZXing)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -516,3 +516,4 @@ keeps the Supabase project awake. CI builds + tests `web/` and the Deno service.
 | 2026-06-17 | R-CAP-17: the shared item editor gains an optional **grams/ml canonical serving** ("1 steak = 250 g") so foods can be logged by count/serving **or** by weight — both resolve (R-DOM-4). `ItemDraft` carries `canonQty`/`canonUnit` via the existing `servingSchema`; unit tests; browser-verified end to end. Web-only. |
 | 2026-06-17 | R-VIEW-8: tapping a substance in the Overview totals opens a **popup of contributing inputs** (protein → Steak 25 g, Eggs 20 g), computed client-side from resolved amounts (`substanceContributions`, `web/src/lib/totals.ts`). Unit-tested; browser-verified. Web-only. |
 | 2026-06-17 | R-CAP-21 (+ADR-024): **Add Item by barcode** — key-less Open Food Facts lookup (`POST /api/items/barcode`, `ProductLookup` seam + pure `parseOffProduct`) → editable draft → save; `BarcodeDetector` camera scan on the Add Item screen (camera-only). Unit/integration/web tested; live + browser verified. |
+| 2026-06-17 | R-CAP-21 (+ADR-025): barcode camera decode moved from native `BarcodeDetector` to **ZXing** (lazy-loaded) so scanning works on **iOS** (WebKit has no `BarcodeDetector`). |
