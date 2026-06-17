@@ -30,7 +30,7 @@ export type SubstanceType = (typeof SUBSTANCE_TYPES)[number];
 export const SUBSTANCE_UNITS = ["g", "mg", "mcg", "ml", "kcal", "iu"] as const;
 export type SubstanceUnit = (typeof SUBSTANCE_UNITS)[number];
 
-export const INPUT_KINDS = ["product", "recipe", "simple"] as const;
+export const INPUT_KINDS = ["product", "recipe", "simple", "stack"] as const;
 export type InputKind = (typeof INPUT_KINDS)[number];
 
 export const INPUT_PRIMARY_TYPES = [
@@ -236,6 +236,8 @@ export interface IntakeEvent {
   notes: string | null;
   source: IntakeSource;
   resolved: ResolvedAmount[];
+  /** When this event logged a **stack** as a single entry: its member items (else empty). */
+  stackItems: StackChild[];
 }
 
 /** An item logged often enough to suggest pinning to Quick Capture (v2-C0). */

@@ -23,6 +23,7 @@ const ctx: AdviceContext = {
       contextTags: ["afternoon"],
       notes: null,
       source: "voice",
+      stackItems: [],
       resolved: [{
         substance: "caffeine",
         amount: 200,

@@ -355,7 +355,25 @@ export async function listIntakeEvents(db: Db, range: ListRange = {}): Promise<I
     byEvent.set(r.eventId, list);
   }
 
-  return events.map((e) => eventDto(e, byEvent.get(e.id) ?? []));
+  // For events that logged a stack as a single entry, attach its member items so
+  // the timeline can list them (ADR-030).
+  const stackMembers = await stackMembersFor(db, events.map((e) => e.itemId));
+
+  return events.map((e) =>
+    eventDto(e, byEvent.get(e.id) ?? [], (e.itemId && stackMembers.get(e.itemId)) || [])
+  );
+}
+
+/** Member items for any of `itemIds` that are stack-kind, keyed by the stack's id. */
+async function stackMembersFor(
+  db: Db,
+  itemIds: (string | null)[],
+): Promise<Map<string, QuickItem["stack"]>> {
+  const ids = [...new Set(itemIds.filter((id): id is string => !!id))];
+  if (!ids.length) return new Map();
+  const stacks = await db.select({ id: inputItem.id }).from(inputItem)
+    .where(and(inArray(inputItem.id, ids), eq(inputItem.kind, "stack")));
+  return listStackChildren(db, stacks.map((s) => s.id));
 }
 
 /**
@@ -397,6 +415,7 @@ export async function recentItems(db: Db, limit = 10): Promise<RecentItem[]> {
 function eventDto(
   e: typeof intakeEvent.$inferSelect,
   resolved: IntakeEvent["resolved"],
+  stackItems: IntakeEvent["stackItems"] = [],
 ): IntakeEvent {
   return {
     id: e.id,
@@ -412,6 +431,7 @@ function eventDto(
     notes: e.notes,
     source: e.source,
     resolved,
+    stackItems,
   };
 }
 
@@ -431,7 +451,8 @@ export async function getIntakeEvent(db: Db, id: string): Promise<IntakeEvent | 
     .from(resolvedAmount)
     .innerJoin(substance, eq(resolvedAmount.substanceId, substance.id))
     .where(eq(resolvedAmount.eventId, id));
-  return eventDto(e, resolved);
+  const stackMembers = await stackMembersFor(db, [e.itemId]);
+  return eventDto(e, resolved, (e.itemId && stackMembers.get(e.itemId)) || []);
 }
 
 // ---- reference reads (for the UI: pick substances / items) ----
@@ -578,7 +599,7 @@ export async function listQuickItems(db: Db): Promise<QuickItem[]> {
   const presets = await listPresets(db, rows.map((r) => r.id));
   const stacks = await listStackChildren(
     db,
-    rows.filter((r) => r.kind === "recipe").map((r) => r.id),
+    rows.filter((r) => r.kind === "stack").map((r) => r.id),
   );
   return rows.map((r) => ({
     ...itemSummary(r),

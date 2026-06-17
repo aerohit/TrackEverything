@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-17 (ADR-029: stacks = recipe favorites; whole-stack vs partial logging, v2-C2)
+> **Last updated:** 2026-06-17 (ADR-030: stack is a first-class kind; single-vs-individual capture; Overview expansion)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -390,11 +390,43 @@ the owner verifies. No phase starts before the prior one is approved.
 risk of building the wrong thing. Requires keeping ROADMAP.md in sync with the
 two core docs.
 
+### ADR-030
+**Title:** Stack is a first-class item kind, with a single-vs-individual capture choice and Overview expansion.
+**Status:** Accepted (2026-06-17). Phase **v2-C2.1**; refines [ADR-029](#adr-029) (whose whole-vs-per-member
+logging mechanism is kept). Realizes the extended R-CAP-23.
+**Context:** ADR-029 modelled a stack as a `recipe`, which overloaded "recipe" (a food made of
+ingredients) with "a routine of items" and gave no clean signal for stack-specific behaviour. The owner also
+wants to **choose at capture** whether a stack is stored as one combined entry or as separate item entries,
+and to **see the member items** of a combined entry in the Overview.
+**Decision:**
+- **Kind:** add `stack` to the `input_kind` enum (migration `0006`, additive `ADD VALUE`). A stack is a
+  `stack`-kind item whose components are child items; the item editor's *Stack members* section and the
+  Quick Capture member loading now key off `kind = 'stack'` (not `recipe`). Recipes go back to meaning
+  food-from-ingredients.
+- **Capture choice (`stackLogPlan(item, included, mode)`):** tapping a stack card logs it as a **single
+  entry** (one `intake_event` against the stack — the default); an **"Log as separate items"** action in the
+  expanded card logs **one event per included member**; the skip checklist drives `included`. Single is only
+  representable when all members are included (a partial selection always logs per-member, since we don't
+  recompute a reduced frozen snapshot).
+- **Overview:** the event read DTO carries `stackItems` — the member items of a stack logged as a single
+  entry (a join in `listIntakeEvents`/`getIntakeEvent`); the timeline lists them under a "stack" tag so a
+  one-entry log still shows what it contained.
+**Consequences:** "stack" is now explicit and self-documenting; the user controls the entry shape; a combined
+stack entry stays a single clean timeline row that expands to its items, while separate mode gives
+first-class per-item rows. Totals are identical across modes (the resolver expands the stack either way).
+Trade-offs: stacks created under ADR-029 as `recipe` items aren't auto-migrated to `stack` (the owner
+recreates them — little/no stack data existed yet); a partial single-entry stack still isn't representable
+(per-member by design). Pure `stackLogPlan` (single/separate/skip) + `draftToBody` mapping are unit-tested;
+`quick-items` members and event `stackItems` are integration-tested; build → log-single → log-separate →
+Overview-expansion is browser-verified.
+
 ### ADR-029
 **Title:** Stacks = recipe favorites; log the whole stack as one event, a partial stack per included member.
 **Status:** Accepted (2026-06-17). Phase **v2-C2** of the Capture Seamlessness track; builds on Quick
 Capture ([ADR-027](#adr-027)). Realizes R-CAP-23. No migration — reuses the existing `item_component`
-child-item support.
+child-item support. **Stack modelling refined by [ADR-030](#adr-030)** — a stack became its own item
+`kind` (not a `recipe`), capture gained an explicit single-vs-separate choice, and a single stack entry is
+expanded to its members in the Overview. The whole-vs-per-member logging mechanism below still stands.
 **Context:** A "Morning Stack" (take several supplements together) needs one-tap logging *and* a way to skip
 an item on a given day. The data model already represents a multi-item routine as a **recipe** item whose
 components are `childItemId`s, and the resolver already expands a recipe into all its members' substances —

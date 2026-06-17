@@ -11,7 +11,7 @@
     items?: InputItemSummary[]; // catalog, for picking stack members (recipe kind)
   } = $props();
 
-  const KINDS = ["product", "recipe", "simple"] as const;
+  const KINDS = ["product", "recipe", "simple", "stack"] as const;
   const TYPES = ["food", "drink", "supplement", "medication", "meal", "other"];
 
   function addComp() {
@@ -78,7 +78,7 @@
   </select>
 </div>
 
-{#if draft.kind === "recipe"}
+{#if draft.kind === "stack"}
   <div class="fieldlabel">Stack members (other items)</div>
   <p class="mut" style="margin:0 0 4px">
     Build a routine or recipe from items you've already added — e.g. a "Morning Stack" of your

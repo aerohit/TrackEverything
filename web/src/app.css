@@ -398,6 +398,17 @@ textarea:focus {
 .stackitem .mut {
   margin-left: auto;
 }
+.stacktag {
+  display: inline-block;
+  padding: 1px 6px;
+  margin-right: 4px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
 
 /* Navigation: top nav on desktop, bottom tab bar on phones. */
 .topnav {

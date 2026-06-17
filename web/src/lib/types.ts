@@ -53,6 +53,8 @@ export interface IntakeEvent {
   notes: string | null;
   source: IntakeSource;
   resolved: ResolvedAmount[];
+  /** When this event logged a stack as a single entry: its member items (else empty). */
+  stackItems: StackChild[];
 }
 
 export interface DailyTotal {
@@ -65,7 +67,7 @@ export interface DailyTotal {
 export interface InputItemSummary {
   id: string;
   name: string;
-  kind: "product" | "recipe" | "simple";
+  kind: "product" | "recipe" | "simple" | "stack";
   primaryType: string;
   roles: string[];
   brand: string | null;
@@ -160,7 +162,7 @@ export interface ComponentInput {
 
 export interface CreateItemBody {
   name: string;
-  kind: "product" | "recipe" | "simple";
+  kind: "product" | "recipe" | "simple" | "stack";
   primaryType: string;
   roles?: string[];
   brand?: string;
