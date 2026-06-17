@@ -5,6 +5,7 @@
  * a day up into per-substance totals.
  */
 import { and, asc, desc, eq, gte, inArray, isNull, lt, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import type {
   Confidence,
   CreateIntakeEvent,
@@ -541,16 +542,49 @@ async function listPresets(
   return out;
 }
 
-/** The pinned Quick Capture favorites (ordered), each with its amount presets. */
+/** Child items (members) of stack favorites, keyed by the stack's id, position-ordered. */
+async function listStackChildren(
+  db: Db,
+  parentIds: string[],
+): Promise<Map<string, QuickItem["stack"]>> {
+  const out = new Map<string, QuickItem["stack"]>();
+  if (!parentIds.length) return out;
+  const child = alias(inputItem, "child");
+  const rows = await db.select({
+    parentId: itemComponent.parentItemId,
+    itemId: itemComponent.childItemId,
+    name: child.name,
+    quantity: itemComponent.amount,
+    unit: itemComponent.unit,
+  })
+    .from(itemComponent)
+    .innerJoin(child, eq(itemComponent.childItemId, child.id))
+    .where(and(inArray(itemComponent.parentItemId, parentIds), isNull(child.deletedAt)))
+    .orderBy(asc(itemComponent.position));
+  for (const r of rows) {
+    if (!r.itemId) continue;
+    const list = out.get(r.parentId) ?? [];
+    list.push({ itemId: r.itemId, name: r.name, quantity: r.quantity, unit: r.unit });
+    out.set(r.parentId, list);
+  }
+  return out;
+}
+
+/** The pinned Quick Capture favorites (ordered), each with its presets + (for stacks) members. */
 export async function listQuickItems(db: Db): Promise<QuickItem[]> {
   const rows = await db.select().from(inputItem)
     .where(and(isNull(inputItem.deletedAt), eq(inputItem.quickLog, true)))
     .orderBy(asc(inputItem.quickOrder), asc(inputItem.name));
   const presets = await listPresets(db, rows.map((r) => r.id));
+  const stacks = await listStackChildren(
+    db,
+    rows.filter((r) => r.kind === "recipe").map((r) => r.id),
+  );
   return rows.map((r) => ({
     ...itemSummary(r),
     quickOrder: r.quickOrder,
     quickPresets: presets.get(r.id) ?? [],
+    stack: stacks.get(r.id) ?? [],
   }));
 }
 

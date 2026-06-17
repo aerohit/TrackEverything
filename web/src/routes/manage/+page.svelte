@@ -114,6 +114,11 @@
     imageBase64 = await fileToBase64(file);
   }
 
+  function newBlank() {
+    draft = emptyDraft();
+    hasDraft = true;
+  }
+
   function applyDraft(d: CreateItemBody) {
     draft = draftFromBody(d);
     hasDraft = true;
@@ -253,8 +258,13 @@
       {decodingBarcode ? "Reading barcode…" : "📷 Scan barcode (take a photo)"}
     </label>
 
+    {#if !hasDraft}
+      <div class="or"><span>or build it yourself</span></div>
+      <button class="ghostbtn" onclick={newBlank}>✏️ Create an item or stack manually</button>
+    {/if}
+
     {#if hasDraft}
-      <ItemDraftForm bind:draft {substances} />
+      <ItemDraftForm bind:draft {substances} {items} />
       <button class="primary" disabled={!draft.name.trim() || saving} onclick={save}>
         {saving ? "Saving…" : "Save item"}
       </button>

@@ -25,3 +25,29 @@ export function defaultAmountLabel(item: QuickItem): string {
   const unit = item.defaultDisplayUnit ?? "serving";
   return `${qty} ${unit}`;
 }
+
+/** Whether a favorite is a stack (a routine/recipe of member items). */
+export function isStack(item: QuickItem): boolean {
+  return item.stack.length > 0;
+}
+
+/**
+ * The intake payload(s) for logging a stack given the set of *included* member ids.
+ * Taking the whole stack → one event against the recipe item (a single timeline
+ * entry that resolves all members). Skipping any member → one event per included
+ * member instead, so the omitted ones simply aren't logged. Returns [] if nothing
+ * is included. Non-stack favorites fall back to a single quick log.
+ */
+export function stackLogPlan(item: QuickItem, included: Set<string>): CreateIntake[] {
+  if (!isStack(item)) return [quickLogPayload(item)];
+  const members = item.stack.filter((m) => included.has(m.itemId));
+  if (members.length === 0) return [];
+  if (members.length === item.stack.length) return [quickLogPayload(item)];
+  return members.map((m) => ({
+    displayName: m.name,
+    itemId: m.itemId,
+    quantity: m.quantity,
+    unit: m.unit,
+    source: "quick" as const,
+  }));
+}

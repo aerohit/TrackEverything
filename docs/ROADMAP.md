@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-17 (v2-C0: capture provenance + favorite suggestions)
+> **Status:** Living document. **Last updated:** 2026-06-17 (v2-C2: stacks & checklist logging)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -74,8 +74,10 @@ owner-approved before the next. R-CAP-22…27, [ADR-027](ARCHITECTURE.md#adr-027
   of pinned favorites; tap = instant log + **Undo**; optional **amount presets** (Water 250/500/750).
   `quick_log`/`quick_order` on items + a `quick_preset` table; `GET /api/intake/quick-items`,
   `PATCH /api/items/:id/quick-log`; curated from the Add Item item popup. R-CAP-22.
-- **v2-C2 — Stacks & checklists** ☐ — one-tap multi-item routines (Morning Stack) with per-item skip;
-  exact-dose medication one-tap. R-CAP-23. *(Needs an ADR for partial-stack logging.)*
+- **v2-C2 — Stacks & checklists** ◐ (built, pending approval) — a stack is a recipe of items (built via a
+  *Stack members* editor section + *Create manually* entry); one tap logs the whole stack, an expandable
+  checklist skips items today (partial → per-member events). `quick-items` returns members; `stackLogPlan`
+  decides whole-vs-partial. Medication exact-dose = pin with dose presets. R-CAP-23, [ADR-029](ARCHITECTURE.md#adr-029).
 - **v2-C3 — Meal templates + quick modifiers** ☐ — size scaler + add/remove an ingredient for this log.
   R-CAP-24.
 - **v2-C4 — Photo portion sizing + honest ranges** ☐ — Light/Medium/Large; confidence-aware ranges;

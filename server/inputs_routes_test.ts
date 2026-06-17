@@ -618,3 +618,62 @@ Deno.test({
     }
   },
 });
+
+Deno.test({
+  name: "inputs API: a pinned stack (recipe of items) returns its members in quick-items (v2-C2)",
+  ignore: !DATABASE_URL,
+  async fn() {
+    await migrate(DATABASE_URL);
+    const { sql, db } = connect(DATABASE_URL);
+    try {
+      const app = createApp(db, { token: TOKEN });
+      const mk = async (name: string, primaryType: string) =>
+        (await (await app.request("/api/items", {
+          method: "POST",
+          headers: auth,
+          body: JSON.stringify({
+            name,
+            kind: "simple",
+            primaryType,
+            defaultServing: { displayQuantity: 1, displayUnit: "tablet" },
+          }),
+        })).json()).id as string;
+
+      const vd = await mk("Vitamin D", "supplement");
+      const mg = await mk("Magnesium", "supplement");
+
+      // A "Morning Stack" recipe whose components are those items.
+      const stack = await (await app.request("/api/items", {
+        method: "POST",
+        headers: auth,
+        body: JSON.stringify({
+          name: "Morning Stack",
+          kind: "recipe",
+          primaryType: "supplement",
+          components: [
+            { childItemId: vd, amount: 1, unit: "tablet" },
+            { childItemId: mg, amount: 2, unit: "capsule" },
+          ],
+        }),
+      })).json();
+
+      await app.request(`/api/items/${stack.id}/quick-log`, {
+        method: "PATCH",
+        headers: auth,
+        body: JSON.stringify({ quickLog: true, quickOrder: 0 }),
+      });
+
+      const quick =
+        (await (await app.request("/api/intake/quick-items", { headers: auth })).json()).items;
+      const me = quick.find((i: { id: string }) => i.id === stack.id);
+      assert(me, "the pinned stack should appear in quick-items");
+      assertEquals(me.stack.map((m: { name: string }) => m.name), ["Vitamin D", "Magnesium"]);
+      assertEquals(
+        me.stack.map((m: { quantity: number; unit: string }) => `${m.quantity}${m.unit}`),
+        ["1tablet", "2capsule"],
+      );
+    } finally {
+      await sql.end();
+    }
+  },
+});

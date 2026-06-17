@@ -282,8 +282,18 @@ export interface InputItemDetail extends InputItemSummary {
   quickPresets: QuickPreset[];
 }
 
-/** A pinned Quick Capture favorite: an item summary + its one-tap amount presets. */
+/** A member item of a stack (a recipe favorite's child item), for the log checklist. */
+export interface StackChild {
+  itemId: string;
+  name: string;
+  quantity: number;
+  unit: string;
+}
+
+/** A pinned Quick Capture favorite: an item summary + presets + (for stacks) its members. */
 export interface QuickItem extends InputItemSummary {
   quickOrder: number | null;
   quickPresets: QuickPreset[];
+  /** Child items, when this favorite is a stack (recipe of items); empty otherwise. */
+  stack: StackChild[];
 }

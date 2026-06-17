@@ -22,6 +22,7 @@ describe("itemDraft converters", () => {
       canonQty: null,
       canonUnit: "",
       comps: [{ substance: "caffeine", amount: 200, unit: "mg" }],
+      members: [],
     });
   });
 
@@ -35,6 +36,7 @@ describe("itemDraft converters", () => {
       canonQty: null,
       canonUnit: "",
       comps: [],
+      members: [],
     });
   });
 
@@ -70,6 +72,7 @@ describe("itemDraft converters", () => {
         { substance: "", amount: 5, unit: "g" }, // dropped (no name)
         { substance: "fat", amount: 0, unit: "g" }, // dropped (zero)
       ],
+      members: [],
     });
     expect(body).toEqual({
       name: "Steak",
@@ -83,6 +86,25 @@ describe("itemDraft converters", () => {
   it("draftToBody omits a zero/blank canonical serving", () => {
     const body = draftToBody({ ...emptyDraft(), name: "Banana", dispQty: 1, dispUnit: "medium", canonQty: 0, canonUnit: "" });
     expect(body.defaultServing).toEqual({ displayQuantity: 1, displayUnit: "medium" });
+  });
+
+  it("draftToBody turns stack members into childItemId components (skipping unresolved ones)", () => {
+    const body = draftToBody({
+      ...emptyDraft(),
+      name: "Morning Stack",
+      kind: "recipe",
+      members: [
+        { itemId: "vd-id", name: "Vitamin D", quantity: 1, unit: "tablet" },
+        { itemId: "mg-id", name: "Magnesium", quantity: 2, unit: "capsule" },
+        { itemId: "", name: "Typo", quantity: 1, unit: "serving" }, // dropped (no match)
+        { itemId: "z-id", name: "Zinc", quantity: 0, unit: "tablet" }, // dropped (zero qty)
+      ],
+    });
+    expect(body.kind).toBe("recipe");
+    expect(body.components).toEqual([
+      { childItemId: "vd-id", amount: 1, unit: "tablet" },
+      { childItemId: "mg-id", amount: 2, unit: "capsule" },
+    ]);
   });
 
   it("emptyDraft round-trips through draftToBody to a minimal body", () => {
