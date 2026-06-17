@@ -2,11 +2,8 @@
   import { onMount } from "svelte";
   import { createItem, getItem, listItems, listSubstances, scanItem } from "$lib/api";
   import type { CreateItemBody, InputItemDetail, InputItemSummary, Substance } from "$lib/types";
-
-  type CompRow = { substance: string; amount: number; unit: string };
-
-  const KINDS = ["product", "recipe", "simple"] as const;
-  const TYPES = ["food", "drink", "supplement", "medication", "meal", "other"];
+  import ItemDraftForm from "$lib/ItemDraftForm.svelte";
+  import { draftFromBody, draftToBody, emptyDraft, type ItemDraft } from "$lib/itemDraft";
 
   // photo + scan state
   let preview = $state<string | null>(null);
@@ -16,12 +13,7 @@
 
   // editable draft (shown after a scan)
   let hasDraft = $state(false);
-  let name = $state("");
-  let kind = $state<"product" | "recipe" | "simple">("product");
-  let primaryType = $state("supplement");
-  let dispQty = $state<number | null>(1);
-  let dispUnit = $state("serving");
-  let comps = $state<CompRow[]>([]);
+  let draft = $state<ItemDraft>(emptyDraft());
 
   let substances = $state<Substance[]>([]);
   let items = $state<InputItemSummary[]>([]);
@@ -75,14 +67,7 @@
   }
 
   function applyDraft(d: CreateItemBody) {
-    name = d.name ?? "";
-    kind = d.kind ?? "product";
-    primaryType = d.primaryType ?? "supplement";
-    dispQty = d.defaultServing?.displayQuantity ?? 1;
-    dispUnit = d.defaultServing?.displayUnit ?? "serving";
-    comps = (d.components ?? [])
-      .filter((c) => c.substance)
-      .map((c) => ({ substance: c.substance as string, amount: c.amount, unit: c.unit }));
+    draft = draftFromBody(d);
     hasDraft = true;
   }
 
@@ -101,13 +86,6 @@
     }
   }
 
-  function addComp() {
-    comps = [...comps, { substance: "", amount: 1, unit: "mg" }];
-  }
-  function removeComp(i: number) {
-    comps = comps.filter((_, idx) => idx !== i);
-  }
-
   async function load() {
     try {
       [substances, items] = await Promise.all([listSubstances(), listItems()]);
@@ -121,28 +99,15 @@
     if (preview) URL.revokeObjectURL(preview);
     preview = null;
     imageBase64 = null;
-    name = "";
-    comps = [];
+    draft = emptyDraft();
   }
 
   async function save() {
-    if (!name.trim()) return;
-    const components = comps
-      .filter((c) => c.substance.trim() && c.amount > 0 && c.unit.trim())
-      .map((c) => ({ substance: c.substance.trim(), amount: c.amount, unit: c.unit.trim() }));
-    const serving: NonNullable<CreateItemBody["defaultServing"]> = {};
-    if (dispQty != null && Number.isFinite(dispQty)) serving.displayQuantity = dispQty;
-    if (dispUnit.trim()) serving.displayUnit = dispUnit.trim();
-
+    const body = draftToBody(draft);
+    if (!body.name) return;
     saving = true;
     try {
-      await createItem({
-        name: name.trim(),
-        kind,
-        primaryType,
-        defaultServing: Object.keys(serving).length ? serving : undefined,
-        components,
-      });
+      await createItem(body);
       flash("Saved ✓");
       reset();
       await load();
@@ -182,45 +147,8 @@
     </button>
 
     {#if hasDraft}
-      <div class="fieldlabel">Name</div>
-      <input class="field" placeholder="Item name" bind:value={name} />
-
-      <div class="row" style="margin-top:8px">
-        <div style="flex:1">
-          <div class="fieldlabel">Kind</div>
-          <select class="field" bind:value={kind}>
-            {#each KINDS as k}<option value={k}>{k}</option>{/each}
-          </select>
-        </div>
-        <div style="flex:1">
-          <div class="fieldlabel">Type</div>
-          <select class="field" bind:value={primaryType}>
-            {#each TYPES as t}<option value={t}>{t}</option>{/each}
-          </select>
-        </div>
-      </div>
-
-      <div class="fieldlabel">Serving</div>
-      <div class="row">
-        <input class="field" type="number" min="0" step="any" placeholder="qty" bind:value={dispQty} />
-        <input class="field" placeholder="unit (scoop, tablet…)" bind:value={dispUnit} />
-      </div>
-
-      <div class="fieldlabel">Ingredients</div>
-      {#each comps as c, i}
-        <div class="row" style="margin-top:6px">
-          <input class="field" style="flex:2" placeholder="substance" list="substances" bind:value={c.substance} />
-          <input class="field" style="flex:1" type="number" min="0" step="any" placeholder="amt" bind:value={c.amount} />
-          <input class="field" style="flex:1" placeholder="unit" bind:value={c.unit} />
-          <button class="iconbtn" aria-label="Remove ingredient" onclick={() => removeComp(i)}>✕</button>
-        </div>
-      {/each}
-      <datalist id="substances">
-        {#each substances as s}<option value={s.name}></option>{/each}
-      </datalist>
-      <button class="ghostbtn" onclick={addComp}>+ Add ingredient</button>
-
-      <button class="primary" disabled={!name.trim() || saving} onclick={save}>
+      <ItemDraftForm bind:draft {substances} />
+      <button class="primary" disabled={!draft.name.trim() || saving} onclick={save}>
         {saving ? "Saving…" : "Save item"}
       </button>
     {/if}
