@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-17 (ADR-024: Add Item by barcode via Open Food Facts)
+> **Last updated:** 2026-06-17 (ADR-025: decode barcodes with ZXing so scanning works on iOS)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -390,10 +390,37 @@ the owner verifies. No phase starts before the prior one is approved.
 risk of building the wrong thing. Requires keeping ROADMAP.md in sync with the
 two core docs.
 
+### ADR-025
+**Title:** Decode barcodes with ZXing (in-JS), not the native `BarcodeDetector`.
+**Status:** Accepted (2026-06-17). Supersedes the client-decoder choice in [ADR-024](#adr-024); the server
+seam/route/mapping there are unchanged.
+**Context:** ADR-024 read the barcode from the camera with the native **`BarcodeDetector`** API. On the
+owner's iPhone (Chrome) it reported "barcode scanning isn't supported" — because **all iOS browsers are
+WebKit under the hood, and WebKit doesn't implement `BarcodeDetector`**. With no manual-entry fallback (a
+deliberate camera-only choice), that left the barcode path completely unusable on the primary device.
+**Decision:** Decode in JavaScript with **ZXing** (`@zxing/browser` + `@zxing/library`), which runs the
+same on iOS WebKit, Android Chrome, and desktop. On the Add Item screen, "📷 Scan barcode with camera"
+calls `BrowserMultiFormatReader.decodeFromConstraints({ video: { facingMode: "environment" } }, video, cb)`
+with the format hints restricted to **EAN-13/8 + UPC-A/E**; the first decoded value stops the scanner
+(`controls.stop()`, which also releases the camera stream) and flows into the existing barcode lookup. ZXing
+is **dynamically imported** only when scanning starts (it's a heavy dep, and the app sets `ssr = false`), so
+it code-splits out of the initial bundle. Camera-permission denial surfaces a clear message; the scanner is
+also stopped on component destroy. Still camera-only (no manual entry), per [ADR-024](#adr-024).
+**Consequences:** barcode capture now works on iPhone/iOS (the actual target device) and everywhere a secure
+context can open the camera; one path to maintain across platforms instead of a native-vs-fallback split.
+Trade-offs: ZXing adds ~a few-hundred-KB lazy chunk (loaded only on first scan) and decodes in JS rather
+than native, so it's a touch slower than `BarcodeDetector` would be on Android — acceptable for occasional
+scanning. Requires a secure context (HTTPS / localhost) for `getUserMedia`, which the deploy already is. The
+camera-decode path can't be exercised headlessly; it's verified by confirming the scan path loads ZXing and
+requests the rear camera, plus device testing for a live decode.
+
 ### ADR-024
 **Title:** Add Item by barcode — look products up against Open Food Facts behind a key-less seam.
 **Status:** Accepted (2026-06-17). Realizes R-CAP-21; reuses the SDK/seam + pure-parser pattern of
 [ADR-019](#adr-019) and feeds the same draft-item editor and `POST /api/items` save path.
+**Client decoder superseded by [ADR-025](#adr-025)** — `BarcodeDetector` doesn't exist on iOS WebKit (so it
+failed on iPhone, where every browser is WebKit); the camera decode now uses ZXing. The server seam, route,
+mapping, and editor flow below are unchanged.
 **Context:** Most packaged foods/drinks carry a barcode, and their nutrition is already in the open
 [Open Food Facts](https://world.openfoodfacts.org) database. Typing or photographing the facts panel
 (ADR-019) is avoidable for these: scanning the barcode is faster and less error-prone, and — unlike the

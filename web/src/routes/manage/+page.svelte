@@ -11,16 +11,11 @@
   let mediaType = $state("");
   let scanning = $state(false);
 
-  // barcode-lookup state (camera scan → Open Food Facts → draft item)
+  // barcode-lookup state (camera scan → Open Food Facts → draft item). Decoding is
+  // done in JS by ZXing so it works on iOS too (WebKit has no BarcodeDetector).
   let camScanning = $state(false);
-  let barcodeSupported = $state(false);
   let videoEl = $state<HTMLVideoElement | null>(null);
-  let stream: MediaStream | null = null;
-  let rafId = 0;
-  // BarcodeDetector isn't in the DOM lib types yet; describe just what we use.
-  type BarcodeDetectorLike = { detect(src: CanvasImageSource): Promise<{ rawValue: string }[]> };
-  type BarcodeDetectorCtor = new (opts?: { formats?: string[] }) => BarcodeDetectorLike;
-  let detector: BarcodeDetectorLike | null = null;
+  let scannerControls: { stop: () => void } | null = null;
 
   // editable draft (shown after a scan)
   let hasDraft = $state(false);
@@ -117,53 +112,51 @@
   }
 
   async function startCamScan() {
-    if (!barcodeSupported) {
-      flash("Barcode scanning isn't supported in this browser.", true);
-      return;
-    }
     try {
-      const Ctor =
-        (globalThis as unknown as { BarcodeDetector: BarcodeDetectorCtor }).BarcodeDetector;
-      detector = new Ctor({ formats: ["ean_13", "ean_8", "upc_a", "upc_e"] });
-      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
       camScanning = true;
-      await tick(); // let the <video> mount before we attach the stream
-      if (videoEl) {
-        videoEl.srcObject = stream;
-        await videoEl.play();
-      }
-      detectLoop();
-    } catch {
-      flash("Couldn't open the camera — enter the barcode by hand.", true);
+      await tick(); // let the <video> mount before ZXing attaches the camera stream
+      if (!videoEl) return;
+      // Load ZXing on demand (heavy dep, only needed when actually scanning).
+      const [{ BrowserMultiFormatReader }, { BarcodeFormat, DecodeHintType }] = await Promise.all([
+        import("@zxing/browser"),
+        import("@zxing/library"),
+      ]);
+      const hints = new Map();
+      hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+        BarcodeFormat.EAN_13,
+        BarcodeFormat.EAN_8,
+        BarcodeFormat.UPC_A,
+        BarcodeFormat.UPC_E,
+      ]);
+      const reader = new BrowserMultiFormatReader(hints);
+      scannerControls = await reader.decodeFromConstraints(
+        { video: { facingMode: "environment" } },
+        videoEl,
+        (result) => {
+          // Called per frame; `result` is set only when a barcode is decoded.
+          if (!result) return;
+          const text = result.getText();
+          stopCamScan();
+          lookup(text);
+        },
+      );
+    } catch (e) {
+      flash(
+        (e as Error)?.name === "NotAllowedError"
+          ? "Camera access was denied — allow it to scan a barcode."
+          : "Couldn't open the camera for scanning.",
+        true,
+      );
       stopCamScan();
     }
   }
 
-  function detectLoop() {
-    if (!camScanning || !videoEl || !detector) return;
-    detector
-      .detect(videoEl)
-      .then((codes) => {
-        const hit = codes?.[0]?.rawValue;
-        if (hit) {
-          stopCamScan();
-          lookup(hit);
-        } else {
-          rafId = requestAnimationFrame(detectLoop);
-        }
-      })
-      .catch(() => {
-        rafId = requestAnimationFrame(detectLoop);
-      });
-  }
-
   function stopCamScan() {
     camScanning = false;
-    if (rafId) cancelAnimationFrame(rafId);
-    rafId = 0;
-    stream?.getTracks().forEach((t) => t.stop());
-    stream = null;
-    detector = null;
+    try {
+      scannerControls?.stop(); // stops decoding and releases the camera stream
+    } catch { /* already stopped */ }
+    scannerControls = null;
   }
 
   async function load() {
@@ -198,11 +191,7 @@
     }
   }
 
-  onMount(() => {
-    barcodeSupported = typeof (globalThis as { BarcodeDetector?: unknown }).BarcodeDetector ===
-      "function";
-    load();
-  });
+  onMount(load);
   onDestroy(stopCamScan); // release the camera if we navigate away mid-scan
 </script>
 
