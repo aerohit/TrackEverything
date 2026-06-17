@@ -9,6 +9,7 @@
  * the migration, mirrored by the shared Zod schema.
  */
 import {
+  boolean,
   doublePrecision,
   index,
   integer,
@@ -71,10 +72,23 @@ export const inputItem = pgTable("input_item", {
   defaultCanonicalUnit: text("default_canonical_unit"),
   version: integer("version").notNull().default(1),
   notes: text("notes"),
+  // Quick Capture (v2-C1): pinned one-tap favorite + its position on the grid.
+  quickLog: boolean("quick_log").notNull().default(false),
+  quickOrder: integer("quick_order"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
 }, (t) => [index("input_item_name_idx").on(t.name)]);
+
+// A quick-log amount preset for a favorite (e.g. Water 250/500/750 ml).
+export const quickPreset = pgTable("quick_preset", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  itemId: uuid("item_id").notNull().references(() => inputItem.id, { onDelete: "cascade" }),
+  position: integer("position").notNull().default(0),
+  label: text("label").notNull(),
+  quantity: doublePrecision("quantity").notNull(),
+  unit: text("unit").notNull(),
+}, (t) => [index("quick_preset_item_idx").on(t.itemId)]);
 
 export const itemComponent = pgTable("item_component", {
   id: uuid("id").primaryKey().defaultRandom(),

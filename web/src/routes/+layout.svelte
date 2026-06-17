@@ -42,6 +42,7 @@
 
   const tabs = [
     { href: "/", label: "Log" },
+    { href: "/capture", label: "Capture" },
     { href: "/overview", label: "Overview" },
     { href: "/manage", label: "Add Item" },
     { href: "/ask", label: "Ask LLM" },

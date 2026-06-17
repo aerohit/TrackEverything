@@ -13,7 +13,9 @@ import type {
   InputItemDetail,
   InputItemSummary,
   IntakeEvent,
+  QuickItem,
   RecentItem,
+  SetQuickLog,
   Substance,
   SubstanceUnit,
   UpdateIntakeEvent,
@@ -25,6 +27,7 @@ import {
   type InputItemRow,
   intakeEvent,
   itemComponent,
+  quickPreset,
   resolvedAmount,
   substance,
 } from "./schema.ts";
@@ -505,7 +508,71 @@ export async function getItemDetail(db: Db, id: string): Promise<InputItemDetail
     .leftJoin(substance, eq(itemComponent.substanceId, substance.id))
     .where(eq(itemComponent.parentItemId, id))
     .orderBy(asc(itemComponent.position));
-  return { ...itemSummary(it), notes: it.notes, version: it.version, components: comps };
+  const presets = await listPresets(db, [id]);
+  return {
+    ...itemSummary(it),
+    notes: it.notes,
+    version: it.version,
+    components: comps,
+    quickLog: it.quickLog,
+    quickOrder: it.quickOrder,
+    quickPresets: presets.get(id) ?? [],
+  };
+}
+
+/** Amount presets keyed by item id, position-ordered. */
+async function listPresets(
+  db: Db,
+  itemIds: string[],
+): Promise<Map<string, QuickItem["quickPresets"]>> {
+  const out = new Map<string, QuickItem["quickPresets"]>();
+  if (!itemIds.length) return out;
+  const rows = await db.select().from(quickPreset)
+    .where(inArray(quickPreset.itemId, itemIds))
+    .orderBy(asc(quickPreset.position));
+  for (const r of rows) {
+    const list = out.get(r.itemId) ?? [];
+    list.push({ label: r.label, quantity: r.quantity, unit: r.unit });
+    out.set(r.itemId, list);
+  }
+  return out;
+}
+
+/** The pinned Quick Capture favorites (ordered), each with its amount presets. */
+export async function listQuickItems(db: Db): Promise<QuickItem[]> {
+  const rows = await db.select().from(inputItem)
+    .where(and(isNull(inputItem.deletedAt), eq(inputItem.quickLog, true)))
+    .orderBy(asc(inputItem.quickOrder), asc(inputItem.name));
+  const presets = await listPresets(db, rows.map((r) => r.id));
+  return rows.map((r) => ({
+    ...itemSummary(r),
+    quickOrder: r.quickOrder,
+    quickPresets: presets.get(r.id) ?? [],
+  }));
+}
+
+/** Pin/unpin an item as a favorite and replace its amount presets. */
+export async function setItemQuickLog(db: Db, id: string, input: SetQuickLog): Promise<boolean> {
+  const [updated] = await db.update(inputItem)
+    .set({ quickLog: input.quickLog, quickOrder: input.quickOrder ?? null, updatedAt: new Date() })
+    .where(and(eq(inputItem.id, id), isNull(inputItem.deletedAt)))
+    .returning({ id: inputItem.id });
+  if (!updated) return false;
+  // Presets are fully replaced when provided (unpinning clears them).
+  await db.delete(quickPreset).where(eq(quickPreset.itemId, id));
+  const presets = input.quickLog ? (input.presets ?? []) : [];
+  if (presets.length) {
+    await db.insert(quickPreset).values(
+      presets.map((p, i) => ({
+        itemId: id,
+        position: i,
+        label: p.label,
+        quantity: p.quantity,
+        unit: p.unit,
+      })),
+    );
+  }
+  return true;
 }
 
 /** Per-substance totals across live events in [from, to). */

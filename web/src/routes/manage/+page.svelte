@@ -1,9 +1,24 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { createItem, getItem, listItems, listSubstances, lookupBarcode, scanItem } from "$lib/api";
-  import type { CreateItemBody, InputItemDetail, InputItemSummary, Substance } from "$lib/types";
+  import {
+    createItem,
+    getItem,
+    listItems,
+    listSubstances,
+    lookupBarcode,
+    scanItem,
+    setQuickLog,
+  } from "$lib/api";
+  import type {
+    CreateItemBody,
+    InputItemDetail,
+    InputItemSummary,
+    QuickPreset,
+    Substance,
+  } from "$lib/types";
   import ItemDraftForm from "$lib/ItemDraftForm.svelte";
   import { draftFromBody, draftToBody, emptyDraft, type ItemDraft } from "$lib/itemDraft";
+  import { unitOptions } from "$lib/units";
 
   // photo + scan state
   let preview = $state<string | null>(null);
@@ -34,14 +49,42 @@
     setTimeout(() => (toast = null), 3200);
   }
 
+  // Quick Capture editing within the item-detail popup.
+  let qPinned = $state(false);
+  let qPresets = $state<QuickPreset[]>([]);
+  let qSaving = $state(false);
+
   async function openDetail(it: InputItemSummary) {
     detailLoading = it.id;
     try {
       detail = await getItem(it.id);
+      qPinned = detail.quickLog;
+      qPresets = detail.quickPresets.map((p) => ({ ...p }));
     } catch {
       flash("Couldn't load that item.", true);
     } finally {
       detailLoading = null;
+    }
+  }
+  function addPreset() {
+    const unit = detail?.defaultDisplayUnit ?? "serving";
+    qPresets = [...qPresets, { label: "", quantity: 1, unit }];
+  }
+  function removePreset(i: number) {
+    qPresets = qPresets.filter((_, idx) => idx !== i);
+  }
+  async function saveQuick() {
+    if (!detail) return;
+    qSaving = true;
+    try {
+      const presets = qPresets.filter((p) => p.label.trim() && p.quantity > 0 && p.unit.trim());
+      await setQuickLog(detail.id, { quickLog: qPinned, presets });
+      flash(qPinned ? "Pinned to Quick Capture ✓" : "Removed from Quick Capture ✓");
+      closeDetail();
+    } catch (e) {
+      flash((e as Error).message || "Couldn't update Quick Capture.", true);
+    } finally {
+      qSaving = false;
     }
   }
   function closeDetail() {
@@ -283,6 +326,40 @@
         <div class="fieldlabel">Notes</div>
         <p class="mut" style="margin:0">{detail.notes}</p>
       {/if}
+
+      <div class="fieldlabel" style="margin-top:14px">Quick Capture</div>
+      <label class="qpin">
+        <input type="checkbox" bind:checked={qPinned} />
+        Pin to the Quick Capture screen for one-tap logging
+      </label>
+      {#if qPinned}
+        <p class="mut" style="margin:6px 0 4px">
+          Optional amount presets (e.g. 250 / 500 ml). Tapping the item logs its serving;
+          presets are extra one-tap amounts.
+        </p>
+        {#each qPresets as p, i}
+          <div class="row" style="margin-top:6px">
+            <input class="field" style="flex:2" placeholder="label (e.g. 500 ml)" bind:value={p.label} />
+            <input
+              class="field"
+              style="flex:1"
+              type="number"
+              min="0"
+              step="any"
+              placeholder="qty"
+              bind:value={p.quantity}
+            />
+            <select class="field" style="flex:1" aria-label="Preset unit" bind:value={p.unit}>
+              {#each unitOptions(p.unit) as u}<option value={u}>{u}</option>{/each}
+            </select>
+            <button class="iconbtn" aria-label="Remove preset" onclick={() => removePreset(i)}>✕</button>
+          </div>
+        {/each}
+        <button class="ghostbtn" onclick={addPreset}>+ Add preset</button>
+      {/if}
+      <button class="primary" disabled={qSaving} onclick={saveQuick}>
+        {qSaving ? "Saving…" : "Save Quick Capture"}
+      </button>
     </div>
   </div>
 {/if}

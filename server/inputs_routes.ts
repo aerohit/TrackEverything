@@ -23,6 +23,7 @@ import {
   createItemSchema,
   recognizeRequestSchema,
   scanRequestSchema,
+  setQuickLogSchema,
   updateIntakeEventSchema,
 } from "../shared/inputs.ts";
 import type { Db } from "../db/client.ts";
@@ -37,8 +38,10 @@ import {
   getItemDetail,
   listIntakeEvents,
   listItems,
+  listQuickItems,
   listSubstances,
   recentItems,
+  setItemQuickLog,
   softDeleteIntakeEvent,
   updateIntakeEvent,
 } from "../db/inputs.ts";
@@ -149,6 +152,19 @@ export function registerInputRoutes(api: Hono, db: Db, deps: InputDeps = {}) {
       return c.json({ error: (e as Error).message }, 400);
     }
   });
+
+  // Pin/unpin an item as a Quick Capture favorite (+ ordering + amount presets).
+  api.patch("/items/:id/quick-log", async (c) => {
+    if (!uuid.safeParse(c.req.param("id")).success) return c.json({ error: "not found" }, 404);
+    const parsed = setQuickLogSchema.safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) return c.json({ error: "invalid", issues: parsed.error.issues }, 400);
+    const ok = await setItemQuickLog(db, c.req.param("id"), parsed.data);
+    if (!ok) return c.json({ error: "not found" }, 404);
+    return c.json(await getItemDetail(db, c.req.param("id")));
+  });
+
+  // The pinned Quick Capture favorites (ordered), each with its amount presets.
+  api.get("/intake/quick-items", async (c) => c.json({ items: await listQuickItems(db) }));
 
   api.post("/intake", async (c) => {
     const parsed = createIntakeEventSchema.safeParse(await c.req.json().catch(() => null));

@@ -13,8 +13,10 @@ import type {
   InputItemDetail,
   InputItemSummary,
   IntakeEvent,
+  QuickItem,
   RecentItem,
   RecognizeResult,
+  SetQuickLogBody,
   SubjectiveKind,
   Substance,
 } from "$lib/types";
@@ -98,6 +100,30 @@ export async function getItem(id: string, ctx: ApiCtx = {}): Promise<InputItemDe
   const { f, token } = resolve(ctx);
   const res = await f("/api/items/" + encodeURIComponent(id), { headers: headers(token) });
   if (!res.ok) throw new ApiError(res.status, "Failed to load item");
+  return await res.json() as InputItemDetail;
+}
+
+/** The pinned Quick Capture favorites with their amount presets (GET /api/intake/quick-items). */
+export async function quickItems(ctx: ApiCtx = {}): Promise<QuickItem[]> {
+  const { f, token } = resolve(ctx);
+  const res = await f("/api/intake/quick-items", { headers: headers(token) });
+  if (!res.ok) throw new ApiError(res.status, "Failed to load quick items");
+  return (await res.json()).items as QuickItem[];
+}
+
+/** Pin/unpin an item as a Quick Capture favorite (PATCH /api/items/:id/quick-log). */
+export async function setQuickLog(
+  id: string,
+  body: SetQuickLogBody,
+  ctx: ApiCtx = {},
+): Promise<InputItemDetail> {
+  const { f, token } = resolve(ctx);
+  const res = await f("/api/items/" + encodeURIComponent(id) + "/quick-log", {
+    method: "PATCH",
+    headers: headers(token, true),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new ApiError(res.status, "Failed to update quick item");
   return await res.json() as InputItemDetail;
 }
 

@@ -300,6 +300,88 @@ textarea:focus {
 .toast.err {
   border-color: var(--danger);
 }
+.toast-undo {
+  margin-left: 12px;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Quick Capture (v2-C1): one-tap favorite grid. */
+.qgrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+.qcard {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line-2);
+  border-radius: 14px;
+  background: var(--field);
+  overflow: hidden;
+}
+.qmain {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 12px 14px;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.qmain:not(:disabled):active {
+  background: var(--accent-soft);
+}
+.qmain:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.qicon {
+  font-size: 22px;
+  line-height: 1;
+}
+.qname {
+  font-weight: 600;
+}
+.qamt {
+  color: var(--mut);
+  font-size: 12px;
+}
+.qpresets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 10px 10px;
+}
+.qpreset {
+  padding: 5px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--fg);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.qpreset:not(:disabled):active {
+  background: var(--accent-soft);
+}
+.qpin {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
 
 /* Navigation: top nav on desktop, bottom tab bar on phones. */
 .topnav {

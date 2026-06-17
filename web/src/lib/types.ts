@@ -89,6 +89,29 @@ export interface InputItemDetail extends InputItemSummary {
   notes: string | null;
   version: number;
   components: ItemComponentDTO[];
+  quickLog: boolean;
+  quickOrder: number | null;
+  quickPresets: QuickPreset[];
+}
+
+/** A one-tap amount preset for a Quick Capture favorite (mirrors shared/inputs.ts). */
+export interface QuickPreset {
+  label: string;
+  quantity: number;
+  unit: string;
+}
+
+/** A pinned Quick Capture favorite: an item summary + its amount presets. */
+export interface QuickItem extends InputItemSummary {
+  quickOrder: number | null;
+  quickPresets: QuickPreset[];
+}
+
+/** Body to pin/unpin an item as a Quick Capture favorite. */
+export interface SetQuickLogBody {
+  quickLog: boolean;
+  quickOrder?: number | null;
+  presets?: QuickPreset[];
 }
 
 export interface CreateIntake {
