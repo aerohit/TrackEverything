@@ -9,6 +9,7 @@
     searchItems,
   } from "$lib/api";
   import type { CreateItemBody, RecentItem, Substance } from "$lib/types";
+  import { iconForInput } from "$lib/icons";
   import { unitOptions } from "$lib/units";
   import { type Match, selectedName, servingUnitChoices } from "$lib/log";
   import ItemDraftForm from "$lib/ItemDraftForm.svelte";
@@ -330,6 +331,7 @@
       <div class="chips">
         {#each recents as r}
           <button class="chip" onclick={() => fromRecent(r)}>
+            <span class="chipicon" aria-hidden="true">{iconForInput(r.displayName)}</span>
             {r.displayName}<span class="meta">{r.quantity} {r.unit}</span>
           </button>
         {/each}
