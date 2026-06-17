@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { buildDayChart } from "$lib/chart";
+  import { buildDayChart, seriesOffset } from "$lib/chart";
   import { KINDS } from "$lib/kinds";
   import type { Checkin } from "$lib/types";
 
@@ -13,8 +13,10 @@
 
   const xpos = (x: number) => x0 + x * (x1 - x0);
   const ypos = (y: number) => yb + ((y - 1) / 4) * (yt - yb);
-  const poly = (points: { x: number; y: number }[]) =>
-    points.map((p) => `${xpos(p.x).toFixed(1)},${ypos(p.y).toFixed(1)}`).join(" ");
+  // Fan the three series apart by a few px so equal ratings don't fully overlap.
+  const dyOf = (kind: string) => seriesOffset(KINDS.findIndex((k) => k.kind === kind), KINDS.length);
+  const poly = (points: { x: number; y: number }[], dy: number) =>
+    points.map((p) => `${xpos(p.x).toFixed(1)},${(ypos(p.y) + dy).toFixed(1)}`).join(" ");
 </script>
 
 {#if chart.empty}
@@ -31,9 +33,10 @@
       </text>
     {/each}
     {#each chart.series as s}
+      {@const dy = dyOf(s.kind)}
       {#if s.points.length > 1}
         <polyline
-          points={poly(s.points)}
+          points={poly(s.points, dy)}
           fill="none"
           stroke={colorOf(s.kind)}
           stroke-width="2"
@@ -42,7 +45,14 @@
         />
       {/if}
       {#each s.points as p}
-        <circle cx={xpos(p.x)} cy={ypos(p.y)} r="3" fill={colorOf(s.kind)} />
+        <circle
+          cx={xpos(p.x)}
+          cy={ypos(p.y) + dy}
+          r="3"
+          fill={colorOf(s.kind)}
+          stroke="var(--card)"
+          stroke-width="1"
+        />
       {/each}
     {/each}
   </svg>

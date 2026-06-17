@@ -1,8 +1,8 @@
 # TrackEverything — Requirements
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this
-> stays current. **Last updated:** 2026-06-16 (R-RT-7 + ADR-023: "Ask LLM" screen —
-> answer questions over the last 48h of logs) **Owner:** aerohit
+> stays current. **Last updated:** 2026-06-17 (Overview chart: fan mood/energy/focus
+> dots so equal ratings don't overlap) **Owner:** aerohit
 > **Companion doc:** [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each requirement has a stable ID (`R-<area>-<n>`) so it can be referenced from
@@ -240,3 +240,4 @@ This document is kept current by an explicit process, not by hope. See
 | 2026-06-16 | R-CAP-18 refinement: in the Log confirm card, a found catalog match is **selected by default** (until the user picks another target), and logging against an existing item now sets the intake `displayName` to **the item's own name** rather than the transcribed/typed text (`web/src/lib/log.ts` `selectedName`, unit-tested). Web-only. |
 | 2026-06-16 | R-CAP-17 refinement: the Add Item screen now offers **Camera** + **Upload** photo sources (two file inputs — `capture="environment"` and plain), matching the Log screen, instead of a single camera-only picker. Web-only; browser-verified (upload preview + scan enable). |
 | 2026-06-16 | Added R-RT-7 + ADR-023: **"Ask LLM"** screen (`/ask`) — preset + free-text questions (typed or OS-keyboard-dictated) answered by Claude over the **last 48h** of check-ins + intake. New `POST /api/ask` gathers the data server-side and an SDK-isolated `Advisor` seam (pure prompt builder `server/advise.ts`, `AnthropicAdvisor`) calls the model; optional (503 without `ANTHROPIC_API_KEY`, which prod already has). The answer is rendered as **sanitized Markdown** (`marked` + `DOMPurify`, `web/src/lib/markdown.ts`). Server (prompt-builder + route w/ mock advisor) + web (`askLlm`, `renderMarkdown`) tests; Postman updated; screen + 503 + Markdown render (incl. `<script>` stripped) browser-verified. |
+| 2026-06-17 | Overview chart fix: mood/energy/focus dots/lines are fanned by a small per-series vertical offset (`seriesOffset` in `web/src/lib/chart.ts`) so identical ratings no longer render as one overlapping dot; dots get a card-colored halo for crisp separation. Pure helper unit-tested; browser-verified (equal scores → 3 distinct dots). Web-only. |
