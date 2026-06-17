@@ -573,19 +573,6 @@ select.field {
   flex: 1;
   border-top: 1px solid var(--line);
 }
-.barcode-row {
-  display: flex;
-  gap: 8px;
-  align-items: stretch;
-}
-.barcode-row .field {
-  flex: 1;
-}
-.barcode-row .bc-go {
-  margin-top: 0;
-  width: auto;
-  white-space: nowrap;
-}
 .linkbtn {
   display: inline-block;
   margin-top: 10px;

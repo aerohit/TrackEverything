@@ -409,16 +409,17 @@ needs no key, **`main.ts` always wires it** (the Claude seams stay key-gated). M
 Food Facts stores reliably — calories (kcal), protein, carbohydrate, sugar, fat, sodium (g; the resolver
 converts to mg) — preferring per-serving figures, else per-100 g; the product's `serving_quantity` becomes
 the item's **canonical gram serving** (ADR-019/R-CAP-17) when known; beverages (by category) map to
-`drink`. On the client the Add Item screen gains a barcode field plus a live **`BarcodeDetector`** camera
-scan where supported (progressive enhancement; manual entry is the universal fallback), then the existing
+`drink`. On the client the Add Item screen reads the barcode live from the rear camera with
+**`BarcodeDetector`** (no manual-entry box — the owner always photographs the product), then the existing
 draft-edit + **Save** flow persists it.
 **Consequences:** barcode capture works with no secret and no model cost; the pure parser is unit-tested and
 the route integration-tested with a stub lookup (no DB), the live lookup is checked against real barcodes,
 and the type→lookup→edit→save flow is browser-verified. Trade-offs: coverage and data quality ride on Open
 Food Facts (crowd-sourced; some products missing or sparse); vitamins/minerals are deliberately **not**
 mapped (their units there are inconsistent and would risk wrong frozen snapshots); the live camera scan
-depends on `BarcodeDetector` (Chromium/Android today), so iOS/Safari falls back to manual entry; an
-outbound call to a third party is introduced (no PII sent — just the barcode).
+depends on `BarcodeDetector` (Chromium/Android today) — with no manual-entry fallback, the barcode path is
+unavailable where it's unsupported (e.g. iOS/Safari), where the label-photo scan (ADR-019) still covers Add
+Item; an outbound call to a third party is introduced (no PII sent — just the barcode).
 
 ### ADR-023
 **Title:** "Ask LLM" — answer free-form/preset questions over the last 48h of logs, with the prompt built server-side.
