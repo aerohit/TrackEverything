@@ -14,11 +14,24 @@ export type ItemDraft = {
   primaryType: string;
   dispQty: number | null;
   dispUnit: string;
+  // Optional analysable serving size, e.g. "1 steak = 250 g": canonQty 250, canonUnit "g".
+  // Lets the item be logged by weight/volume as well as by its display serving.
+  canonQty: number | null;
+  canonUnit: string;
   comps: CompRow[];
 };
 
 export function emptyDraft(): ItemDraft {
-  return { name: "", kind: "product", primaryType: "supplement", dispQty: 1, dispUnit: "serving", comps: [] };
+  return {
+    name: "",
+    kind: "product",
+    primaryType: "supplement",
+    dispQty: 1,
+    dispUnit: "serving",
+    canonQty: null,
+    canonUnit: "",
+    comps: [],
+  };
 }
 
 /** Pre-fill the editable draft from a recognized/scanned item (tolerant of gaps). */
@@ -29,6 +42,8 @@ export function draftFromBody(d: CreateItemBody): ItemDraft {
     primaryType: d.primaryType ?? "supplement",
     dispQty: d.defaultServing?.displayQuantity ?? 1,
     dispUnit: d.defaultServing?.displayUnit ?? "serving",
+    canonQty: d.defaultServing?.canonicalQuantity ?? null,
+    canonUnit: d.defaultServing?.canonicalUnit ?? "",
     comps: (d.components ?? [])
       .filter((c) => c.substance)
       .map((c) => ({ substance: c.substance as string, amount: c.amount, unit: c.unit })),
@@ -43,6 +58,10 @@ export function draftToBody(d: ItemDraft): CreateItemBody {
   const serving: NonNullable<CreateItemBody["defaultServing"]> = {};
   if (d.dispQty != null && Number.isFinite(d.dispQty)) serving.displayQuantity = d.dispQty;
   if (d.dispUnit.trim()) serving.displayUnit = d.dispUnit.trim();
+  if (d.canonQty != null && Number.isFinite(d.canonQty) && d.canonQty > 0) {
+    serving.canonicalQuantity = d.canonQty;
+  }
+  if (d.canonUnit.trim()) serving.canonicalUnit = d.canonUnit.trim();
   return {
     name: d.name.trim(),
     kind: d.kind,

@@ -19,6 +19,8 @@ describe("itemDraft converters", () => {
       primaryType: "supplement",
       dispQty: 2,
       dispUnit: "scoops",
+      canonQty: null,
+      canonUnit: "",
       comps: [{ substance: "caffeine", amount: 200, unit: "mg" }],
     });
   });
@@ -30,19 +32,41 @@ describe("itemDraft converters", () => {
       primaryType: "food",
       dispQty: 1,
       dispUnit: "serving",
+      canonQty: null,
+      canonUnit: "",
       comps: [],
     });
   });
 
-  it("draftToBody trims, builds the serving, and drops blank/zero ingredient rows", () => {
+  it("draftFromBody / draftToBody round-trip a canonical serving (\"1 steak = 250 g\")", () => {
+    const d = draftFromBody({
+      name: "Steak",
+      kind: "simple",
+      primaryType: "food",
+      defaultServing: { displayQuantity: 1, displayUnit: "steak", canonicalQuantity: 250, canonicalUnit: "g" },
+      components: [{ substance: "protein", amount: 62, unit: "g" }],
+    });
+    expect(d.canonQty).toBe(250);
+    expect(d.canonUnit).toBe("g");
+    expect(draftToBody(d).defaultServing).toEqual({
+      displayQuantity: 1,
+      displayUnit: "steak",
+      canonicalQuantity: 250,
+      canonicalUnit: "g",
+    });
+  });
+
+  it("draftToBody trims, builds the serving (incl. canonical), and drops blank/zero rows", () => {
     const body = draftToBody({
       name: "  Steak ",
       kind: "simple",
       primaryType: "food",
-      dispQty: 100,
-      dispUnit: " g ",
+      dispQty: 1,
+      dispUnit: " steak ",
+      canonQty: 250,
+      canonUnit: " g ",
       comps: [
-        { substance: " protein ", amount: 26, unit: " g " },
+        { substance: " protein ", amount: 62, unit: " g " },
         { substance: "", amount: 5, unit: "g" }, // dropped (no name)
         { substance: "fat", amount: 0, unit: "g" }, // dropped (zero)
       ],
@@ -51,9 +75,14 @@ describe("itemDraft converters", () => {
       name: "Steak",
       kind: "simple",
       primaryType: "food",
-      defaultServing: { displayQuantity: 100, displayUnit: "g" },
-      components: [{ substance: "protein", amount: 26, unit: "g" }],
+      defaultServing: { displayQuantity: 1, displayUnit: "steak", canonicalQuantity: 250, canonicalUnit: "g" },
+      components: [{ substance: "protein", amount: 62, unit: "g" }],
     });
+  });
+
+  it("draftToBody omits a zero/blank canonical serving", () => {
+    const body = draftToBody({ ...emptyDraft(), name: "Banana", dispQty: 1, dispUnit: "medium", canonQty: 0, canonUnit: "" });
+    expect(body.defaultServing).toEqual({ displayQuantity: 1, displayUnit: "medium" });
   });
 
   it("emptyDraft round-trips through draftToBody to a minimal body", () => {

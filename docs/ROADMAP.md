@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-17 (Log recognizer extracts a stated time — "coffee at 10am" pre-fills the When field)
+> **Status:** Living document. **Last updated:** 2026-06-17 (Add Item: optional grams/ml canonical serving — "1 steak = 250 g", log either way)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -513,3 +513,4 @@ keeps the Supabase project awake. CI builds + tests `web/` and the Deno service.
 | 2026-06-17 | R-CAP-20: the Log confirm card constrains the **unit dropdown** to a chosen item's serving / measurement unit (`serving` + the item's own unit) — log in servings or the item's unit, not an incompatible one; freeform keeps the full list. `servingUnitChoices` (`web/src/lib/log.ts`) + tests; browser-verified. Web-only. |
 | 2026-06-17 | Log **"save as a new item"** now opens the **full editable item form** (serving + ingredients, auto-filled from recognition), same as Add Item after a scan; the editor was extracted into a shared `ItemDraftForm` (+ unit-tested `itemDraft` converters), so saving creates the detailed item and logs it. Web-only; both screens browser-verified. |
 | 2026-06-17 | Log recognizer extracts a **stated time** (R-CAP-8/R-CAP-18): the client sends its local `now`, Claude resolves "coffee at 10am" → a local `when`, which pre-fills the **When** field. `server/recognize.ts`/`recognize_anthropic.ts`; parser + web client tests; browser-verified. |
+| 2026-06-17 | R-CAP-17: the shared item editor gains an optional **grams/ml canonical serving** ("1 steak = 250 g") so foods can be logged by count/serving **or** by weight — both resolve (R-DOM-4). `ItemDraft` carries `canonQty`/`canonUnit` via the existing `servingSchema`; unit tests; browser-verified end to end. Web-only. |
