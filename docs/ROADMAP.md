@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-17 (R-CAP-21/ADR-025: barcode scanning works on iOS via ZXing)
+> **Status:** Living document. **Last updated:** 2026-06-17 (R-CAP-21/ADR-026: scan the barcode from a still photo)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -517,3 +517,4 @@ keeps the Supabase project awake. CI builds + tests `web/` and the Deno service.
 | 2026-06-17 | R-VIEW-8: tapping a substance in the Overview totals opens a **popup of contributing inputs** (protein → Steak 25 g, Eggs 20 g), computed client-side from resolved amounts (`substanceContributions`, `web/src/lib/totals.ts`). Unit-tested; browser-verified. Web-only. |
 | 2026-06-17 | R-CAP-21 (+ADR-024): **Add Item by barcode** — key-less Open Food Facts lookup (`POST /api/items/barcode`, `ProductLookup` seam + pure `parseOffProduct`) → editable draft → save; `BarcodeDetector` camera scan on the Add Item screen (camera-only). Unit/integration/web tested; live + browser verified. |
 | 2026-06-17 | R-CAP-21 (+ADR-025): barcode camera decode moved from native `BarcodeDetector` to **ZXing** (lazy-loaded) so scanning works on **iOS** (WebKit has no `BarcodeDetector`). |
+| 2026-06-17 | R-CAP-21 (+ADR-026): barcode capture switched from live-video scan to **photographing** the barcode + decoding the still (ZXing), which locks on reliably on phones. |
