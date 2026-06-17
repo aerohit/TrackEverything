@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-18 (v2-C5: smart time-of-day suggestions)
+> **Status:** Living document. **Last updated:** 2026-06-18 (v2-C6: forgot-to-log fuzzy time)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -86,8 +86,9 @@ owner-approved before the next. R-CAP-22…27, [ADR-027](ARCHITECTURE.md#adr-027
   the Overview. R-CAP-25, [ADR-032](ARCHITECTURE.md#adr-032). *(Confidence-aware ranges in totals deferred.)*
 - **v2-C5 — Smart time suggestions** ◐ (built, pending approval) — "Around now you usually log" row on
   Quick Capture, computed client-side (`timeSuggestions`). R-CAP-26.
-- **v2-C6 — Daily reconstruction & forgot-to-log** ☐ — end-of-day gaps, fuzzy-time "add earlier", one
-  utterance → a day. R-CAP-27.
+- **v2-C6 — Forgot-to-log fuzzy time** ◐ (built, pending approval) — fuzzy time buckets on the confirm
+  card (`fuzzyWhen`) → estimated time today, low-confidence. R-CAP-27. *(End-of-day gap prompt + one-
+  utterance-multi-event deferred.)*
 
 ### Phase v2-A — Cross-domain analysis ◐ (started)
 Re-frames MVP Stage C (real-time questions) and Phase 10 (correlation) over the typed entities: assemble a cross-domain timeline by unioning the entities, compute correlations (inputs/behaviors/exposures → subjective/performance outcomes), and have the LLM interpret. Carries forward R-RT-* and R-PAT-*. **First cut shipped — the "Ask LLM" screen (R-RT-7, [ADR-023](ARCHITECTURE.md#adr-023)):** `POST /api/ask` gathers the last 48h of check-ins + intake server-side and Claude answers preset/free-text questions on the `/ask` screen. Still to come: statistical correlation/lagged analysis and a user-selectable window.
