@@ -138,3 +138,60 @@ Deno.test({
     }
   },
 });
+
+Deno.test({
+  name: "inputs: partial servings contribute proportionally to daily totals",
+  ignore: !DATABASE_URL,
+  async fn() {
+    await migrate(DATABASE_URL);
+    const { sql, db } = connect(DATABASE_URL);
+    try {
+      await sql`truncate resolved_amount, intake_event, item_component, input_item cascade`;
+      const from = new Date("2026-06-20T00:00:00.000Z");
+      const to = new Date("2026-06-21T00:00:00.000Z");
+
+      // Production shape: serving = 2 scoops; sodium 1034 mg + potassium 306 mg per serving.
+      const id = await createItem(db, {
+        name: "Bulk Electrolyte Powder",
+        kind: "product",
+        primaryType: "supplement",
+        defaultServing: { displayQuantity: 2, displayUnit: "scoops" },
+        components: [
+          { substance: "sodium", amount: 1034, unit: "mg" },
+          { substance: "potassium", amount: 306, unit: "mg" },
+        ],
+      });
+
+      // Log half a serving two equivalent ways: "0.5 serving" and "1 scoop" (singular).
+      await createIntakeEvent(db, {
+        displayName: "Bulk Electrolyte Powder",
+        itemId: id,
+        quantity: 0.5,
+        unit: "serving",
+        occurredAt: "2026-06-20T08:00:00.000Z",
+      });
+      await createIntakeEvent(db, {
+        displayName: "Bulk Electrolyte Powder",
+        itemId: id,
+        quantity: 1,
+        unit: "scoop",
+        occurredAt: "2026-06-20T18:00:00.000Z",
+      });
+
+      // Each event froze a half-serving snapshot (sodium 517).
+      const events = await listIntakeEvents(db, { from, to });
+      assertEquals(events.length, 2);
+      for (const e of events) {
+        assertEquals(e.resolved.find((r) => r.substance === "sodium")?.amount, 517);
+        assertEquals(e.resolved.find((r) => r.substance === "potassium")?.amount, 153);
+      }
+
+      // Two half-servings sum to one full serving in the daily totals.
+      const totals = totalsMap(await dailyTotals(db, from, to));
+      assertEquals(totals.get("sodium"), 1034);
+      assertEquals(totals.get("potassium"), 306);
+    } finally {
+      await sql.end();
+    }
+  },
+});
