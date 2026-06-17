@@ -72,6 +72,11 @@ function servingMultiplier(item: ResolveItem, quantity: number, unit: string): n
     const c = convert(quantity, unit, item.defaultCanonicalUnit);
     if (c !== null && item.defaultCanonicalQuantity > 0) return c / item.defaultCanonicalQuantity;
   }
+  // "serving"/"servings" is a universal reference to ONE default serving of the item,
+  // whatever its serving unit is named (scoop, tablet, "serving (22.5g)"…). So logging
+  // "1 serving" / "0.5 serving" resolves even when the unit strings don't reconcile.
+  const u = unit.trim().toLowerCase();
+  if (u === "serving" || u === "servings") return quantity;
   return null;
 }
 

@@ -1,8 +1,8 @@
 # TrackEverything — Requirements
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this
-> stays current. **Last updated:** 2026-06-17 (Add Item: tap an item to see its
-> ingredients in a popup) **Owner:** aerohit
+> stays current. **Last updated:** 2026-06-17 (Resolver: logging in "serving" units
+> now resolves an item's ingredients into totals) **Owner:** aerohit
 > **Companion doc:** [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each requirement has a stable ID (`R-<area>-<n>`) so it can be referenced from
@@ -242,3 +242,4 @@ This document is kept current by an explicit process, not by hope. See
 | 2026-06-16 | Added R-RT-7 + ADR-023: **"Ask LLM"** screen (`/ask`) — preset + free-text questions (typed or OS-keyboard-dictated) answered by Claude over the **last 48h** of check-ins + intake. New `POST /api/ask` gathers the data server-side and an SDK-isolated `Advisor` seam (pure prompt builder `server/advise.ts`, `AnthropicAdvisor`) calls the model; optional (503 without `ANTHROPIC_API_KEY`, which prod already has). The answer is rendered as **sanitized Markdown** (`marked` + `DOMPurify`, `web/src/lib/markdown.ts`). Server (prompt-builder + route w/ mock advisor) + web (`askLlm`, `renderMarkdown`) tests; Postman updated; screen + 503 + Markdown render (incl. `<script>` stripped) browser-verified. |
 | 2026-06-17 | Overview chart fix: mood/energy/focus dots/lines are fanned by a small per-series vertical offset (`seriesOffset` in `web/src/lib/chart.ts`) so identical ratings no longer render as one overlapping dot; dots get a card-colored halo for crisp separation. Pure helper unit-tested; browser-verified (equal scores → 3 distinct dots). Web-only. |
 | 2026-06-17 | Add Item: the "Your items" rows are now tappable → a popup (modal) lists the item's ingredients (substance + amount + unit), fetched via the existing `GET /api/items/:id`. New `getItem` client (`web/src/lib/api.ts`) + test; modal closes on ✕/backdrop/Esc. Web-only; browser-verified. |
+| 2026-06-17 | Resolver fix (R-DOM-4): an item logged in **"serving"/"servings"** units now resolves its ingredients (→ per-event breakdown + daily totals) even when the item's serving unit is spelled differently (e.g. "2 scoops", "serving (22.5g)"); a serving means one default serving, so `quantity` is the multiplier when the unit can't otherwise reconcile (`db/resolve.ts`). Pure resolver test added. **Note:** resolution is frozen per event (ADR-018) — events logged before this keep their empty snapshot; re-log them to pick up the breakdown. |

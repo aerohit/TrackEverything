@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-17 (Add Item: tap an item to see its ingredients in a popup)
+> **Status:** Living document. **Last updated:** 2026-06-17 (Resolver: logging in "serving" units resolves an item's ingredients into totals)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -508,3 +508,4 @@ keeps the Supabase project awake. CI builds + tests `web/` and the Deno service.
 | 2026-06-16 | Phase v2-A started (R-RT-7, ADR-023): **"Ask LLM"** screen (`/ask`) + `POST /api/ask`. Preset + free-text questions (typed or OS-keyboard-dictated) answered by Claude over the **last 48h** of check-ins + intake, gathered server-side; SDK-isolated `Advisor` seam (pure prompt builder + `AnthropicAdvisor`). Optional (503 without a key; prod already has one). The answer renders as **sanitized Markdown** (`marked` + `DOMPurify`). Server + web tests; Postman updated; browser-verified (screen, 503 fallback, Markdown render); live answers device-verified. |
 | 2026-06-17 | Overview chart fix: fan the mood/energy/focus series by a small per-series vertical offset (`seriesOffset`, `web/src/lib/chart.ts`) + a card-colored dot halo, so equal ratings no longer overlap into a single dot. Unit-tested helper; browser-verified. Web-only. |
 | 2026-06-17 | Add Item: tappable "Your items" rows open a popup listing the item's ingredients (substance + amount + unit) via the existing `GET /api/items/:id`. New `getItem` client + test; modal closes on ✕/backdrop/Esc. Web-only; browser-verified. |
+| 2026-06-17 | Resolver fix (R-DOM-4): an item logged in **"serving"/"servings"** units now resolves its ingredients (→ breakdown + daily totals) even when the item's serving unit is named differently ("2 scoops", "serving (22.5g)"); a serving means one default serving (`db/resolve.ts`). Pure test added. Existing frozen events need a re-log to pick it up. |

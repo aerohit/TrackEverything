@@ -114,6 +114,28 @@ Deno.test("resolveItem: recipe recurses through child items and sums", () => {
   assertEquals(new Map(two.amounts.map((a) => [a.substanceId, a.amount])).get("protein"), 48);
 });
 
+Deno.test("resolveItem: 'serving' resolves against any serving unit name", () => {
+  // Electrolyte powder: 1 serving = 2 scoops; 1000 mg sodium per serving.
+  const g = graph([{
+    id: "lyte",
+    defaultDisplayQuantity: 2,
+    defaultDisplayUnit: "scoops",
+    defaultCanonicalQuantity: null,
+    defaultCanonicalUnit: null,
+    components: [{ substanceId: "sodium", childItemId: null, amount: 1000, unit: "mg" }],
+  }], { sodium: "mg" });
+
+  // Logged as "1 serving" — doesn't match "scoops", but a serving is one default serving.
+  const one = resolveItem("lyte", 1, "serving", g);
+  assert(one.complete);
+  assertEquals(one.amounts[0], { substanceId: "sodium", amount: 1000, unit: "mg" });
+  // Half a serving halves the actives ("servings" plural also accepted).
+  assertEquals(resolveItem("lyte", 0.5, "servings", g).amounts[0].amount, 500);
+
+  // A non-serving unit that still can't reconcile remains incomplete (unchanged).
+  assertEquals(resolveItem("lyte", 1, "tablet", g).complete, false);
+});
+
 Deno.test("resolveItem: unreconcilable serving marks the result incomplete", () => {
   const g = graph([{
     id: "salad",
