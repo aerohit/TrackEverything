@@ -9,6 +9,7 @@
     searchItems,
   } from "$lib/api";
   import type { CreateItemBody, IntakeSource, RecentItem, Substance } from "$lib/types";
+  import { type FuzzyTime, FUZZY_TIMES, fuzzyWhen } from "$lib/fuzzytime";
   import { iconForInput } from "$lib/icons";
   import { unitOptions } from "$lib/units";
   import { type Match, selectedName, servingUnitChoices } from "$lib/log";
@@ -34,7 +35,15 @@
     hint?: string; // the spoken/typed phrase, shown for context
     source: IntakeSource; // how this intake was captured (provenance, R-CAP-12)
     baseQuantity: number; // the recognized quantity, so portion buttons scale from it
+    fuzzyTime: boolean; // the time was set from a vague bucket → log it low-confidence
   };
+
+  // Fuzzy "when" buckets for after-the-fact logging (R-CAP-27).
+  function setFuzzy(b: FuzzyTime) {
+    if (!confirm) return;
+    confirm.when = fuzzyWhen(b, new Date());
+    confirm.fuzzyTime = true;
+  }
 
   // Portion picker for photo/voice estimates (R-CAP-25): scales the recognized amount.
   const PORTIONS = [
@@ -114,6 +123,7 @@
       unit: o.unit,
       when: o.when ?? toLocalInput(new Date()),
       baseQuantity: o.quantity,
+      fuzzyTime: false,
       query: o.name,
       results: [],
       sel: o.draft ? "new" : "freeform",
@@ -277,6 +287,8 @@
         unit: confirm.unit.trim() || "serving",
         occurredAt: new Date(confirm.when).toISOString(),
         source: confirm.source,
+        // A vague time → log it low-confidence (R-CAP-27).
+        ...(confirm.fuzzyTime ? { confidence: "low" as const } : {}),
       };
       if (sel.startsWith("item:")) {
         await logIntake({ ...base, displayName: confirm.name.trim(), itemId: sel.slice("item:".length) });
@@ -390,8 +402,18 @@
       </div>
     </div>
 
-    <div class="fieldlabel">When</div>
-    <input class="field" type="datetime-local" bind:value={confirm.when} />
+    <div class="fieldlabel">When {#if confirm.fuzzyTime}<span class="mut">· approx</span>{/if}</div>
+    <div class="chips" style="margin-bottom:6px">
+      {#each FUZZY_TIMES as b}
+        <button class="chip" type="button" onclick={() => setFuzzy(b)}>{b.label}</button>
+      {/each}
+    </div>
+    <input
+      class="field"
+      type="datetime-local"
+      bind:value={confirm.when}
+      oninput={() => confirm && (confirm.fuzzyTime = false)}
+    />
 
     <div class="fieldlabel">Save as</div>
     <input

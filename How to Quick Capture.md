@@ -94,7 +94,15 @@ current time of day (e.g. coffee at ~8am), it shows an **"Around now you usually
 log"** row at the top with one-tap buttons. It's quiet — just on the screen, no
 notifications — and it hides items you've already logged today.
 
-### 7. Stacks — log a whole routine in one tap
+### 7. Logging something you forgot (approximate time)
+
+On the **Log** screen's confirm card (after a photo / voice / recent tap), the
+**When** row has quick buttons — **Morning · Noon · Afternoon · Evening ·
+Night**. Tap one to set an approximate time today instead of fiddling with the
+clock; the entry is saved as low-confidence (shown as "· approx") so you know the
+time is a guess.
+
+### 8. Stacks — log a whole routine in one tap
 
 A **stack** is a routine made of several items — e.g. a *Morning Stack* of your
 supplements, or a meal of a few foods. Tap it once and the whole thing is logged.
@@ -142,8 +150,9 @@ updated with how-to steps as each ships.
 - **Honest ranges in totals (rest of v2-C4, deferred)** — daily totals showing a
   range ("protein 145–165 g") for rough days, instead of a fake-precise number.
   (Rough flagging + the portion picker below already shipped.)
-- **Daily reconstruction (v2-C6)** — an end-of-day "anything missing?" and a way
-  to rebuild a forgotten day from one spoken sentence.
+- **Daily reconstruction (rest of v2-C6, deferred)** — an end-of-day "anything
+  missing?" and rebuilding a forgotten day from one spoken sentence. (The fuzzy
+  "when" picker below already shipped.)
 
 ---
 
