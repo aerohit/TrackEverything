@@ -446,3 +446,91 @@ Deno.test({
     }
   },
 });
+
+Deno.test({
+  name: "inputs API: Quick Capture — pin an item, list quick-items with presets, unpin",
+  ignore: !DATABASE_URL,
+  async fn() {
+    await migrate(DATABASE_URL);
+    const { sql, db } = connect(DATABASE_URL);
+    try {
+      const app = createApp(db, { token: TOKEN });
+
+      // Create an item to pin.
+      const created = await (await app.request("/api/items", {
+        method: "POST",
+        headers: auth,
+        body: JSON.stringify({
+          name: "Water",
+          kind: "simple",
+          primaryType: "drink",
+          defaultServing: { displayQuantity: 500, displayUnit: "ml" },
+        }),
+      })).json();
+      const id = created.id as string;
+
+      // Initially no favorites.
+      assertEquals(
+        (await (await app.request("/api/intake/quick-items", { headers: auth })).json()).items,
+        [],
+      );
+
+      // Bad id → 404; bad body → 400.
+      assertEquals(
+        (await app.request("/api/items/not-a-uuid/quick-log", {
+          method: "PATCH",
+          headers: auth,
+          body: "{}",
+        })).status,
+        404,
+      );
+      assertEquals(
+        (await app.request(`/api/items/${id}/quick-log`, {
+          method: "PATCH",
+          headers: auth,
+          body: "{}",
+        })).status,
+        400,
+      );
+
+      // Pin it with two amount presets.
+      const pinned = await (await app.request(`/api/items/${id}/quick-log`, {
+        method: "PATCH",
+        headers: auth,
+        body: JSON.stringify({
+          quickLog: true,
+          quickOrder: 0,
+          presets: [
+            { label: "250 ml", quantity: 250, unit: "ml" },
+            { label: "1 L", quantity: 1000, unit: "ml" },
+          ],
+        }),
+      })).json();
+      assertEquals(pinned.quickLog, true);
+      assertEquals(pinned.quickPresets.length, 2);
+
+      // quick-items now lists it with its presets (ordered).
+      const quick =
+        (await (await app.request("/api/intake/quick-items", { headers: auth })).json()).items;
+      assertEquals(quick.length, 1);
+      assertEquals(quick[0].name, "Water");
+      assertEquals(quick[0].quickPresets.map((p: { quantity: number }) => p.quantity), [250, 1000]);
+
+      // Unpin → presets cleared and it drops off the quick list.
+      await app.request(`/api/items/${id}/quick-log`, {
+        method: "PATCH",
+        headers: auth,
+        body: JSON.stringify({ quickLog: false }),
+      });
+      const detail = await (await app.request(`/api/items/${id}`, { headers: auth })).json();
+      assertEquals(detail.quickLog, false);
+      assertEquals(detail.quickPresets, []);
+      assertEquals(
+        (await (await app.request("/api/intake/quick-items", { headers: auth })).json()).items,
+        [],
+      );
+    } finally {
+      await sql.end();
+    }
+  },
+});

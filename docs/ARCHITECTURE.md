@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-17 (ADR-026: scan the barcode from a still photo, not live video)
+> **Last updated:** 2026-06-17 (ADR-027: Quick Capture — capture-first screen of one-tap favorites)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -389,6 +389,30 @@ the owner verifies. No phase starts before the prior one is approved.
 **Consequences:** Slower nominal throughput but continuous verification and low
 risk of building the wrong thing. Requires keeping ROADMAP.md in sync with the
 two core docs.
+
+### ADR-027
+**Title:** Quick Capture — a capture-first screen of one-tap favorites, beside the existing Log screen.
+**Status:** Accepted (2026-06-17). First step of the **Capture Seamlessness** track (R-CAP-22; phases
+v2-C1…C6). Builds on the existing two-layer model (human `intake_event` → background resolution) and reuses
+the item catalog + `POST /api/intake`.
+**Context:** The capture philosophy is "log in 1–3 seconds now, add precision later." The existing Log
+screen (ADR-020) leads with photo/voice/recognition and lists *recent* items; it doesn't offer a curated,
+capture-first home of the handful of things logged daily (water, coffee, supplements, usual meals). We want
+that one-tap home without disturbing the working Log screen, and to migrate gradually.
+**Decision:** Add a **new `/capture` screen** rather than rebuilding Log, so both run side-by-side for
+comparison (Log is removed later once Quick Capture covers its uses). An item gains `quick_log` (pinned) +
+`quick_order`, and an optional small set of **amount presets** in a typed `quick_preset` table
+(`label, quantity, unit`) — e.g. Water 250/500/750 ml. New routes: `GET /api/intake/quick-items` (favorites
++ presets, ordered) and `PATCH /api/items/:id/quick-log` (pin/unpin + replace presets); favorites are
+curated from the Add Item item popup. Tapping a favorite logs an **ordinary `intake_event`** against the
+item at its default serving (or a chosen preset amount) with an **Undo** (soft-delete), so the
+resolver/totals/snapshots are unchanged — Quick Capture is pure capture UX over the existing model. Presets
+live in their own table (not jsonb) to keep the typed-model convention (§4b).
+**Consequences:** the everyday logs become one tap with no new analytical machinery; the legacy Log screen
+keeps working during the transition (nav has both). Trade-offs: a fifth nav tab until Log is retired;
+favorites are curated by hand for now (auto-suggesting them is a later phase, R-CAP-26); a "skip part of a
+stack" / modifiers / portion-ranges are explicitly deferred to v2-C2…C4. Pure payload logic is unit-tested;
+the routes are integration-tested (pin → list → unpin); the pin→log→undo flow is browser-verified.
 
 ### ADR-026
 **Title:** Scan the barcode from a still photo, not a live video stream.

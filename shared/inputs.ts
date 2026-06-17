@@ -74,6 +74,22 @@ export const servingSchema = z.object({
   canonicalUnit: z.string().optional(),
 });
 
+/** A quick-log amount preset for a favorite (e.g. Water "500 ml" → 500 ml). */
+export const quickPresetSchema = z.object({
+  label: z.string().min(1),
+  quantity: z.number().positive(),
+  unit: z.string().min(1),
+});
+export type QuickPreset = z.infer<typeof quickPresetSchema>;
+
+/** Pin/unpin an item as a Quick Capture favorite, with ordering + amount presets. */
+export const setQuickLogSchema = z.object({
+  quickLog: z.boolean(),
+  quickOrder: z.number().int().nonnegative().nullish(),
+  presets: z.array(quickPresetSchema).max(8).optional(),
+});
+export type SetQuickLog = z.infer<typeof setQuickLogSchema>;
+
 export const createItemSchema = z.object({
   name: z.string().min(1),
   kind: z.enum(INPUT_KINDS),
@@ -248,4 +264,13 @@ export interface InputItemDetail extends InputItemSummary {
   notes: string | null;
   version: number;
   components: ItemComponentDTO[];
+  quickLog: boolean;
+  quickOrder: number | null;
+  quickPresets: QuickPreset[];
+}
+
+/** A pinned Quick Capture favorite: an item summary + its one-tap amount presets. */
+export interface QuickItem extends InputItemSummary {
+  quickOrder: number | null;
+  quickPresets: QuickPreset[];
 }

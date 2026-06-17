@@ -275,6 +275,46 @@
           }
         },
         {
+          "name": "Set item Quick Capture (pin/unpin + presets)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"quickLog\": true,\n  \"quickOrder\": 0,\n  \"presets\": [\n    { \"label\": \"250 ml\", \"quantity\": 250, \"unit\": \"ml\" },\n    { \"label\": \"500 ml\", \"quantity\": 500, \"unit\": \"ml\" }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/items/:id/quick-log",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "items",
+                ":id",
+                "quick-log"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "<item uuid>"
+                }
+              ]
+            },
+            "description": "Pin/unpin an item as a Quick Capture favorite, with grid ordering and optional one-tap amount presets. Returns the updated item detail. 404 for an unknown id."
+          }
+        },
+        {
           "name": "Create item",
           "request": {
             "method": "POST",
@@ -532,6 +572,25 @@
               ]
             },
             "description": "Top-N distinct recently-logged items (deduped by item, or by name for freeform logs), newest first."
+          }
+        },
+        {
+          "name": "Quick Capture favorites",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/intake/quick-items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "intake",
+                "quick-items"
+              ]
+            },
+            "description": "The pinned Quick Capture favorites (ordered), each with its amount presets."
           }
         },
         {

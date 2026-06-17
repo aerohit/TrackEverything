@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-17 (R-VIEW-1: Overview chart zooms to waking hours, 08:00–22:00)
+> **Status:** Living document. **Last updated:** 2026-06-17 (v2-C1: Quick Capture screen — one-tap favorites; starts the Capture Seamlessness track)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -59,6 +59,26 @@ One phase per domain; each adds its own typed entity (Drizzle + Zod + enums), ca
 - **v2-7 — Events / Stressors / Wins** — arguments, rejections, deadlines, good conversations, achievements.
 - **v2-8 — Context** — time, place, day type, season, current goal, experiment phase.
 - **Expand Subjective State** (small) — add the remaining dimensions (stress, confidence, motivation, calmness, playfulness) as columns when the owner wants them.
+
+### Capture Seamlessness track (v2-C) — make logging 1–3 seconds
+
+Goal: "log now in one tap, add precision later." Built on a **new `/capture` screen** beside the existing
+Log screen (Log is retired once Quick Capture covers its uses). Each phase ships, is tested, and is
+owner-approved before the next. R-CAP-22…27, [ADR-027](ARCHITECTURE.md#adr-027).
+
+- **v2-C1 — Quick Capture + one-tap favorites** ◐ (built, pending approval) — `/capture` screen with a grid
+  of pinned favorites; tap = instant log + **Undo**; optional **amount presets** (Water 250/500/750).
+  `quick_log`/`quick_order` on items + a `quick_preset` table; `GET /api/intake/quick-items`,
+  `PATCH /api/items/:id/quick-log`; curated from the Add Item item popup. R-CAP-22.
+- **v2-C2 — Stacks & checklists** ☐ — one-tap multi-item routines (Morning Stack) with per-item skip;
+  exact-dose medication one-tap. R-CAP-23. *(Needs an ADR for partial-stack logging.)*
+- **v2-C3 — Meal templates + quick modifiers** ☐ — size scaler + add/remove an ingredient for this log.
+  R-CAP-24.
+- **v2-C4 — Photo portion sizing + honest ranges** ☐ — Light/Medium/Large; confidence-aware ranges;
+  rough/precise flag. R-CAP-25.
+- **v2-C5 — Smart suggestions** ☐ — quiet time/pattern prompts. R-CAP-26.
+- **v2-C6 — Daily reconstruction & forgot-to-log** ☐ — end-of-day gaps, fuzzy-time "add earlier", one
+  utterance → a day. R-CAP-27.
 
 ### Phase v2-A — Cross-domain analysis ◐ (started)
 Re-frames MVP Stage C (real-time questions) and Phase 10 (correlation) over the typed entities: assemble a cross-domain timeline by unioning the entities, compute correlations (inputs/behaviors/exposures → subjective/performance outcomes), and have the LLM interpret. Carries forward R-RT-* and R-PAT-*. **First cut shipped — the "Ask LLM" screen (R-RT-7, [ADR-023](ARCHITECTURE.md#adr-023)):** `POST /api/ask` gathers the last 48h of check-ins + intake server-side and Claude answers preset/free-text questions on the `/ask` screen. Still to come: statistical correlation/lagged analysis and a user-selectable window.
