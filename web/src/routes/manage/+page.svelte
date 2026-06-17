@@ -11,9 +11,7 @@
   let mediaType = $state("");
   let scanning = $state(false);
 
-  // barcode-lookup state (Open Food Facts → draft item)
-  let barcode = $state("");
-  let looking = $state(false);
+  // barcode-lookup state (camera scan → Open Food Facts → draft item)
   let camScanning = $state(false);
   let barcodeSupported = $state(false);
   let videoEl = $state<HTMLVideoElement | null>(null);
@@ -99,18 +97,15 @@
     }
   }
 
-  // Look up a barcode → draft item. `code` defaults to the typed field but the
-  // camera scanner passes the detected code directly.
-  async function lookup(code = barcode) {
+  // Look up a barcode (read by the camera) → draft item.
+  async function lookup(code: string) {
     const digits = code.replace(/\D/g, "");
     if (!/^\d{8,14}$/.test(digits)) {
-      flash("Enter a valid 8–14 digit barcode.", true);
+      flash("Couldn't read a valid barcode — try again.", true);
       return;
     }
-    looking = true;
     try {
       applyDraft(await lookupBarcode(digits));
-      barcode = digits;
       flash("Found it — review and save ✓");
     } catch (e) {
       const status = (e as { status?: number }).status;
@@ -118,13 +113,14 @@
         status === 404 ? "No product found for that barcode." : (e as Error).message || "Lookup failed.",
         true,
       );
-    } finally {
-      looking = false;
     }
   }
 
   async function startCamScan() {
-    if (!barcodeSupported) return;
+    if (!barcodeSupported) {
+      flash("Barcode scanning isn't supported in this browser.", true);
+      return;
+    }
     try {
       const Ctor =
         (globalThis as unknown as { BarcodeDetector: BarcodeDetectorCtor }).BarcodeDetector;
@@ -183,7 +179,6 @@
     if (preview) URL.revokeObjectURL(preview);
     preview = null;
     imageBase64 = null;
-    barcode = "";
     draft = emptyDraft();
   }
 
@@ -245,24 +240,8 @@
         <p class="mut">Point the rear camera at the barcode…</p>
         <button class="linkbtn" onclick={stopCamScan}>Cancel</button>
       </div>
-    {/if}
-
-    <div class="barcode-row">
-      <input
-        class="field"
-        type="text"
-        inputmode="numeric"
-        autocomplete="off"
-        placeholder="Barcode number (EAN / UPC)"
-        bind:value={barcode}
-        onkeydown={(e) => e.key === "Enter" && lookup()}
-      />
-      <button class="primary bc-go" disabled={!barcode.trim() || looking} onclick={() => lookup()}>
-        {looking ? "Looking…" : "Look up"}
-      </button>
-    </div>
-    {#if barcodeSupported && !camScanning}
-      <button class="linkbtn" onclick={startCamScan}>📷 Scan barcode with camera</button>
+    {:else}
+      <button class="primary" onclick={startCamScan}>📷 Scan barcode with camera</button>
     {/if}
 
     {#if hasDraft}
