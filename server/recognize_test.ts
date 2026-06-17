@@ -47,3 +47,17 @@ Deno.test("parseRecognized: tolerant defaults for garbage / missing fields", () 
   assertEquals(empty.name, "");
   assertEquals(empty.draft.components, []);
 });
+
+Deno.test("parseRecognized: keeps a valid local 'when', drops malformed/absent ones", () => {
+  assertEquals(
+    parseRecognized({ name: "coffee", when: "2026-06-17T10:00" }).when,
+    "2026-06-17T10:00",
+  );
+  assertEquals(
+    parseRecognized({ name: "coffee", when: "  2026-06-17T10:00 " }).when,
+    "2026-06-17T10:00",
+  );
+  assertEquals(parseRecognized({ name: "coffee", when: "10am" }).when, undefined); // not a timestamp
+  assertEquals(parseRecognized({ name: "coffee", when: null }).when, undefined);
+  assertEquals(parseRecognized({ name: "coffee" }).when, undefined); // no time mentioned
+});

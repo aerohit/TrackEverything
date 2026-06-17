@@ -91,12 +91,13 @@
     draft: CreateItemBody | null;
     hint?: string;
     preferItemId?: string | null;
+    when?: string;
   }) {
     confirm = {
       name: o.name,
       quantity: o.quantity,
       unit: o.unit,
-      when: toLocalInput(new Date()),
+      when: o.when ?? toLocalInput(new Date()),
       query: o.name,
       results: [],
       sel: o.draft ? "new" : "freeform",
@@ -184,9 +185,13 @@
     busy = "Looking at your photo…";
     try {
       const imageBase64 = await blobToBase64(file);
-      const res = await recognizeIntake({ imageBase64, mediaType: file.type || "image/jpeg" });
+      const res = await recognizeIntake({
+        imageBase64,
+        mediaType: file.type || "image/jpeg",
+        now: toLocalInput(new Date()),
+      });
       const r = res.recognized;
-      await openConfirm({ name: r.name, quantity: r.quantity, unit: r.unit, draft: r.draft });
+      await openConfirm({ name: r.name, quantity: r.quantity, unit: r.unit, draft: r.draft, when: r.when });
     } catch (err) {
       flash((err as Error).message || "Couldn't read that photo.", true);
     } finally {
@@ -211,9 +216,16 @@
     if (!text) return;
     busy = "Working it out…";
     try {
-      const res = await recognizeIntake({ text });
+      const res = await recognizeIntake({ text, now: toLocalInput(new Date()) });
       const r = res.recognized;
-      await openConfirm({ name: r.name, quantity: r.quantity, unit: r.unit, draft: r.draft, hint: text });
+      await openConfirm({
+        name: r.name,
+        quantity: r.quantity,
+        unit: r.unit,
+        draft: r.draft,
+        hint: text,
+        when: r.when,
+      });
       phrasing = false;
       phrase = "";
     } catch (err) {

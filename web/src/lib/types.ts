@@ -139,6 +139,8 @@ export interface RecognizedIntake {
   unit: string;
   primaryType: string;
   draft: CreateItemBody;
+  /** A time the user stated, as a local "YYYY-MM-DDTHH:MM"; absent if none. */
+  when?: string;
 }
 
 /** Recognition + catalog match returned by POST /api/intake/recognize. */

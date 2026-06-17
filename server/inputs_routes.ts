@@ -92,8 +92,9 @@ export function registerInputRoutes(api: Hono, db: Db, deps: InputDeps = {}) {
             kind: "photo",
             imageBase64: parsed.data.imageBase64,
             mediaType: parsed.data.mediaType,
+            now: parsed.data.now,
           }
-          : { kind: "text", text: parsed.data.text },
+          : { kind: "text", text: parsed.data.text, now: parsed.data.now },
       );
       const matches = recognized.name
         ? await listItems(db, { search: recognized.name, limit: 5 })
