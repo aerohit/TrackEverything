@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Substance } from "$lib/types";
   import type { ItemDraft } from "$lib/itemDraft";
+  import { measureUnitOptions, substanceUnitOptions, unitOptions } from "$lib/units";
 
   // Editable item fields (name, kind, type, serving, ingredient rows) shared by the
   // Add Item screen and the Log screen's "save as a new item" flow.
@@ -38,7 +39,9 @@
 <div class="fieldlabel">Serving</div>
 <div class="row">
   <input class="field" type="number" min="0" step="any" placeholder="qty" bind:value={draft.dispQty} />
-  <input class="field" placeholder="unit (scoop, tablet, g…)" bind:value={draft.dispUnit} />
+  <select class="field" aria-label="Serving unit" bind:value={draft.dispUnit}>
+    {#each unitOptions(draft.dispUnit) as u}<option value={u}>{u}</option>{/each}
+  </select>
 </div>
 
 <div class="fieldlabel">Serving in grams/ml (optional)</div>
@@ -48,7 +51,10 @@
 </p>
 <div class="row">
   <input class="field" type="number" min="0" step="any" placeholder="qty (e.g. 250)" bind:value={draft.canonQty} />
-  <input class="field" placeholder="unit (g, ml…)" bind:value={draft.canonUnit} />
+  <select class="field" aria-label="Serving measurement unit" bind:value={draft.canonUnit}>
+    <option value="">— none —</option>
+    {#each measureUnitOptions(draft.canonUnit) as u}<option value={u}>{u}</option>{/each}
+  </select>
 </div>
 
 <div class="fieldlabel">Ingredients (per serving)</div>
@@ -56,7 +62,9 @@
   <div class="row" style="margin-top:6px">
     <input class="field" style="flex:2" placeholder="substance" list="df-substances" bind:value={c.substance} />
     <input class="field" style="flex:1" type="number" min="0" step="any" placeholder="amt" bind:value={c.amount} />
-    <input class="field" style="flex:1" placeholder="unit" bind:value={c.unit} />
+    <select class="field" style="flex:1" aria-label="Ingredient unit" bind:value={c.unit}>
+      {#each substanceUnitOptions(c.unit) as u}<option value={u}>{u}</option>{/each}
+    </select>
     <button class="iconbtn" aria-label="Remove ingredient" onclick={() => removeComp(i)}>✕</button>
   </div>
 {/each}

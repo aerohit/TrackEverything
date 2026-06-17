@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-17 (R-CAP-19: emoji icons on the Log screen's recent-item chips)
+> **Status:** Living document. **Last updated:** 2026-06-17 (R-CAP-17: every unit field in the item editor is a dropdown)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -519,3 +519,4 @@ keeps the Supabase project awake. CI builds + tests `web/` and the Deno service.
 | 2026-06-17 | R-CAP-21 (+ADR-025): barcode camera decode moved from native `BarcodeDetector` to **ZXing** (lazy-loaded) so scanning works on **iOS** (WebKit has no `BarcodeDetector`). |
 | 2026-06-17 | R-CAP-21 (+ADR-026): barcode capture switched from live-video scan to **photographing** the barcode + decoding the still (ZXing), which locks on reliably on phones. |
 | 2026-06-17 | R-CAP-19: recent-item chips on the Log screen show an emoji icon (`iconForInput`, as on the Overview timeline). |
+| 2026-06-17 | R-CAP-17: the item editor's unit fields became **dropdowns** (serving / canonical-serving / ingredient units), matching the Log confirm card (R-CAP-20). |
