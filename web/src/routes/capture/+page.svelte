@@ -1,7 +1,15 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { deleteIntake, favoriteSuggestions, logIntake, quickItems, setQuickLog } from "$lib/api";
+  import {
+    deleteIntake,
+    favoriteSuggestions,
+    listIntake,
+    logIntake,
+    quickItems,
+    setQuickLog,
+  } from "$lib/api";
   import { iconForInput } from "$lib/icons";
+  import { type TimeSuggestion, suggestionPayload, timeSuggestions } from "$lib/suggest";
   import {
     defaultAmountLabel,
     isStack,
@@ -15,6 +23,7 @@
 
   let items = $state<QuickItem[]>([]);
   let suggestions = $state<FavoriteSuggestion[]>([]);
+  let timeSugg = $state<TimeSuggestion[]>([]);
   let pinningId = $state<string | null>(null);
   let loading = $state(true);
   let busyId = $state<string | null>(null);
@@ -33,7 +42,16 @@
 
   async function load() {
     try {
-      [items, suggestions] = await Promise.all([quickItems(), favoriteSuggestions()]);
+      const now = new Date();
+      const from = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const [q, s, events] = await Promise.all([
+        quickItems(),
+        favoriteSuggestions(),
+        listIntake({ from, to: now, limit: 500 }),
+      ]);
+      items = q;
+      suggestions = s;
+      timeSugg = timeSuggestions(events, now);
       // Default every stack to "all members included".
       const next: Record<string, Set<string>> = {};
       for (const it of items) {
@@ -92,6 +110,20 @@
     }
   }
 
+  // Smart suggestion (v2-C5): log an item you usually have around now.
+  async function logSuggestion(s: TimeSuggestion) {
+    busyId = s.itemId;
+    try {
+      const ev = await logIntake(suggestionPayload(s));
+      timeSugg = timeSugg.filter((x) => x.itemId !== s.itemId);
+      flash(`Logged ${s.displayName}`, { eventIds: [ev.id] });
+    } catch {
+      flash(`Couldn't log ${s.displayName}.`, { err: true });
+    } finally {
+      busyId = null;
+    }
+  }
+
   // Size scaler (v2-C3): log a multiple of the default serving.
   async function logSize(it: QuickItem, size: { label: string; factor: number }) {
     busyId = it.id;
@@ -133,6 +165,20 @@
 </script>
 
 <main class="layout">
+  {#if timeSugg.length}
+    <section class="card">
+      <h2>Around now you usually log</h2>
+      <div class="chips">
+        {#each timeSugg as s}
+          <button class="chip" disabled={busyId === s.itemId} onclick={() => logSuggestion(s)}>
+            <span class="chipicon" aria-hidden="true">{iconForInput(s.displayName)}</span>
+            {s.displayName}<span class="meta">{s.quantity} {s.unit}</span>
+          </button>
+        {/each}
+      </div>
+    </section>
+  {/if}
+
   <section class="card">
     <h2>Quick Capture</h2>
     <p class="mut">Tap a favorite to log it instantly. A stack logs all its items in one tap — expand it
