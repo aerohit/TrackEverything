@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { createItem, listItems, listSubstances, scanItem } from "$lib/api";
-  import type { CreateItemBody, InputItemSummary, Substance } from "$lib/types";
+  import { createItem, getItem, listItems, listSubstances, scanItem } from "$lib/api";
+  import type { CreateItemBody, InputItemDetail, InputItemSummary, Substance } from "$lib/types";
 
   type CompRow = { substance: string; amount: number; unit: string };
 
@@ -28,9 +28,30 @@
   let saving = $state(false);
   let toast = $state<{ msg: string; err: boolean } | null>(null);
 
+  // item-detail popup
+  let detail = $state<InputItemDetail | null>(null);
+  let detailLoading = $state<string | null>(null); // id being loaded
+
   function flash(msg: string, err = false) {
     toast = { msg, err };
     setTimeout(() => (toast = null), 3200);
+  }
+
+  async function openDetail(it: InputItemSummary) {
+    detailLoading = it.id;
+    try {
+      detail = await getItem(it.id);
+    } catch {
+      flash("Couldn't load that item.", true);
+    } finally {
+      detailLoading = null;
+    }
+  }
+  function closeDetail() {
+    detail = null;
+  }
+  function compLabel(c: { substance: string | null; childItemId: string | null }) {
+    return c.substance ?? "linked item";
   }
 
   function fileToBase64(file: File): Promise<string> {
@@ -209,7 +230,16 @@
     <h2>Your items</h2>
     {#if items.length}
       {#each items as it}
-        <div class="itemrow"><span>{it.name}</span><span class="meta">{it.kind} · {it.primaryType}</span></div>
+        <button
+          class="itemrow itembtn"
+          onclick={() => openDetail(it)}
+          disabled={detailLoading === it.id}
+        >
+          <span>{it.name}</span>
+          <span class="meta">
+            {detailLoading === it.id ? "Loading…" : `${it.kind} · ${it.primaryType}`} ›
+          </span>
+        </button>
       {/each}
     {:else}
       <p class="mut">No items yet. Scan a label to add one.</p>
@@ -217,6 +247,56 @@
   </section>
 </main>
 
+{#if detail}
+  <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+  <div class="modal-backdrop" onclick={closeDetail}>
+    <div
+      class="modal"
+      role="dialog"
+      tabindex="-1"
+      aria-modal="true"
+      aria-label="Item details"
+      onclick={(e) => e.stopPropagation()}
+    >
+      <div class="modal-head">
+        <div>
+          <div class="modal-title">{detail.name}</div>
+          <div class="meta">
+            {detail.kind} · {detail.primaryType}{detail.brand ? ` · ${detail.brand}` : ""}
+          </div>
+        </div>
+        <button class="iconbtn" aria-label="Close" onclick={closeDetail}>✕</button>
+      </div>
+
+      {#if detail.defaultDisplayQuantity != null && detail.defaultDisplayUnit}
+        <div class="fieldlabel">Serving</div>
+        <p class="mut" style="margin:0 0 6px">
+          {detail.defaultDisplayQuantity} {detail.defaultDisplayUnit}
+        </p>
+      {/if}
+
+      <div class="fieldlabel">Ingredients</div>
+      {#if detail.components.length}
+        {#each detail.components as c}
+          <div class="totrow">
+            <span>{compLabel(c)}{c.prepState ? ` (${c.prepState})` : ""}</span>
+            <b>{c.amount} {c.unit}</b>
+          </div>
+        {/each}
+      {:else}
+        <p class="mut">No ingredients recorded for this item.</p>
+      {/if}
+
+      {#if detail.notes}
+        <div class="fieldlabel">Notes</div>
+        <p class="mut" style="margin:0">{detail.notes}</p>
+      {/if}
+    </div>
+  </div>
+{/if}
+
 {#if toast}
   <div class="toast" class:err={toast.err}>{toast.msg}</div>
 {/if}
+
+<svelte:window onkeydown={(e) => e.key === "Escape" && closeDetail()} />

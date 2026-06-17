@@ -10,6 +10,7 @@ import type {
   CreateIntake,
   CreateItemBody,
   DailyTotal,
+  InputItemDetail,
   InputItemSummary,
   IntakeEvent,
   RecentItem,
@@ -90,6 +91,14 @@ export async function listItems(ctx: ApiCtx = {}): Promise<InputItemSummary[]> {
   const res = await f("/api/items", { headers: headers(token) });
   if (!res.ok) throw new ApiError(res.status, "Failed to load items");
   return (await res.json()).items as InputItemSummary[];
+}
+
+/** One item with its components (GET /api/items/:id). */
+export async function getItem(id: string, ctx: ApiCtx = {}): Promise<InputItemDetail> {
+  const { f, token } = resolve(ctx);
+  const res = await f("/api/items/" + encodeURIComponent(id), { headers: headers(token) });
+  if (!res.ok) throw new ApiError(res.status, "Failed to load item");
+  return await res.json() as InputItemDetail;
 }
 
 export async function listSubstances(ctx: ApiCtx = {}): Promise<Substance[]> {

@@ -74,6 +74,23 @@ export interface InputItemSummary {
   defaultCanonicalUnit: string | null;
 }
 
+/** One component of an item — exactly one of `substance` (by name) or `childItemId`. */
+export interface ItemComponentDTO {
+  substance: string | null;
+  childItemId: string | null;
+  amount: number;
+  unit: string;
+  position: number;
+  prepState: string | null;
+}
+
+/** An item plus its components (GET /api/items/:id). */
+export interface InputItemDetail extends InputItemSummary {
+  notes: string | null;
+  version: number;
+  components: ItemComponentDTO[];
+}
+
 export interface CreateIntake {
   displayName: string;
   itemId?: string;

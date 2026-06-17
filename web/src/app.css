@@ -686,3 +686,59 @@ select.field {
 .err-text {
   color: var(--danger);
 }
+
+/* Item-detail popup (manage screen): clickable item rows + a modal. */
+.itembtn {
+  width: 100%;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.itembtn:last-child {
+  border-bottom: none;
+}
+.itembtn:hover {
+  color: var(--accent);
+}
+.itembtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(8, 9, 14, 0.55);
+  backdrop-filter: blur(2px);
+}
+.modal {
+  width: 100%;
+  max-width: 420px;
+  max-height: 80vh;
+  overflow-y: auto;
+  background: var(--card);
+  border: 1px solid var(--line-2);
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: var(--shadow);
+}
+.modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}

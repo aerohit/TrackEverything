@@ -4,6 +4,7 @@ import {
   askLlm,
   createCheckin,
   createItem,
+  getItem,
   intakeTotals,
   listCheckins,
   listSubstances,
@@ -158,6 +159,22 @@ describe("api client", () => {
     const out = await recentItems(10, { fetch, token: "t" });
     expect(out[0].displayName).toBe("Banana");
     expect(String(fetch.mock.calls[0][0])).toBe("/api/intake/recent-items?limit=10");
+  });
+
+  it("getItem fetches one item with its components by id", async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>(async () =>
+      jsonResponse({
+        id: "abc",
+        name: "My Pre-Workout",
+        kind: "product",
+        primaryType: "supplement",
+        components: [{ substance: "caffeine", childItemId: null, amount: 200, unit: "mg", position: 0, prepState: null }],
+      })
+    );
+    const item = await getItem("abc", { fetch, token: "t" });
+    expect(item.name).toBe("My Pre-Workout");
+    expect(item.components[0].substance).toBe("caffeine");
+    expect(String(fetch.mock.calls[0][0])).toBe("/api/items/abc");
   });
 
   it("askLlm POSTs the question and returns the answer", async () => {
