@@ -594,6 +594,25 @@
           }
         },
         {
+          "name": "Favorite suggestions (log often → pin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/intake/favorite-suggestions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "intake",
+                "favorite-suggestions"
+              ]
+            },
+            "description": "Items logged often (>= 3 times in the last 30 days) that aren't pinned to Quick Capture yet — surfaced as 'you log this a lot, pin it?' suggestions (v2-C0)."
+          }
+        },
+        {
           "name": "Edit intake event",
           "request": {
             "method": "PATCH",

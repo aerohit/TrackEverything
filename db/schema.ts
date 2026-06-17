@@ -24,6 +24,7 @@ import {
   CONFIDENCE_LEVELS,
   INPUT_KINDS,
   INPUT_PRIMARY_TYPES,
+  INTAKE_SOURCES,
   SUBSTANCE_TYPES,
   SUBSTANCE_UNITS,
 } from "../shared/inputs.ts";
@@ -49,6 +50,7 @@ export const substanceUnit = pgEnum("substance_unit", SUBSTANCE_UNITS);
 export const inputKind = pgEnum("input_kind", INPUT_KINDS);
 export const inputPrimaryType = pgEnum("input_primary_type", INPUT_PRIMARY_TYPES);
 export const intakeConfidence = pgEnum("intake_confidence", CONFIDENCE_LEVELS);
+export const intakeSource = pgEnum("intake_source", INTAKE_SOURCES);
 
 export const substance = pgTable("substance", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -117,6 +119,7 @@ export const intakeEvent = pgTable("intake_event", {
   confidence: intakeConfidence("confidence").notNull().default("medium"),
   contextTags: text("context_tags").array().notNull().default([]),
   notes: text("notes"),
+  source: intakeSource("source").notNull().default("manual"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),

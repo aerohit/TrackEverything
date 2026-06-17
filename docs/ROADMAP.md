@@ -1,6 +1,6 @@
 # TrackEverything — Roadmap (phased, gated build plan)
 
-> **Status:** Living document. **Last updated:** 2026-06-17 (v2-C1: Quick Capture screen — one-tap favorites; starts the Capture Seamlessness track)
+> **Status:** Living document. **Last updated:** 2026-06-17 (v2-C0: capture provenance + favorite suggestions)
 > **Companion docs:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each phase is **small, independently testable, and ends in an approval gate**
@@ -66,6 +66,10 @@ Goal: "log now in one tap, add precision later." Built on a **new `/capture` scr
 Log screen (Log is retired once Quick Capture covers its uses). Each phase ships, is tested, and is
 owner-approved before the next. R-CAP-22…27, [ADR-027](ARCHITECTURE.md#adr-027).
 
+- **v2-C0 — Foundations** ◐ (built, pending approval) — **capture provenance** (`intake_event.source` enum
+  set by every path: quick/recent/photo/voice/manual/api — fixes R-CAP-12) + **"you log this a lot, pin it?"**
+  suggestions on Quick Capture (`GET /api/intake/favorite-suggestions`). R-CAP-12, R-CAP-28,
+  [ADR-028](ARCHITECTURE.md#adr-028). *(Precision rough/precise + ranges deferred to v2-C4.)*
 - **v2-C1 — Quick Capture + one-tap favorites** ◐ (built, pending approval) — `/capture` screen with a grid
   of pinned favorites; tap = instant log + **Undo**; optional **amount presets** (Water 250/500/750).
   `quick_log`/`quick_order` on items + a `quick_preset` table; `GET /api/intake/quick-items`,

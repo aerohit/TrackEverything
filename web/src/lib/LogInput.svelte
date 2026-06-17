@@ -8,7 +8,7 @@
     recognizeIntake,
     searchItems,
   } from "$lib/api";
-  import type { CreateItemBody, RecentItem, Substance } from "$lib/types";
+  import type { CreateItemBody, IntakeSource, RecentItem, Substance } from "$lib/types";
   import { iconForInput } from "$lib/icons";
   import { unitOptions } from "$lib/units";
   import { type Match, selectedName, servingUnitChoices } from "$lib/log";
@@ -32,6 +32,7 @@
     recognizedUnit: string; // the recognized/recent unit, restored for "new" / freeform
     draft: CreateItemBody | null; // present when recognized (enables "save as new")
     hint?: string; // the spoken/typed phrase, shown for context
+    source: IntakeSource; // how this intake was captured (provenance, R-CAP-12)
   };
 
   let busy = $state<string | null>(null); // a status label while recognition runs
@@ -93,6 +94,7 @@
     hint?: string;
     preferItemId?: string | null;
     when?: string;
+    source?: IntakeSource;
   }) {
     confirm = {
       name: o.name,
@@ -107,6 +109,7 @@
       recognizedUnit: o.unit,
       draft: o.draft,
       hint: o.hint,
+      source: o.source ?? "manual",
     };
     // Pre-fill the editable "save as a new item" form from the recognized draft.
     newDraft = o.draft ? draftFromBody(o.draft) : emptyDraft();
@@ -192,7 +195,7 @@
         now: toLocalInput(new Date()),
       });
       const r = res.recognized;
-      await openConfirm({ name: r.name, quantity: r.quantity, unit: r.unit, draft: r.draft, when: r.when });
+      await openConfirm({ name: r.name, quantity: r.quantity, unit: r.unit, draft: r.draft, when: r.when, source: "photo" });
     } catch (err) {
       flash((err as Error).message || "Couldn't read that photo.", true);
     } finally {
@@ -226,6 +229,7 @@
         draft: r.draft,
         hint: text,
         when: r.when,
+        source: "voice",
       });
       phrasing = false;
       phrase = "";
@@ -243,6 +247,7 @@
       unit: r.unit,
       draft: null,
       preferItemId: r.itemId,
+      source: "recent",
     });
   }
 
@@ -258,6 +263,7 @@
         quantity: confirm.quantity,
         unit: confirm.unit.trim() || "serving",
         occurredAt: new Date(confirm.when).toISOString(),
+        source: confirm.source,
       };
       if (sel.startsWith("item:")) {
         await logIntake({ ...base, displayName: confirm.name.trim(), itemId: sel.slice("item:".length) });

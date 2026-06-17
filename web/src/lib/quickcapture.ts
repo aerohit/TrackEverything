@@ -15,6 +15,7 @@ export function quickLogPayload(item: QuickItem, preset?: QuickPreset): CreateIn
     itemId: item.id,
     quantity: preset?.quantity ?? item.defaultDisplayQuantity ?? 1,
     unit: preset?.unit ?? item.defaultDisplayUnit ?? "serving",
+    source: "quick",
   };
 }
 

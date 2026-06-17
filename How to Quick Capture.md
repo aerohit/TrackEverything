@@ -4,9 +4,10 @@ A living guide to the **Quick Capture** workflow — the fast, "log it in one ta
 way to track. It's a **new screen that lives alongside the old Log screen** while
 we build it out; the old Log screen stays until Quick Capture fully replaces it.
 
-> **Status:** v2-C1 shipped (one-tap favorites + amount presets). Later phases
-> (stacks, meal modifiers, photo portions, suggestions, daily reconstruction) are
-> listed under "Coming next" and this doc grows as each lands.
+> **Status:** v2-C0 + v2-C1 shipped (one-tap favorites + amount presets, plus
+> auto-suggested favorites and behind-the-scenes capture provenance). Later phases
+> (stacks, meal modifiers, photo portions, daily reconstruction) are listed under
+> "Coming next" and this doc grows as each lands.
 
 ---
 
@@ -57,6 +58,18 @@ its presets.)
 That's it — no forms, no confirm screen. The entry shows up in your timeline and
 daily totals like any other log.
 
+### 3. Let the app suggest favorites
+
+You don't have to remember to pin things. When you've logged an item **a few
+times** (3+ in the last month) and it isn't pinned yet, the Capture screen shows
+a **"You log these a lot"** section at the bottom. Each row has a **Pin · N×**
+button (N = how many times you've logged it) — tap it to promote that item
+straight into your favorites grid. It then disappears from the suggestions.
+
+> Behind the scenes, every log now also records **how** it was captured (a quick
+> tap, a recent re-log, a photo, or voice). You won't see this — it's there so the
+> analysis and future smart suggestions can use it.
+
 ### Tips
 - **Curate ruthlessly.** Quick Capture is for the handful of things you log
   daily. Everything else still lives on the Log screen (voice, photo, barcode,
@@ -87,6 +100,6 @@ updated with how-to steps as each ships.
 
 ---
 
-*Maintained alongside the code. See `docs/REQUIREMENTS.md` (R-CAP-22…27),
+*Maintained alongside the code. See `docs/REQUIREMENTS.md` (R-CAP-12, 22, 28),
 `docs/ROADMAP.md` (Capture Seamlessness track), and `docs/ARCHITECTURE.md`
-(ADR-027) for the engineering detail.*
+(ADR-027, ADR-028) for the engineering detail.*

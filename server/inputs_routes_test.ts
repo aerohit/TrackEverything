@@ -534,3 +534,87 @@ Deno.test({
     }
   },
 });
+
+Deno.test({
+  name: "inputs API: capture provenance (source) + favorite suggestions (v2-C0)",
+  ignore: !DATABASE_URL,
+  async fn() {
+    await migrate(DATABASE_URL);
+    const { sql, db } = connect(DATABASE_URL);
+    try {
+      const app = createApp(db, { token: TOKEN });
+
+      // An item we'll log a few times.
+      const item = await (await app.request("/api/items", {
+        method: "POST",
+        headers: auth,
+        body: JSON.stringify({ name: "Espresso", kind: "simple", primaryType: "drink" }),
+      })).json();
+
+      // A quick-source log carries its provenance back on read.
+      const ev = await (await app.request("/api/intake", {
+        method: "POST",
+        headers: auth,
+        body: JSON.stringify({
+          displayName: "Espresso",
+          itemId: item.id,
+          quantity: 1,
+          unit: "cup",
+          source: "quick",
+        }),
+      })).json();
+      assertEquals(ev.source, "quick");
+
+      // A log with no source defaults to "manual".
+      const ev2 = await (await app.request("/api/intake", {
+        method: "POST",
+        headers: auth,
+        body: JSON.stringify({
+          displayName: "Espresso",
+          itemId: item.id,
+          quantity: 1,
+          unit: "cup",
+        }),
+      })).json();
+      assertEquals(ev2.source, "manual");
+
+      // Not yet suggested (only 2 logs < the default threshold of 3).
+      const before =
+        (await (await app.request("/api/intake/favorite-suggestions", { headers: auth })).json())
+          .items;
+      assertEquals(before.find((i: { id: string }) => i.id === item.id), undefined);
+
+      // Third log crosses the threshold → it shows up as a suggestion with its count.
+      await app.request("/api/intake", {
+        method: "POST",
+        headers: auth,
+        body: JSON.stringify({
+          displayName: "Espresso",
+          itemId: item.id,
+          quantity: 1,
+          unit: "cup",
+          source: "recent",
+        }),
+      });
+      const sugg =
+        (await (await app.request("/api/intake/favorite-suggestions", { headers: auth })).json())
+          .items;
+      const me = sugg.find((i: { id: string }) => i.id === item.id);
+      assert(me, "Espresso should be suggested after 3 logs");
+      assertEquals(me.count, 3);
+
+      // Once pinned, it drops out of suggestions.
+      await app.request(`/api/items/${item.id}/quick-log`, {
+        method: "PATCH",
+        headers: auth,
+        body: JSON.stringify({ quickLog: true }),
+      });
+      const after =
+        (await (await app.request("/api/intake/favorite-suggestions", { headers: auth })).json())
+          .items;
+      assertEquals(after.find((i: { id: string }) => i.id === item.id), undefined);
+    } finally {
+      await sql.end();
+    }
+  },
+});

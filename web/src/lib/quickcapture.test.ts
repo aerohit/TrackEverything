@@ -27,6 +27,7 @@ describe("quickLogPayload", () => {
       itemId: "11111111-1111-1111-1111-111111111111",
       quantity: 500,
       unit: "ml",
+      source: "quick",
     });
   });
 
