@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-17 (ADR-030: stack is a first-class kind; single-vs-individual capture; Overview expansion)
+> **Last updated:** 2026-06-18 (ADR-031: soft-delete items; past logs keep showing)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -389,6 +389,26 @@ the owner verifies. No phase starts before the prior one is approved.
 **Consequences:** Slower nominal throughput but continuous verification and low
 risk of building the wrong thing. Requires keeping ROADMAP.md in sync with the
 two core docs.
+
+### ADR-031
+**Title:** Soft-delete reusable items; past logs keep their frozen snapshot.
+**Status:** Accepted (2026-06-18). Realizes R-CAP-29; applies the event soft-delete pattern of
+[ADR-018](#adr-018) to `input_item`. No migration — `input_item.deletedAt` has existed since v2-2.
+**Context:** The catalog accrues one-off, mistaken, or stale items, but an item can't be hard-deleted
+without orphaning history: every past `intake_event` may reference it. We need a delete that tidies the
+catalog without rewriting the timeline.
+**Decision:** **Soft delete** — `DELETE /api/items/:id` sets `input_item.deleted_at` (`softDeleteItem`,
+204 / 404). All catalog read paths already filter `deleted_at` (`listItems`, item search, `getItemDetail`,
+`listQuickItems`, stack-member listing), so a deleted item leaves the catalog, search, and Quick Capture.
+**Past logs are untouched:** each `intake_event` froze its own `display_name` + `resolved_amount` snapshot
+at log time (ADR-018), so the timeline and daily totals render with no dependency on the live item.
+Resolution that loads an item by id (the resolve graph, used for *re-resolving an edited event* or a stack
+that still lists it as a member) intentionally does **not** filter `deleted_at`, so those keep working. The
+UI is a two-step confirm in the Add Item item popup.
+**Consequences:** the catalog stays clean while history is preserved and analysable; delete is reversible in
+principle (the row and its components remain). Trade-offs: rows are never reclaimed (fine at single-user
+scale); there's no "show deleted / undelete" UI yet (the data supports adding one); a soft-deleted item can
+still be referenced by *new* logs if something holds a stale id, but no UI surfaces deleted items to do so.
 
 ### ADR-030
 **Title:** Stack is a first-class item kind, with a single-vs-individual capture choice and Overview expansion.

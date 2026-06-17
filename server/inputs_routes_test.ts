@@ -698,3 +698,81 @@ Deno.test({
     }
   },
 });
+
+Deno.test({
+  name: "inputs API: soft-delete an item — it leaves the catalog but past logs still display",
+  ignore: !DATABASE_URL,
+  async fn() {
+    await migrate(DATABASE_URL);
+    const { sql, db } = connect(DATABASE_URL);
+    try {
+      const app = createApp(db, { token: TOKEN });
+
+      const item = await (await app.request("/api/items", {
+        method: "POST",
+        headers: auth,
+        body: JSON.stringify({
+          name: "Old Protein Bar",
+          kind: "product",
+          primaryType: "food",
+          defaultServing: { displayQuantity: 1, displayUnit: "bar" },
+          components: [{ substance: "protein", amount: 20, unit: "g" }],
+        }),
+      })).json();
+
+      // Log it (frozen snapshot lives on the event).
+      const when = "2026-06-18T09:00:00.000Z";
+      await app.request("/api/intake", {
+        method: "POST",
+        headers: auth,
+        body: JSON.stringify({
+          displayName: "Old Protein Bar",
+          itemId: item.id,
+          quantity: 1,
+          unit: "bar",
+          occurredAt: when,
+        }),
+      });
+
+      // Soft-delete; a second delete is 404; an unknown id is 404.
+      assertEquals(
+        (await app.request(`/api/items/${item.id}`, { method: "DELETE", headers: auth })).status,
+        204,
+      );
+      assertEquals(
+        (await app.request(`/api/items/${item.id}`, { method: "DELETE", headers: auth })).status,
+        404,
+      );
+
+      // Gone from the catalog, search, and item detail.
+      const list = (await (await app.request("/api/items", { headers: auth })).json()).items;
+      assertEquals(list.find((i: { id: string }) => i.id === item.id), undefined);
+      assertEquals(
+        (await (await app.request("/api/items?search=Old%20Protein", { headers: auth })).json())
+          .items.length,
+        0,
+      );
+      assertEquals((await app.request(`/api/items/${item.id}`, { headers: auth })).status, 404);
+
+      // But the past log still displays with its name + frozen resolution + totals.
+      const day = "from=2026-06-18T00:00:00Z&to=2026-06-19T00:00:00Z";
+      const events =
+        (await (await app.request(`/api/intake?${day}`, { headers: auth })).json()).events;
+      const ev = events.find((e: { itemId: string }) => e.itemId === item.id);
+      assert(ev, "the past log should still be listed");
+      assertEquals(ev.displayName, "Old Protein Bar");
+      assertEquals(
+        ev.resolved.find((r: { substance: string }) => r.substance === "protein")?.amount,
+        20,
+      );
+      const totals =
+        (await (await app.request(`/api/intake/totals?${day}`, { headers: auth })).json()).totals;
+      assertEquals(
+        totals.find((t: { substance: string }) => t.substance === "protein")?.amount,
+        20,
+      );
+    } finally {
+      await sql.end();
+    }
+  },
+});
