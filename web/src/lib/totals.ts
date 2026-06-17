@@ -5,11 +5,39 @@
  *   - Others:  everything else (alphabetical)
  * Empty groups are dropped. Pure, so it's unit-tested.
  */
-import type { DailyTotal } from "$lib/types";
+import type { DailyTotal, IntakeEvent } from "$lib/types";
 
 export interface TotalGroup {
   label: string;
   items: DailyTotal[];
+}
+
+/** One logged input's contribution to a substance's daily total. */
+export interface Contribution {
+  name: string;
+  amount: number;
+  unit: string;
+}
+
+/**
+ * Which logged inputs make up a substance's daily total — e.g. for "protein":
+ * [{ name: "Steak", amount: 25, ... }, { name: "Eggs", amount: 20, ... }].
+ * Aggregates the per-event resolved amounts by display name, largest first. Pure.
+ */
+export function substanceContributions(events: IntakeEvent[], substance: string): Contribution[] {
+  const byName = new Map<string, { amount: number; unit: string }>();
+  for (const e of events) {
+    for (const r of e.resolved) {
+      if (r.substance !== substance) continue;
+      const cur = byName.get(e.displayName) ?? { amount: 0, unit: r.unit };
+      cur.amount += r.amount;
+      cur.unit = r.unit;
+      byName.set(e.displayName, cur);
+    }
+  }
+  return [...byName.entries()]
+    .map(([name, v]) => ({ name, amount: Math.round(v.amount * 1000) / 1000, unit: v.unit }))
+    .sort((a, b) => b.amount - a.amount || a.name.localeCompare(b.name));
 }
 
 const MACRO_ORDER = ["calories", "protein", "carbohydrate", "fat"];

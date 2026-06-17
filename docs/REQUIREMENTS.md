@@ -1,8 +1,8 @@
 # TrackEverything — Requirements
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this
-> stays current. **Last updated:** 2026-06-17 (Add Item: optional grams/ml canonical
-> serving — define "1 steak = 250 g" and log either way) **Owner:** aerohit
+> stays current. **Last updated:** 2026-06-17 (R-VIEW-8: tap a total to see which
+> inputs contributed to it) **Owner:** aerohit
 > **Companion doc:** [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each requirement has a stable ID (`R-<area>-<n>`) so it can be referenced from
@@ -131,6 +131,7 @@ moment.
 | R-VIEW-5 | Timeline **food** rows show a dish-level summary (**"Meal — item"**, e.g. "Lunch — Salad"), not the raw ingredient list; the dish name is clickable to reveal its ingredients. | Built    |
 | R-VIEW-6 | The UI supports **light and dark appearance**: follows the system setting by default with a manual toggle (System / Light / Dark), persisted on the device.                    | Built    |
 | R-VIEW-7 | The UI is **responsive for phone and desktop**: mobile-first single column; an adaptive two-pane layout on wide screens (the app is used on both a phone and a computer).       | Built    |
+| R-VIEW-8 | In the Overview **"Today's Total Macros & Micros"** table, each substance row is tappable: it opens a **popup listing which logged inputs contributed** to that total (e.g. protein → Steak 25 g, Eggs 20 g), largest first. Computed client-side from the day's resolved intake amounts (no extra request). | Built    |
 
 ## 9. Non-functional requirements
 
@@ -249,3 +250,4 @@ This document is kept current by an explicit process, not by hope. See
 | 2026-06-17 | R-CAP-18 refinement: choosing **"save as a new item"** in the Log confirm card now opens the **full editable item form** (serving + ingredient rows, auto-filled from recognition) before saving — identical to the Add Item editor, which was extracted into a shared `ItemDraftForm` component (+ pure `itemDraft` converters, unit-tested). Saving creates the detailed item *and* logs the intake. Web-only; both screens browser-verified end to end. |
 | 2026-06-17 | R-CAP-18/R-CAP-8: the Log recognizer now extracts a **stated time** — the client sends its current local time with the photo/phrase (`now`), Claude resolves "at 10am"/"an hour ago"/"this morning" to a local `when`, and it pre-fills the **When** field (`server/recognize.ts`, `recognize_anthropic.ts`). Pure parser test (valid/malformed `when`) + web client test (`now` forwarded); browser-verified. |
 | 2026-06-17 | R-CAP-17: the shared item editor (Add Item + Log "save as new") gains an optional **grams/ml "canonical" serving** so an item can be defined as e.g. "1 steak = 250 g" and logged **either way** — by count/serving or by weight (both resolve via the canonical-serving branch, R-DOM-4). `ItemDraft` + `draftFromBody`/`draftToBody` carry `canonQty`/`canonUnit` (uses the existing `servingSchema` canonical fields); unit tests added. Browser-verified: a "1 steak = 250 g" item logs 62 g protein for "1 steak" and "250 g", 31 g for "125 g". |
+| 2026-06-17 | Added R-VIEW-8: tapping a substance in the Overview "Today's Total Macros & Micros" table opens a **popup of contributing inputs** (e.g. protein → Steak 25 g, Eggs 20 g, largest first), computed client-side from the day's resolved amounts (`substanceContributions` in `web/src/lib/totals.ts`). Unit-tested; browser-verified. Web-only. |

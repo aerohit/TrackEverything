@@ -3,7 +3,7 @@
   import Chart from "$lib/Chart.svelte";
   import { intakeTotals, listCheckins, listIntake } from "$lib/api";
   import { iconForInput } from "$lib/icons";
-  import { groupTotals } from "$lib/totals";
+  import { type Contribution, groupTotals, substanceContributions } from "$lib/totals";
   import type { Checkin, DailyTotal, IntakeEvent } from "$lib/types";
 
   let day = $state(startOfToday());
@@ -11,6 +11,8 @@
   let events = $state<IntakeEvent[]>([]);
   let totals = $state<DailyTotal[]>([]);
   let toast = $state<{ msg: string; err: boolean } | null>(null);
+  // Per-substance contribution breakdown popup (which inputs made up a total).
+  let breakdown = $state<{ substance: string; amount: number; unit: string; items: Contribution[] } | null>(null);
 
   // Inputs shown in chronological (earliest-first) order; ISO strings sort lexically.
   const ordered = $derived(events.slice().sort((a, b) => a.occurredAt.localeCompare(b.occurredAt)));
@@ -42,6 +44,18 @@
   function flash(msg: string, err = false) {
     toast = { msg, err };
     setTimeout(() => (toast = null), 2600);
+  }
+
+  function openBreakdown(tot: DailyTotal) {
+    breakdown = {
+      substance: tot.substance,
+      amount: tot.amount,
+      unit: tot.unit,
+      items: substanceContributions(events, tot.substance),
+    };
+  }
+  function closeBreakdown() {
+    breakdown = null;
   }
 
   async function load() {
@@ -87,7 +101,9 @@
         {#each groupTotals(totals) as g}
           <div class="totgroup">{g.label}</div>
           {#each g.items as t}
-            <div class="totrow"><span>{t.substance}</span><b>{t.amount} {t.unit}</b></div>
+            <button class="totrow totbtn" onclick={() => openBreakdown(t)}>
+              <span>{t.substance}</span><b>{t.amount} {t.unit} ›</b>
+            </button>
           {/each}
         {/each}
       {:else}
@@ -115,6 +131,38 @@
   </div>
 </main>
 
+{#if breakdown}
+  <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+  <div class="modal-backdrop" onclick={closeBreakdown}>
+    <div
+      class="modal"
+      role="dialog"
+      tabindex="-1"
+      aria-modal="true"
+      aria-label="Contributions breakdown"
+      onclick={(e) => e.stopPropagation()}
+    >
+      <div class="modal-head">
+        <div>
+          <div class="modal-title">{breakdown.substance}</div>
+          <div class="meta">{breakdown.amount} {breakdown.unit} total · {dayLabel(day)}</div>
+        </div>
+        <button class="iconbtn" aria-label="Close" onclick={closeBreakdown}>✕</button>
+      </div>
+
+      {#if breakdown.items.length}
+        {#each breakdown.items as c}
+          <div class="totrow"><span>{c.name}</span><b>{c.amount} {c.unit}</b></div>
+        {/each}
+      {:else}
+        <p class="mut">No itemized breakdown for this total.</p>
+      {/if}
+    </div>
+  </div>
+{/if}
+
 {#if toast}
   <div class="toast" class:err={toast.err}>{toast.msg}</div>
 {/if}
+
+<svelte:window onkeydown={(e) => e.key === "Escape" && closeBreakdown()} />

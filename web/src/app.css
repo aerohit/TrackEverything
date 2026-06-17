@@ -486,6 +486,22 @@ textarea:focus {
 .totrow b {
   font-variant-numeric: tabular-nums;
 }
+button.totbtn {
+  width: 100%;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  align-items: baseline;
+}
+button.totbtn:last-child {
+  border-bottom: none;
+}
+button.totbtn:hover {
+  color: var(--accent);
+}
 .fieldlabel {
   font-size: 12px;
   color: var(--mut);
