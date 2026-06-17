@@ -41,6 +41,16 @@
   <input class="field" placeholder="unit (scoop, tablet, g…)" bind:value={draft.dispUnit} />
 </div>
 
+<div class="fieldlabel">Serving in grams/ml (optional)</div>
+<p class="mut" style="margin:0 0 4px">
+  What one serving weighs/measures, so you can also log by weight — e.g. "1 steak" + "250 g"
+  lets you log either "1 steak" or "250 g".
+</p>
+<div class="row">
+  <input class="field" type="number" min="0" step="any" placeholder="qty (e.g. 250)" bind:value={draft.canonQty} />
+  <input class="field" placeholder="unit (g, ml…)" bind:value={draft.canonUnit} />
+</div>
+
 <div class="fieldlabel">Ingredients (per serving)</div>
 {#each draft.comps as c, i}
   <div class="row" style="margin-top:6px">
