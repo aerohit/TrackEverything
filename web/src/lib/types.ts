@@ -53,6 +53,8 @@ export interface IntakeEvent {
   notes: string | null;
   source: IntakeSource;
   precision: IntakePrecision;
+  /** An occasional item with no matching item/nutrition yet — resolvable on the Overview. */
+  unresolved: boolean;
   resolved: ResolvedAmount[];
   /** When this event logged a stack as a single entry: its member items (else empty). */
   stackItems: StackChild[];
@@ -137,6 +139,7 @@ export interface CreateIntake {
   notes?: string;
   source?: IntakeSource;
   precision?: IntakePrecision;
+  unresolved?: boolean;
 }
 
 /** How an intake was captured (provenance, mirrors shared/inputs.ts). */

@@ -54,6 +54,7 @@ describe("substanceContributions", () => {
       notes: null,
       source: "manual",
       precision: "precise",
+    unresolved: false,
       stackItems: [],
       resolved: resolved.map((r) => ({ ...r, confidence: "medium", source: "item" })),
     } as IntakeEvent;

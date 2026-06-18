@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-18 (ADR-032: rough/precise logging + portion picker, v2-C4)
+> **Last updated:** 2026-06-18 (ADR-033: occasional / 'unresolved' items — capture now, resolve later)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -389,6 +389,31 @@ the owner verifies. No phase starts before the prior one is approved.
 **Consequences:** Slower nominal throughput but continuous verification and low
 risk of building the wrong thing. Requires keeping ROADMAP.md in sync with the
 two core docs.
+
+### ADR-033
+**Title:** Occasional / "unresolved" items — capture by name now, resolve nutrition later.
+**Status:** Accepted (2026-06-18). Realizes R-CAP-30 (phase 1, capture) and R-CAP-31 (phase 2, resolve).
+Migration `0008`.
+**Context:** Logging something not in your regulars (a restaurant dish, a one-off snack) must be
+1–3 seconds and must not force you to define an item first — but we still want it on the timeline and,
+eventually, in the totals. The existing recognizer confirm card already fuzzy-matches the catalog and offers
+"log by name"; what was missing is a way to (a) capture by name manually without the LLM, (b) flag a
+by-name log as needing nutrition, and (c) fill that nutrition in later.
+**Decision:** Add a boolean **`intake_event.unresolved`** (default false). The Log screen gains a **manual
+"Type item"** mode: type a name (+ amount/unit) → the existing confirm card runs the trigram fuzzy search
+(`GET /api/items?search=`) and **pre-selects the best match** (suggest "log as <item>"); choosing "log by
+name" instead logs with `unresolved: true` and no resolved amounts, so it **contributes nothing to totals**
+(honest) and shows an "unresolved" tag on the Overview. **Resolution (phase 2)** reuses the existing
+mutable-event machinery (`PATCH /api/intake/:id`, ADR-018, which re-resolves): (a) link an existing item =
+PATCH `{itemId}`; (b) save as a regular item = `POST /api/items` then PATCH `{itemId}`; (c) enter nutrients
+= PATCH `{resolved:[…]}`; each also clears `unresolved`. No new resolve endpoint is needed.
+**Consequences:** occasional items are captured instantly and never block on item definition, while the
+totals stay honest (unresolved = not counted) until you choose to resolve. Reuses fuzzy search + the confirm
+card + PATCH re-resolution, so the surface area is small. Additive migration with a default (no backfill).
+Trade-offs: an unresolved item is invisible to analysis until resolved (by design — we don't fabricate
+numbers); "guessed" macros for unresolved items (an alternative the owner mentioned) are deferred. Pure
+flagging is integration-tested; the manual-capture → fuzzy-suggest → unresolved → Overview-exclusion path is
+browser-verified.
 
 ### ADR-032
 **Title:** Rough-vs-precise logging + a photo/voice portion picker (capture honesty).

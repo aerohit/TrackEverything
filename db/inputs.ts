@@ -258,6 +258,7 @@ export async function createIntakeEvent(db: Db, input: CreateIntakeEvent): Promi
     // Photo/voice are estimates → rough by default; everything else is precise.
     precision: input.precision ??
       (input.source === "photo" || input.source === "voice" ? "rough" : "precise"),
+    unresolved: input.unresolved ?? false,
   }).returning();
   if (resolution.rows.length) {
     await db.insert(resolvedAmount).values(resolution.rows.map((r) => ({ eventId: ev.id, ...r })));
@@ -434,6 +435,7 @@ function eventDto(
     notes: e.notes,
     source: e.source,
     precision: e.precision,
+    unresolved: e.unresolved,
     resolved,
     stackItems,
   };

@@ -433,6 +433,17 @@ textarea:focus {
   font-weight: 700;
   margin: 0 2px;
 }
+.unresolvedtag {
+  display: inline-block;
+  padding: 1px 6px;
+  margin: 0 4px;
+  border-radius: 6px;
+  background: var(--danger-soft, var(--accent-soft));
+  color: var(--danger);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
 .stacktag {
   display: inline-block;
   padding: 1px 6px;
@@ -741,8 +752,12 @@ select.field {
 /* Log capture (ADR-020): photo / voice mode buttons, recent chips, save-as options. */
 .modes {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin: 12px 0 4px;
+}
+.modes .modebtn {
+  min-width: 84px;
 }
 .modebtn {
   flex: 1;
