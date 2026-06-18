@@ -19,7 +19,7 @@
   } from "$lib/types";
   import ItemDraftForm from "$lib/ItemDraftForm.svelte";
   import { draftFromBody, draftToBody, emptyDraft, type ItemDraft } from "$lib/itemDraft";
-  import { preparePresets } from "$lib/quickcapture";
+  import { preparePresets, presetLabel } from "$lib/quickcapture";
   import { unitOptions } from "$lib/units";
 
   // photo + scan state
@@ -55,9 +55,11 @@
     setTimeout(() => (toast = null), 3200);
   }
 
-  // Quick Capture editing within the item-detail popup.
+  // Quick Capture editing within the item-detail popup. A preset row keeps the
+  // user's label `override` (blank = auto-derive "<qty> <unit>" from the amount).
+  type PresetRow = { override: string; quantity: number; unit: string };
   let qPinned = $state(false);
-  let qPresets = $state<QuickPreset[]>([]);
+  let qPresets = $state<PresetRow[]>([]);
   let qSaving = $state(false);
 
   async function openDetail(it: InputItemSummary) {
@@ -65,7 +67,12 @@
     try {
       detail = await getItem(it.id);
       qPinned = detail.quickLog;
-      qPresets = detail.quickPresets.map((p) => ({ ...p }));
+      // Existing labels become the override so they show and stay editable.
+      qPresets = detail.quickPresets.map((p) => ({
+        override: p.label,
+        quantity: p.quantity,
+        unit: p.unit,
+      }));
       confirmingDelete = false;
     } catch {
       flash("Couldn't load that item.", true);
@@ -75,15 +82,18 @@
   }
   function addPreset() {
     const unit = detail?.defaultDisplayUnit ?? "serving";
-    qPresets = [...qPresets, { label: "", quantity: 1, unit }];
+    qPresets = [...qPresets, { override: "", quantity: 1, unit }];
   }
   function removePreset(i: number) {
     qPresets = qPresets.filter((_, idx) => idx !== i);
   }
-  // Validate presets only when pinned (unpinning clears them); blank rows block the
-  // save instead of being silently dropped (the server requires a label).
+  // Resolve each row to its effective label (override or auto-derived), then validate.
+  // Only checked when pinned (unpinning clears presets server-side).
+  let resolvedPresets = $derived(
+    qPresets.map((p) => ({ label: presetLabel(p.quantity, p.unit, p.override), quantity: p.quantity, unit: p.unit })),
+  );
   let presetCheck = $derived(
-    qPinned ? preparePresets(qPresets) : { ok: true as const, presets: [] as QuickPreset[] },
+    qPinned ? preparePresets(resolvedPresets) : { ok: true as const, presets: [] as QuickPreset[] },
   );
   async function saveQuick() {
     if (!detail) return;
@@ -416,11 +426,17 @@
       {#if qPinned}
         <p class="mut" style="margin:6px 0 4px">
           Optional amount presets (e.g. 250 / 500 ml). Tapping the item logs its serving;
-          presets are extra one-tap amounts.
+          presets are extra one-tap amounts. The label fills in from the amount — edit it if you like.
         </p>
         {#each qPresets as p, i}
           <div class="row" style="margin-top:6px">
-            <input class="field" style="flex:2" placeholder="label (e.g. 500 ml)" bind:value={p.label} />
+            <input
+              class="field"
+              style="flex:2"
+              placeholder="label (auto from amount)"
+              value={presetLabel(p.quantity, p.unit, p.override)}
+              oninput={(e) => (p.override = e.currentTarget.value)}
+            />
             <input
               class="field"
               style="flex:1"

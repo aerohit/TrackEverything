@@ -3,6 +3,7 @@ import {
   defaultAmountLabel,
   isStack,
   preparePresets,
+  presetLabel,
   quickLogPayload,
   sizeLogPayload,
   stackLogPlan,
@@ -118,6 +119,26 @@ describe("stackLogPlan", () => {
 
   it("falls back to a single quick log for a non-stack favorite", () => {
     expect(stackLogPlan(qi(), new Set(), "single")).toHaveLength(1);
+  });
+});
+
+describe("presetLabel", () => {
+  it("derives \"<qty> <unit>\" when no override is given", () => {
+    expect(presetLabel(250, "g")).toBe("250 g");
+    expect(presetLabel(500, " ml ")).toBe("500 ml");
+  });
+
+  it("prefers a non-blank override and trims it", () => {
+    expect(presetLabel(250, "g", "  Big portion ")).toBe("Big portion");
+  });
+
+  it("falls back to the derived label when the override is blank", () => {
+    expect(presetLabel(300, "g", "   ")).toBe("300 g");
+  });
+
+  it("is empty when the amount itself is incomplete", () => {
+    expect(presetLabel(0, "g")).toBe("");
+    expect(presetLabel(250, "  ")).toBe("");
   });
 });
 
