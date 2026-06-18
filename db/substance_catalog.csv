@@ -1,0 +1,266 @@
+name,substance_type,canonical_unit,aliases
+Bicarbonate,electrolyte,mg,hco3; bicarbonaat
+Chloride,electrolyte,mg,cl; chloor; chloride ion
+Magnesium Citrate,electrolyte,mg,magnesium salt of citric acid; magnesiumcitraat
+Magnesium Glycinate,electrolyte,mg,magnesium bisglycinate; magnesiumglycinaat; magnesiumbisglycinaat
+Potassium,electrolyte,mg,k; kalium; potassium ion
+Potassium Citrate,electrolyte,mg,tripotassium citrate; kaliumcitraat
+Sodium,electrolyte,mg,na; natrium; sodium ion
+Sodium Chloride,electrolyte,g,salt; table salt; nacl; zout; keukenzout; Himalayazout; sea salt; Himalayan salt; zeezout
+Energy,energy,kcal,calories; kcal; kilocalories; calorieën; energie; kilocalorieën
+Added Sugars,macronutrient,g,added sugar; free sugars; toegevoegde suikers; vrije suikers
+Alpha-Linolenic Acid,macronutrient,mg,plant omega-3; omega-3 ALA; alfa-linoleenzuur
+Arachidonic Acid,macronutrient,mg,aa; ARA; omega-6 arachidonic acid; arachidonzuur
+Beta-Glucan,macronutrient,g,β-glucan; oat beta glucan; bètaglucaan
+Capric Acid,macronutrient,g,C10; decanoic acid; caprinezuur; decaanzuur
+Caprylic Acid,macronutrient,g,C8; octanoic acid; caprylzuur; octaanzuur
+Carbohydrate,macronutrient,g,carbs; carbohydrates; koolhydraten; Total Carbohydrate; total carbs; totale koolhydraten
+Casein,macronutrient,g,milk casein; micellar casein; caseïne
+Cellulose,macronutrient,g,microcrystalline cellulose; plant fiber
+Cholesterol,macronutrient,mg,dietary cholesterol
+Collagen,macronutrient,g,collageen; collagen peptides; hydrolyzed collagen; collagen hydrolysate; collageenpeptiden; gehydrolyseerd collageen
+Conjugated Linoleic Acid,macronutrient,mg,cla; geconjugeerd linolzuur
+Dietary Fiber,macronutrient,g,fiber; fibre; vezels; voedingsvezels; dietary fibre; voedingsvezel
+Docosahexaenoic Acid,macronutrient,mg,dha; omega-3 DHA; docosahexaeenzuur
+Eicosapentaenoic Acid,macronutrient,mg,epa; omega-3 EPA; eicosapentaeenzuur
+Fat,macronutrient,g,total fat; vet; vetten; fats; lipid; totaal vet
+Fructooligosaccharides,macronutrient,g,FOS; oligofructose; fructo-oligosachariden
+Fructose,macronutrient,g,fruit sugar; vruchtensuiker
+Galactooligosaccharides,macronutrient,g,GOS; galacto-oligosaccharides; galacto-oligosachariden
+Galactose,macronutrient,g,
+Gamma-Linolenic Acid,macronutrient,mg,gla
+Glucose,macronutrient,g,dextrose; blood sugar; druivensuiker
+Guar Gum,macronutrient,g,guaran; E412; guargom
+Insoluble Fiber,macronutrient,g,onoplosbare vezels; insoluble fibre; insoluble dietary fiber
+Inulin,macronutrient,g,chicory root fiber; fructan; inuline
+Lactose,macronutrient,g,milk sugar; melksuiker
+Linoleic Acid,macronutrient,mg,la; omega-6 linoleic acid; linolzuur
+Maltose,macronutrient,g,malt sugar; moutsuiker
+Medium-Chain Triglycerides,macronutrient,g,mct; mct oil; mct-olie; middellange-keten triglyceriden
+Monounsaturated Fat,macronutrient,g,mufa; enkelvoudig onverzadigd vet; Monounsaturated Fatty Acids; enkelvoudig onverzadigde vetzuren
+Oleic Acid,macronutrient,mg,omega-9; oliezuur; omega-9 oleic acid
+Omega-3 Fatty Acids,macronutrient,mg,omega-3 vetzuren; n-3 fatty acids; omega 3-vetzuren
+Omega-6 Fatty Acids,macronutrient,mg,omega-6 vetzuren; n-6 fatty acids; omega 6-vetzuren
+Pectin,macronutrient,g,fruit pectin; pectine
+Polyunsaturated Fat,macronutrient,g,pufa; meervoudig onverzadigd vet; Polyunsaturated Fatty Acids; meervoudig onverzadigde vetzuren
+Protein,macronutrient,g,proteins; eiwit; eiwitten; proteïne; amino acid total
+Psyllium Husk,macronutrient,g,ispaghula husk; Plantago ovata husk; psylliumvezels; vlozaadvezels
+Resistant Starch,macronutrient,g,RS; resistant carbohydrate; resistent zetmeel
+Saturated Fat,macronutrient,g,saturated fatty acids; verzadigd vet; saturates; SFA; verzadigde vetzuren
+Soluble Fiber,macronutrient,g,oplosbare vezels; soluble fibre; soluble dietary fiber
+Starch,macronutrient,g,polysaccharide; zetmeel; complex carbohydrate
+Sucrose,macronutrient,g,table sugar; saccharose
+Sugar,macronutrient,g,total sugars; suiker; suikers; sugars; total sugar; totale suikers
+Trans Fat,macronutrient,g,trans fatty acids; transvet; trans-fat; transvetzuren
+Whey Protein Isolate,macronutrient,g,whey isolate; WPI; wei-eiwit isolaat
+Xanthan Gum,macronutrient,g,xanthan; E415; xanthaangom
+Amlodipine,medication,mg,
+Amoxicillin,medication,mg,amoxicilline
+Aspirin,medication,mg,acetylsalicylic acid; acetylsalicylzuur; aspirine
+Atomoxetine,medication,mg,Strattera
+Atorvastatin,medication,mg,lipitor; atorvastatine
+Azithromycin,medication,mg,zithromax; azitromycine
+Bupropion,medication,mg,Wellbutrin; Zyban
+Cetirizine,medication,mg,zyrtec
+Dexamfetamine,medication,mg,dexamphetamine; dextroamphetamine; Tentin
+Diclofenac,medication,mg,voltaren
+Diphenhydramine,medication,mg,benadryl; difenhydramine; sleep aid
+Fluoxetine,medication,mg,prozac
+Ibuprofen,medication,mg,advil; nurofen; NSAID
+Levothyroxine,medication,mcg,synthroid; thyrax
+Lisdexamfetamine,medication,mg,Vyvanse; Elvanse; lisdexamphetamine
+Lisinopril,medication,mg,
+Loperamide,medication,mg,imodium
+Loratadine,medication,mg,claritin
+Metformin,medication,mg,glucophage; metformine
+Methylphenidate,medication,mg,ritalin; concerta; methylfenidaat; Medikinet
+Metoprolol,medication,mg,
+Modafinil,medication,mg,Provigil; Modiodal
+Naproxen,medication,mg,aleve
+Omeprazole,medication,mg,prilosec; omeprazol
+Paracetamol,medication,mg,acetaminophen; tylenol; APAP
+Prednisone,medication,mg,prednison
+Pseudoephedrine,medication,mg,sudafed; pseudo-efedrine; decongestant
+Salbutamol,medication,mcg,albuterol; ventolin
+Sertraline,medication,mg,zoloft
+Boron,mineral,mg,b; boor; borium
+Calcium,mineral,mg,ca; calcium ion; kalk
+Chromium,mineral,mcg,cr; chroom
+Copper,mineral,mg,cu; koper; cuprum
+Fluoride,mineral,mg,f; fluor; fluorine
+Iodine,mineral,mcg,i; iodide; jodium; jood; jodide
+Iron,mineral,mg,fe; ijzer; ferrum
+Magnesium,mineral,mg,mg; magnesium ion
+Manganese,mineral,mg,mn; mangaan
+Molybdenum,mineral,mcg,mo; molybdeen
+Phosphorus,mineral,mg,p; phosphate; fosfor; fosfaat
+Selenium,mineral,mcg,se
+Silicon,mineral,mg,si; silica; silicium
+Zinc,mineral,mg,zn; zink
+Zinc Picolinate,mineral,mg,zinkpicolinaat
+Acesulfame K,other,mg,acesulfame potassium; e950; acesulfaam-k
+Acetic Acid,other,mg,vinegar acid; acetate; azijnzuur; acetaat
+Allium Sativum,other,mg,garlic; knoflook; Garlic Extract; Allium sativum extract; aged garlic extract; knoflookextract
+Aspartame,other,mg,e951; aspartaam
+Bacopa Monnieri,other,mg,bacopa; brahmi
+Beetroot Extract,other,mg,Beta vulgaris extract; beet extract; rode bietenextract; bietenextract
+Bifidobacterium Bifidum,other,cfu,b. bifidum
+Bifidobacterium Lactis,other,cfu,B. lactis; Bifidobacterium animalis subsp. lactis
+Bifidobacterium Longum,other,cfu,b. longum
+Camellia Sinensis,other,mg,green tea extract; groene thee; Camellia sinensis extract; tea extract; groene thee-extract
+Cinnamon Extract,other,mg,Cinnamomum extract; kaneelextract
+Citric Acid,other,mg,citrate acid; E330; citroenzuur
+Cranberry Extract,other,mg,Vaccinium macrocarpon extract; cranberry-extract; veenbesextract
+Curcuma Longa,other,mg,turmeric; kurkuma; Curcuma longa extract; turmeric root extract; kurkuma-extract; geelwortel
+Echinacea Purpurea,other,mg,echinacea; rode zonnehoed
+Erythritol,other,g,erytritol; sugar alcohol; E968
+Ginkgo Biloba,other,mg,ginkgo; ginkgo biloba extract; ginkgo extract; maidenhair tree extract; ginkgo biloba-extract
+Grape Seed Extract,other,mg,Vitis vinifera extract; OPC extract; druivenpitextract
+Griffonia Simplicifolia,other,mg,griffonia; griffonia-extract; Griffonia Seed Extract; Griffonia simplicifolia extract; 5-HTP source
+Humulus Lupulus,other,mg,hops; hop; Hop Extract; Humulus lupulus extract; hops extract; hopextract
+Hypericum Perforatum,other,mg,st johns wort; sint-janskruid
+Lactic Acid,other,mg,lactate; E270; melkzuur; lactaat
+Lactobacillus Acidophilus,other,cfu,l. acidophilus; acidophilus
+Lactobacillus Rhamnosus,other,cfu,lgg; l. rhamnosus
+Lavandula Angustifolia,other,mg,lavender; lavendel
+Lepidium Meyenii,other,mg,maca; maca-extract; Maca Extract; Lepidium meyenii extract; Peruvian ginseng
+Malic Acid,other,mg,malate; apple acid; appelzuur; malaat
+Maltitol,other,g,e965
+Matricaria Chamomilla,other,mg,chamomile; kamille
+Melissa Officinalis,other,mg,lemon balm; citroenmelisse; Lemon Balm Extract; Melissa officinalis extract; melissa; citroenmelisse-extract
+Monosodium Glutamate,other,mg,MSG; E621; sodium glutamate; mononatriumglutamaat; ve-tsin
+Panax Ginseng,other,mg,korean ginseng; ginseng; panax ginseng extract; Asian ginseng; Panax ginseng-extract
+Passiflora Incarnata,other,mg,passionflower; passiebloem; Passionflower Extract; Passiflora incarnata extract; passiebloemextract
+Potassium Sorbate,other,mg,E202; kaliumsorbaat
+Probiotics,other,cfu,probiotica; live cultures; probiotic blend; levende culturen
+Rhodiola Rosea,other,mg,rhodiola; golden root; rozenwortel; Rhodiola Rosea Extract; roseroot extract; rozenwortel-extract
+Saccharomyces Boulardii,other,cfu,s. boulardii; probiotic yeast
+Saw Palmetto Extract,other,mg,Serenoa repens extract; zaagpalmextract; saw palmetto
+Silybum Marianum,other,mg,milk thistle; mariadistel; Milk Thistle Extract; Silybum marianum extract; mariadistel-extract
+Sodium Benzoate,other,mg,E211; natriumbenzoaat
+Sorbitol,other,g,e420
+Soy Lecithin,other,mg,lecithin; E322; sojalecithine; lecithine
+Steviol Glycosides,other,mg,stevia; stevia extract; E960; steviolglycosiden
+Sucralose,other,mg,e955; Splenda
+Valeriana Officinalis,other,mg,valerian; valeriaan; Valerian Root Extract; Valeriana officinalis extract; valeriaanextract; valeriaanwortel
+Withania Somnifera,other,mg,ashwagandha; winter cherry; ashwagandha-extract; Ashwagandha Extract; Withania somnifera extract; Indian ginseng
+Xylitol,other,g,birch sugar; E967; berkensuiker
+Zingiber Officinale,other,mg,ginger; gember; Ginger Extract; Zingiber officinale extract; gemberextract
+Cannabidiol,psychoactive,mg,cbd
+Ethanol,psychoactive,g,alcohol; ethyl alcohol; ethylalcohol; booze
+Kava,psychoactive,mg,piper methysticum; kavakava
+Kratom,psychoactive,mg,mitragyna speciosa
+MDMA,psychoactive,mg,ecstasy
+Nitrous Oxide,psychoactive,ml,laughing gas; lachgas; n2o
+Psilocybin,psychoactive,mg,psilocybine
+Tetrahydrocannabinol,psychoactive,mg,thc
+Caffeine,stimulant,mg,"cafeïne; 1,3,7-trimethylxanthine; coffee caffeine"
+Guarana,stimulant,mg,paullinia cupana
+Nicotine,stimulant,mg,
+Synephrine,stimulant,mg,bitter orange; synefrine
+Theobromine,stimulant,mg,"cocoa alkaloid; 3,7-dimethylxanthine"
+Theophylline,stimulant,mg,"theofylline; 1,3-dimethylxanthine; tea alkaloid"
+Yohimbine,stimulant,mg,yohimbe
+5-Hydroxytryptophan,supplement_compound,mg,5-htp; oxitriptan; 5-hydroxytryptofaan
+Acetyl-L-Carnitine Hydrochloride,supplement_compound,mg,ALCAR HCl; acetyl carnitine
+Alanine,supplement_compound,g,L-alanine
+Alpha-Lipoic Acid,supplement_compound,mg,lipoic acid; alfa-liponzuur; thioctic acid
+Anthocyanins,supplement_compound,mg,anthocyanen
+Arginine,supplement_compound,mg,l-arginine
+Arginine Alpha-Ketoglutarate,supplement_compound,g,AAKG; arginine AKG; arginine alfa-ketoglutaraat
+Berberine,supplement_compound,mg,berberine hydrochloride; berberine HCl
+Beta-Alanine,supplement_compound,g,β-alanine; bèta-alanine; beta alanine
+Betaine,supplement_compound,mg,trimethylglycine; tmg; betaïne
+Bioflavonoids,supplement_compound,mg,citrus bioflavonoids; bioflavonoïden
+Branched-Chain Amino Acids,supplement_compound,g,BCAAs; leucine isoleucine valine; vertakte-keten aminozuren; BCAA's
+Catechin,supplement_compound,mg,catechine
+Chlorogenic Acid,supplement_compound,mg,chlorogeenzuur; green coffee extract
+Chondroitin,supplement_compound,mg,chondroitin sulfate; chondroïtine; chondroitin sulphate; chondroïtinesulfaat
+Citrulline Malate,supplement_compound,g,L-citrulline malate; citrulline malaat
+Creatine,supplement_compound,g,creatine base
+Creatine Monohydrate,supplement_compound,g,creatine-monohydraat; creatine mono; creatine monohydraat
+Curcumin,supplement_compound,mg,curcumine; curcuminoids; turmeric polyphenol
+Cysteine,supplement_compound,mg,l-cysteine; cysteïne
+DHEA,supplement_compound,mg,dehydroepiandrosterone
+Epigallocatechin Gallate,supplement_compound,mg,egcg; green tea catechin; epigallocatechinegallaat
+Essential Amino Acids,supplement_compound,g,EAAs; indispensable amino acids; essentiële aminozuren
+Fish Oil,supplement_compound,mg,fish oil triglyceride; omega-3 fish oil
+Gamma-Aminobutyric Acid,supplement_compound,mg,gaba; gamma aminobutyric acid; gamma-aminoboterzuur
+Glucosamine,supplement_compound,mg,Glucosamine Sulfate; glucosamine sulphate; glucosaminesulfaat
+Glutamine,supplement_compound,g,l-glutamine
+Glutathione,supplement_compound,mg,gsh; glutathion
+Glycine,supplement_compound,g,l-glycine
+Hesperidin,supplement_compound,mg,hesperidine
+Histidine,supplement_compound,mg,l-histidine
+Hyaluronic Acid,supplement_compound,mg,hyaluronzuur; sodium hyaluronate; hyaluronan
+Isoleucine,supplement_compound,mg,l-isoleucine; BCAA isoleucine
+Krill Oil,supplement_compound,mg,Antarctic krill oil; phospholipid omega-3; krillolie
+L-Carnitine,supplement_compound,mg,carnitine; acetyl-l-carnitine; alcar; levocarnitine
+L-Citrulline,supplement_compound,g,citrulline
+L-Ornithine,supplement_compound,mg,ornithine
+L-Theanine,supplement_compound,mg,theanine; l-theanin
+Leucine,supplement_compound,mg,l-leucine; BCAA leucine
+Lysine,supplement_compound,mg,l-lysine
+Melatonin,supplement_compound,mg,melatonine; N-acetyl-5-methoxytryptamine; sleep hormone
+Methionine,supplement_compound,mg,l-methionine
+Methylsulfonylmethane,supplement_compound,g,msm; methylsulfonylmethaan; dimethyl sulfone
+N-Acetyl-L-Tyrosine,supplement_compound,mg,NALT; acetyl tyrosine
+N-Acetylcysteine,supplement_compound,mg,nac; n-acetylcysteïne; acetylcysteine; acetylcysteïne
+Naringin,supplement_compound,mg,naringine
+Nicotinamide Mononucleotide,supplement_compound,mg,nmn; beta-NMN; nicotinamide-mononucleotide
+Nicotinamide Riboside,supplement_compound,mg,nr; niagen; nicotinamide-riboside
+Nitrate,supplement_compound,mg,NO3; dietary nitrate; beet nitrate; nitraat
+Phenylalanine,supplement_compound,mg,l-phenylalanine; fenylalanine
+Phosphatidylserine,supplement_compound,mg,ps; fosfatidylserine
+Piperine,supplement_compound,mg,black pepper extract; BioPerine; zwarte peper-extract
+Pregnenolone,supplement_compound,mg,pregnenolon
+Proanthocyanidins,supplement_compound,mg,opc; pycnogenol; procyanidins
+Proline,supplement_compound,g,L-proline
+Quercetin,supplement_compound,mg,quercetine; flavonoid
+Resveratrol,supplement_compound,mg,trans-resveratrol; grape polyphenol
+Rutin,supplement_compound,mg,rutoside; rutine
+Serine,supplement_compound,g,L-serine
+Silymarin,supplement_compound,mg,milk thistle flavonolignans; silymarine
+Sodium Bicarbonate,supplement_compound,g,bicarbonate of soda; natriumbicarbonaat; zuiveringszout
+Taurine,supplement_compound,mg,2-aminoethanesulfonic acid
+Threonine,supplement_compound,mg,l-threonine
+Tryptophan,supplement_compound,mg,l-tryptophan; tryptofaan
+Tyrosine,supplement_compound,mg,l-tyrosine
+Ubiquinone,supplement_compound,mg,coenzyme q10; coq10; ubiquinol; co-enzym q10; ubiquinon
+Valine,supplement_compound,mg,l-valine; BCAA valine
+4-Aminobenzoic Acid,vitamin,mg,paba; para-aminobenzoic acid; vitamin b10; para-aminobenzoëzuur
+Alpha-Carotene,vitamin,mg,alfa-caroteen
+Ascorbic Acid,vitamin,mg,vitamin c; vitamine c; ascorbinezuur; ascorbate
+Astaxanthin,vitamin,mg,astaxanthine
+Beta-Carotene,vitamin,mcg,provitamin a; bèta-caroteen; β-carotene; bètacaroteen; provitamine A
+Biotin,vitamin,mcg,vitamin b7; vitamin h; biotine; vitamine b7
+Cholecalciferol,vitamin,mcg,vitamin d3; vit-d; vitamine d (1 mcg = 40 IU); colecalciferol; vitamine D3
+Choline,vitamin,mg,choline bitartrate; vitamin b4; CDP-choline
+Cobalamin,vitamin,mcg,vitamin b12; vitamine b12; cobalamins; cobalamine
+Cyanocobalamin,vitamin,mcg,vitamin B12 cyanocobalamin; cyanocobalamine
+Ergocalciferol,vitamin,mcg,vitamin d2; vitamine d2
+Folate,vitamin,mcg,vitamin b9; folaat; folacin; vitamine B9
+Folic Acid,vitamin,mcg,pteroylmonoglutamic acid; synthetic folate
+Inositol,vitamin,mg,myo-inositol; vitamin b8
+Levomefolic Acid,vitamin,mcg,5-MTHF; L-methylfolate; methylfolate; methylfolaat
+Lutein,vitamin,mg,luteïne
+Lycopene,vitamin,mg,lycopeen
+Menaquinone,vitamin,mcg,vitamin k2; mk-7; vitamine k2; Menaquinone-7; vitamin K2 MK-7; vitamine K2 MK-7; menachinon-7
+Methylcobalamin,vitamin,mcg,methyl-B12; vitamin B12 methylcobalamin; methylcobalamine
+Mixed Tocopherols,vitamin,mg,mixed vitamin E; tocopherol mix; gemengde tocoferolen
+Niacin,vitamin,mg,vitamin b3; nicotinic acid; niacine; vitamine b3; nicotinezuur
+Nicotinamide,vitamin,mg,niacinamide; vitamin B3 amide
+Pantothenic Acid,vitamin,mg,vitamin b5; pantotheenzuur; vitamine b5; pantothenate
+Phylloquinone,vitamin,mcg,vitamin k1; phytonadione; vitamine k1; fyllochinon
+Pyridoxal 5'-Phosphate,vitamin,mg,P5P; active vitamin B6; pyridoxaal-5-fosfaat; actieve vitamine B6
+Pyridoxine,vitamin,mg,vitamin b6; vitamine b6; pyridoxine hydrochloride
+Retinol,vitamin,mcg,retinyl palmitate; preformed vitamin A; vitamin A1; vitamine A1
+Riboflavin,vitamin,mg,vitamin b2; vitamine b2; riboflavine
+Thiamine,vitamin,mg,vitamin b1; thiamin; vitamine b1
+Tocopherol,vitamin,mg,alpha-tocopherol; α-tocopherol; d-alpha tocopherol; alfa-tocoferol
+Vitamin A,vitamin,mcg,retinoids; vitamin A activity
+Vitamin D,vitamin,mcg,calciferol; vitamin D total; vitamine D
+Vitamin E,vitamin,mg,tocopherols; vitamin E activity
+Vitamin K,vitamin,mcg,vitamin K total; vitamine K
+Zeaxanthin,vitamin,mg,zeaxanthine
+Water,water,ml,h2o; aqua; moisture; fluid; vocht
