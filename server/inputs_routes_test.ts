@@ -820,3 +820,74 @@ Deno.test({
     }
   },
 });
+
+Deno.test({
+  name: "inputs API: occasional item logged by name is flagged unresolved (v2, R-CAP-30)",
+  ignore: !DATABASE_URL,
+  async fn() {
+    await migrate(DATABASE_URL);
+    const { sql, db } = connect(DATABASE_URL);
+    try {
+      const app = createApp(db, { token: TOKEN });
+      const day = "from=2026-06-10T00:00:00Z&to=2026-06-11T00:00:00Z";
+
+      // Freeform "occasional item" with no matching item → unresolved, no nutrition.
+      const occ = await (await app.request("/api/intake", {
+        method: "POST",
+        headers: auth,
+        body: JSON.stringify({
+          displayName: "restaurant pad thai",
+          quantity: 1,
+          unit: "plate",
+          occurredAt: "2026-06-10T13:00:00Z",
+          source: "manual",
+          unresolved: true,
+        }),
+      })).json();
+      assertEquals(occ.unresolved, true);
+      assertEquals(occ.resolved.length, 0);
+
+      // A normal item log defaults to resolved (unresolved=false).
+      const item = await (await app.request("/api/items", {
+        method: "POST",
+        headers: auth,
+        body: JSON.stringify({
+          name: "Coffee",
+          kind: "simple",
+          primaryType: "drink",
+          components: [{ substance: "caffeine", amount: 95, unit: "mg" }],
+        }),
+      })).json();
+      const normal = await (await app.request("/api/intake", {
+        method: "POST",
+        headers: auth,
+        body: JSON.stringify({
+          displayName: "Coffee",
+          itemId: item.id,
+          quantity: 1,
+          unit: "serving",
+          occurredAt: "2026-06-10T08:00:00Z",
+        }),
+      })).json();
+      assertEquals(normal.unresolved, false);
+
+      // The unresolved entry contributes nothing to totals (only the coffee's caffeine).
+      const totals =
+        (await (await app.request(`/api/intake/totals?${day}`, { headers: auth })).json()).totals;
+      assertEquals(totals.length, 1);
+      assertEquals(totals[0].substance, "caffeine");
+      assertEquals(totals[0].amount, 95);
+
+      // It's listed and carries the flag for the Overview.
+      const events =
+        (await (await app.request(`/api/intake?${day}`, { headers: auth })).json()).events;
+      assert(
+        events.find((e: { displayName: string; unresolved: boolean }) =>
+          e.displayName === "restaurant pad thai" && e.unresolved
+        ),
+      );
+    } finally {
+      await sql.end();
+    }
+  },
+});

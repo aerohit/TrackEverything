@@ -18,6 +18,7 @@ function ev(itemId: string | null, name: string, iso: string, qty = 1, unit = "c
     notes: null,
     source: "quick",
     precision: "precise",
+    unresolved: false,
     resolved: [],
     stackItems: [],
   };

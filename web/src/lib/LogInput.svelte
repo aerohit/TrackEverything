@@ -60,6 +60,12 @@
   let phrasing = $state(false); // the "speak or type" field is open
   let phrase = $state("");
   let phraseEl = $state<HTMLInputElement | null>(null);
+  // Manual "occasional item" entry (no AI): type a name + amount, fuzzy-match locally.
+  let typing = $state(false);
+  let manualName = $state("");
+  let manualQty = $state(1);
+  let manualUnit = $state("serving");
+  let manualEl = $state<HTMLInputElement | null>(null);
   let confirm = $state<Confirm | null>(null);
   let recents = $state<RecentItem[]>([]);
   let substances = $state<Substance[]>([]); // for the "save as a new item" editor
@@ -228,6 +234,32 @@
 
   // Voice = the phone's own dictation: we open a text field and focus it so the
   // keyboard (with its 🎤 mic) appears; the user dictates or types, then continues.
+  // Manual occasional-item entry: open a name/amount form, then hand off to the
+  // confirm card (which fuzzy-searches the catalog and suggests a match if any).
+  async function startManual() {
+    typing = true;
+    manualName = "";
+    manualQty = 1;
+    manualUnit = "serving";
+    await tick();
+    manualEl?.focus();
+  }
+  function cancelManual() {
+    typing = false;
+  }
+  async function submitManual() {
+    const name = manualName.trim();
+    if (!name || !(manualQty > 0)) return;
+    await openConfirm({
+      name,
+      quantity: manualQty,
+      unit: manualUnit.trim() || "serving",
+      draft: null,
+      source: "manual",
+    });
+    typing = false;
+  }
+
   async function startPhrase() {
     phrasing = true;
     phrase = "";
@@ -297,9 +329,11 @@
         const item = await createItem(newItemBody);
         await logIntake({ ...base, displayName: newItemBody.name, itemId: item.id });
       } else {
-        await logIntake({ ...base, displayName: confirm.name.trim() });
+        // Logged by name with no matching item → an "occasional" / unresolved entry
+        // (no nutrition yet; resolvable later on the Overview). R-CAP-30.
+        await logIntake({ ...base, displayName: confirm.name.trim(), unresolved: true });
       }
-      flash("Logged ✓");
+      flash(sel === "freeform" ? "Logged — resolve its nutrition later ✓" : "Logged ✓");
       confirm = null;
       newDraft = emptyDraft();
       await loadRecents();
@@ -334,7 +368,39 @@
       <button class="modebtn" class:busy={!!busy} onclick={startPhrase} disabled={!!busy}>
         <span class="ico">🎙️</span><span>Speak / type</span>
       </button>
+      <button class="modebtn" class:busy={!!busy} onclick={startManual} disabled={!!busy}>
+        <span class="ico">✏️</span><span>Type item</span>
+      </button>
     </div>
+
+    {#if typing}
+      <div class="fieldlabel">Occasional item — type what you had</div>
+      <input
+        class="field"
+        bind:this={manualEl}
+        bind:value={manualName}
+        placeholder="e.g. “restaurant pad thai”, “a croissant”"
+        onkeydown={(e) => e.key === "Enter" && submitManual()}
+      />
+      <div class="row" style="margin-top:8px">
+        <div style="flex:1">
+          <div class="fieldlabel">Amount</div>
+          <input class="field" type="number" min="0" step="any" bind:value={manualQty} />
+        </div>
+        <div style="flex:1">
+          <div class="fieldlabel">Unit</div>
+          <select class="field" bind:value={manualUnit}>
+            {#each unitOptions(manualUnit) as u}<option value={u}>{u}</option>{/each}
+          </select>
+        </div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="ghostbtn" onclick={cancelManual}>Cancel</button>
+        <button class="primary" style="flex:1" disabled={!manualName.trim() || !(manualQty > 0)} onclick={submitManual}>
+          Find / log it
+        </button>
+      </div>
+    {/if}
 
     {#if phrasing}
       <div class="fieldlabel">Say it or type it</div>

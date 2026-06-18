@@ -124,10 +124,13 @@
               <span class="tlicon">{iconForInput(e.displayName)}</span>
               <span class="when">{fmtTime(e.occurredAt)}</span>{e.displayName}
               {#if e.precision === "rough"}<span class="roughtag" title="estimated portion">~</span>{/if}
+              {#if e.unresolved}<span class="unresolvedtag" title="no nutrition yet">unresolved</span>{/if}
               <span class="qty">{e.quantity} {e.unit}</span>
             </summary>
             <div class="res">
-              {#if e.stackItems.length}
+              {#if e.unresolved}
+                Not resolved yet — its macros/micros aren't counted. (Resolving comes next.)
+              {:else if e.stackItems.length}
                 <span class="stacktag">stack</span> {stackText(e)}
               {:else}
                 {e.resolved.length ? resolvedText(e) : "no breakdown"}

@@ -136,6 +136,8 @@ export const createIntakeEventSchema = z.object({
   source: intakeSourceSchema.optional(),
   // How exact it is (R-CAP-25); defaults from source server-side (photo/voice → rough).
   precision: intakePrecisionSchema.optional(),
+  // An occasional item logged by name with no matching item/nutrition (R-CAP-30).
+  unresolved: z.boolean().optional(),
   // Freeform logs (no item) can attach known substance amounts directly.
   resolved: z.array(manualResolvedSchema).optional(),
 });
@@ -243,6 +245,8 @@ export interface IntakeEvent {
   notes: string | null;
   source: IntakeSource;
   precision: IntakePrecision;
+  /** An occasional item with no matching item/nutrition yet — resolvable on the Overview (R-CAP-30). */
+  unresolved: boolean;
   resolved: ResolvedAmount[];
   /** When this event logged a **stack** as a single entry: its member items (else empty). */
   stackItems: StackChild[];

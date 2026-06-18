@@ -23,6 +23,7 @@ const ctx: AdviceContext = {
       contextTags: ["afternoon"],
       notes: null,
       source: "voice",
+      unresolved: false,
       stackItems: [],
       precision: "rough",
       resolved: [{

@@ -123,6 +123,9 @@ export const intakeEvent = pgTable("intake_event", {
   notes: text("notes"),
   source: intakeSource("source").notNull().default("manual"),
   precision: intakePrecision("precision").notNull().default("precise"),
+  // An "occasional item" logged by name with no matching item + no known nutrition
+  // (R-CAP-30); the Overview offers to resolve it. Contributes nothing to totals until then.
+  unresolved: boolean("unresolved").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
