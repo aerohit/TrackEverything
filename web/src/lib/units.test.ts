@@ -34,7 +34,7 @@ describe("unitOptions", () => {
 describe("substanceUnitOptions", () => {
   it("offers the canonical analytical units", () => {
     expect(substanceUnitOptions()).toEqual(SUBSTANCE_UNITS);
-    expect(SUBSTANCE_UNITS).toEqual(["g", "mg", "mcg", "ml", "kcal", "iu"]);
+    expect(SUBSTANCE_UNITS).toEqual(["g", "mg", "mcg", "ml", "kcal", "iu", "cfu"]);
   });
 
   it("keeps an off-list current value selectable without duplicating an on-list one", () => {

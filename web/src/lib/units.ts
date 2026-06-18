@@ -1,7 +1,7 @@
 /**
  * Common display units for the Log capture unit dropdown (ADR-020). These are the
  * human "serving" units a log carries (scoop, bowl, cup…) — distinct from the
- * canonical analytical units (g/mg/mcg/ml/kcal/iu) the resolver normalizes to.
+ * canonical analytical units (g/mg/mcg/ml/kcal/iu/cfu) the resolver normalizes to.
  * The list isn't exhaustive; `unitOptions` keeps any current value selectable even
  * if a recognizer returned something off-list.
  */
@@ -51,7 +51,7 @@ export function unitOptions(current?: string): string[] {
  * Canonical analytical units an ingredient/substance amount can carry — the units
  * the resolver normalizes to (mirrors `SUBSTANCE_UNITS` in shared/inputs.ts).
  */
-export const SUBSTANCE_UNITS: string[] = ["g", "mg", "mcg", "ml", "kcal", "iu"];
+export const SUBSTANCE_UNITS: string[] = ["g", "mg", "mcg", "ml", "kcal", "iu", "cfu"];
 
 /**
  * Units valid for a "serving in grams/ml" measurement — only mass/volume, since the

@@ -26,8 +26,12 @@ export const SUBSTANCE_TYPES = [
 ] as const;
 export type SubstanceType = (typeof SUBSTANCE_TYPES)[number];
 
-/** Canonical (analysable) units. Display units (scoop, bowl, tablet…) are free text. */
-export const SUBSTANCE_UNITS = ["g", "mg", "mcg", "ml", "kcal", "iu"] as const;
+/**
+ * Canonical (analysable) units. Display units (scoop, bowl, tablet…) are free text.
+ * `cfu` (colony-forming units) is a count unit for probiotics — it only matches itself
+ * (no mass/volume conversion), like `iu`.
+ */
+export const SUBSTANCE_UNITS = ["g", "mg", "mcg", "ml", "kcal", "iu", "cfu"] as const;
 export type SubstanceUnit = (typeof SUBSTANCE_UNITS)[number];
 
 export const INPUT_KINDS = ["product", "recipe", "simple", "stack"] as const;
