@@ -59,7 +59,6 @@ export const componentInputSchema = z
     amount: z.number().positive(),
     unit: z.string().min(1),
     position: z.number().int().nonnegative().optional(),
-    prepState: z.string().optional(),
   })
   .refine(
     (c) => (c.substance != null) !== (c.childItemId != null),
@@ -260,7 +259,6 @@ export interface ItemComponentDTO {
   amount: number;
   unit: string;
   position: number;
-  prepState: string | null;
 }
 
 export interface InputItemDetail extends InputItemSummary {

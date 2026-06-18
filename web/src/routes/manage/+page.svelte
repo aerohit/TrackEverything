@@ -391,7 +391,7 @@
       {#if detail.components.length}
         {#each detail.components as c}
           <div class="totrow">
-            <span>{compLabel(c)}{c.prepState ? ` (${c.prepState})` : ""}</span>
+            <span>{compLabel(c)}</span>
             <b>{c.amount} {c.unit}</b>
           </div>
         {/each}
