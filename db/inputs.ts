@@ -53,7 +53,13 @@ function toSubstanceUnit(u: string): SubstanceUnit {
   return (SUBSTANCE_UNITS as readonly string[]).includes(n) ? n as SubstanceUnit : "mg";
 }
 
-/** name + aliases (normalized) → {id, canonical unit}. */
+/**
+ * Match index for finding a substance in an item's components: every substance's
+ * primary `name` AND each of its `aliases`, normalized (lowercase, case-insensitive)
+ * → {id, canonical unit}. Both name and aliases are keys so a component can reference
+ * a substance either way; resolution then always uses the canonical substance (its
+ * `name`), never the alias. Keep this name-or-alias matching for any newly added items.
+ */
 async function substanceIndex(db: Db): Promise<Map<string, SubstanceMeta>> {
   const rows = await db.select().from(substance);
   const m = new Map<string, SubstanceMeta>();
