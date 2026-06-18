@@ -28,7 +28,7 @@ export interface Checkin {
 
 // ---- Inputs domain (mirrors ../../shared/inputs.ts; server is authoritative) ----
 
-export type SubstanceUnit = "g" | "mg" | "mcg" | "ml" | "kcal" | "iu";
+export type SubstanceUnit = "g" | "mg" | "mcg" | "ml" | "kcal" | "iu" | "cfu";
 export type Confidence = "high" | "medium" | "low" | "unknown";
 
 export interface ResolvedAmount {

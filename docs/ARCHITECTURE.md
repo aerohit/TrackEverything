@@ -159,7 +159,7 @@ rich analytical decomposition:
 
 - **`substance`** — the analytical vocabulary (seeded; elemental forms only for now): `name`,
   `substance_type` (macronutrient/mineral/electrolyte/vitamin/stimulant/…), `canonical_unit`
-  (g/mg/mcg/ml/kcal/iu), `aliases[]`.
+  (g/mg/mcg/ml/kcal/iu/cfu — `cfu` is a count unit for probiotics, matches only itself), `aliases[]`.
 - **`input_item`** — a reusable thing (`kind`: product | recipe | simple | stack — see
   [ADR-034](#adr-034)/[ADR-035](#adr-035) for why `kind` is the only descriptive column we keep).
   Carries a default serving (display + canonical). Mutable, soft-deletable.
