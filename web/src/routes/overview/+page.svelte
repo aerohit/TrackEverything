@@ -11,7 +11,7 @@
     updateIntake,
   } from "$lib/api";
   import { iconForInput } from "$lib/icons";
-  import { type Contribution, groupTotals, substanceContributions } from "$lib/totals";
+  import { type Contribution, displaySubstance, groupTotals, substanceContributions } from "$lib/totals";
   import { substanceUnitOptions } from "$lib/units";
   import ItemDraftForm from "$lib/ItemDraftForm.svelte";
   import { draftToBody, emptyDraft, type ItemDraft } from "$lib/itemDraft";
@@ -219,7 +219,7 @@
           <div class="totgroup">{g.label}</div>
           {#each g.items as t}
             <button class="totrow totbtn" onclick={() => openBreakdown(t)}>
-              <span>{t.substance}</span><b>{t.amount} {t.unit} ›</b>
+              <span>{displaySubstance(t.substance)}</span><b>{t.amount} {t.unit} ›</b>
             </button>
           {/each}
         {/each}
@@ -272,7 +272,7 @@
     >
       <div class="modal-head">
         <div>
-          <div class="modal-title">{breakdown.substance}</div>
+          <div class="modal-title">{displaySubstance(breakdown.substance)}</div>
           <div class="meta">{breakdown.amount} {breakdown.unit} total · {dayLabel(day)}</div>
         </div>
         <button class="iconbtn" aria-label="Close" onclick={closeBreakdown}>✕</button>

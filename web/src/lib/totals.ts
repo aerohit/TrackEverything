@@ -40,7 +40,13 @@ export function substanceContributions(events: IntakeEvent[], substance: string)
     .sort((a, b) => b.amount - a.amount || a.name.localeCompare(b.name));
 }
 
-const MACRO_ORDER = ["calories", "protein", "carbohydrate", "fat"];
+// The four headline macros, by canonical substance name (Energy = the kcal total).
+const MACRO_ORDER = ["Energy", "Protein", "Carbohydrate", "Fat"];
+
+/** Display label for a substance — shows the kcal "Energy" total as "Calories". */
+export function displaySubstance(substance: string): string {
+  return substance === "Energy" ? "Calories" : substance;
+}
 
 function isMicro(t: DailyTotal): boolean {
   return t.substanceType === "vitamin" || t.substanceType === "mineral" ||
