@@ -5,6 +5,7 @@ import {
   createIntakeEvent,
   createItem,
   dailyTotals,
+  getItemDetail,
   listIntakeEvents,
   softDeleteIntakeEvent,
   updateIntakeEvent,
@@ -181,6 +182,54 @@ Deno.test({
       const totals = totalsMap(await dailyTotals(db, from, to));
       assertEquals(totals.get("sodium"), 1034);
       assertEquals(totals.get("potassium"), 306);
+    } finally {
+      await sql.end();
+    }
+  },
+});
+
+Deno.test({
+  // Finding a substance in an item's components must match the substance's primary
+  // name AND any of its aliases, case-insensitively, and always resolve to the one
+  // canonical substance (its `name`) — never create a duplicate keyed by the alias.
+  name:
+    "inputs: substance match is case-insensitive over name + aliases, resolves to canonical name",
+  ignore: !DATABASE_URL,
+  async fn() {
+    await migrate(DATABASE_URL!);
+    const { sql, db } = connect(DATABASE_URL!);
+    try {
+      await sql`truncate resolved_amount, intake_event, item_component, input_item cascade`;
+      // A canonical substance with a couple of aliases (differing case / separators).
+      await sql`delete from substance where name = 'zz_match_test'`;
+      await sql`insert into substance (name, substance_type, canonical_unit, aliases)
+        values ('zz_match_test', 'other', 'mg', array['ZZ-Alias-One', 'zz alias two'])`;
+      const before = (await sql<{ n: number }[]>`select count(*)::int as n from substance`)[0].n;
+
+      // Reference it three ways: canonical name (upper), alias 1 (upper+hyphen), alias 2 (spaces).
+      const id = await createItem(db, {
+        name: "Alias Match Probe",
+        kind: "product",
+        components: [
+          { substance: "ZZ_MATCH_TEST", amount: 1, unit: "mg" },
+          { substance: "zz-alias-ONE", amount: 2, unit: "mg" },
+          { substance: "ZZ Alias Two", amount: 3, unit: "mg" },
+        ],
+      });
+
+      const detail = await getItemDetail(db, id);
+      // All three resolved to the SAME canonical substance, reported by its `name`.
+      assertEquals(detail!.components.map((c) => c.substance), [
+        "zz_match_test",
+        "zz_match_test",
+        "zz_match_test",
+      ]);
+      // No alias-keyed duplicate substance was auto-created.
+      const after = (await sql<{ n: number }[]>`select count(*)::int as n from substance`)[0].n;
+      assertEquals(after, before);
+
+      await sql`truncate resolved_amount, intake_event, item_component, input_item cascade`;
+      await sql`delete from substance where name = 'zz_match_test'`;
     } finally {
       await sql.end();
     }
