@@ -12,7 +12,7 @@ export interface ItemScanner {
 
 export const SCAN_SYSTEM_PROMPT =
   `You read a photo of a food or supplement label and extract it. Return JSON ONLY (no prose):
-{"name": string, "brand": string|null,
+{"name": string,
  "serving": {"displayQuantity": number, "displayUnit": string},
  "components": [{"substance": string, "amount": number, "unit": "mg"|"g"|"mcg"|"iu"|"ml"|"kcal"}]}.
 List EVERY active ingredient / nutrient in the facts panel with its amount PER SERVING and unit.
@@ -58,7 +58,6 @@ export function parseScannedItem(raw: unknown): CreateItem {
   return {
     name: typeof o.name === "string" ? o.name.trim() : "",
     kind: "product",
-    brand: typeof o.brand === "string" && o.brand.trim() ? o.brand.trim() : undefined,
     defaultServing: {
       displayQuantity: positive(s.displayQuantity) ?? 1,
       displayUnit: typeof s.displayUnit === "string" && s.displayUnit.trim()

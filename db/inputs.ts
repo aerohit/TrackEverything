@@ -93,12 +93,10 @@ export async function createItem(db: Db, input: CreateItem): Promise<string> {
   const [item] = await db.insert(inputItem).values({
     name: input.name,
     kind: input.kind,
-    brand: input.brand ?? null,
     defaultDisplayQuantity: input.defaultServing?.displayQuantity ?? null,
     defaultDisplayUnit: input.defaultServing?.displayUnit ?? null,
     defaultCanonicalQuantity: input.defaultServing?.canonicalQuantity ?? null,
     defaultCanonicalUnit: input.defaultServing?.canonicalUnit ?? null,
-    notes: input.notes ?? null,
   }).returning();
 
   const components = input.components ?? [];
@@ -232,19 +230,11 @@ async function computeResolution(
 }
 
 export async function createIntakeEvent(db: Db, input: CreateIntakeEvent): Promise<string> {
-  let itemVersion: number | null = null;
-  if (input.itemId) {
-    const [it] = await db.select({ version: inputItem.version }).from(inputItem).where(
-      eq(inputItem.id, input.itemId),
-    );
-    itemVersion = it?.version ?? null;
-  }
   const resolution = await computeResolution(db, input);
   const [ev] = await db.insert(intakeEvent).values({
     occurredAt: input.occurredAt ? new Date(input.occurredAt) : new Date(),
     displayName: input.displayName,
     itemId: input.itemId ?? null,
-    itemVersion,
     quantity: input.quantity,
     unit: input.unit,
     canonicalQuantity: resolution.canonicalQuantity,
@@ -479,7 +469,6 @@ function itemSummary(r: InputItemRow): InputItemSummary {
     id: r.id,
     name: r.name,
     kind: r.kind,
-    brand: r.brand,
     defaultDisplayQuantity: r.defaultDisplayQuantity,
     defaultDisplayUnit: r.defaultDisplayUnit,
     defaultCanonicalQuantity: r.defaultCanonicalQuantity,
@@ -554,8 +543,6 @@ export async function getItemDetail(db: Db, id: string): Promise<InputItemDetail
   const presets = await listPresets(db, [id]);
   return {
     ...itemSummary(it),
-    notes: it.notes,
-    version: it.version,
     components: comps,
     quickLog: it.quickLog,
     quickOrder: it.quickOrder,
@@ -669,7 +656,6 @@ export async function favoriteSuggestions(
     id: inputItem.id,
     name: inputItem.name,
     kind: inputItem.kind,
-    brand: inputItem.brand,
     defaultDisplayQuantity: inputItem.defaultDisplayQuantity,
     defaultDisplayUnit: inputItem.defaultDisplayUnit,
     defaultCanonicalQuantity: inputItem.defaultCanonicalQuantity,
@@ -693,7 +679,6 @@ export async function favoriteSuggestions(
     id: r.id,
     name: r.name,
     kind: r.kind,
-    brand: r.brand,
     defaultDisplayQuantity: r.defaultDisplayQuantity,
     defaultDisplayUnit: r.defaultDisplayUnit,
     defaultCanonicalQuantity: r.defaultCanonicalQuantity,

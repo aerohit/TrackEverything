@@ -331,7 +331,7 @@
                   "language": "json"
                 }
               },
-              "raw": "{\n  \"name\": \"My Pre-Workout\",\n  \"kind\": \"product\",\n  \"brand\": \"Acme\",\n  \"defaultServing\": {\n    \"displayQuantity\": 1,\n    \"displayUnit\": \"scoop\",\n    \"canonicalQuantity\": 12,\n    \"canonicalUnit\": \"g\"\n  },\n  \"components\": [\n    { \"substance\": \"caffeine\", \"amount\": 200, \"unit\": \"mg\" },\n    { \"substance\": \"creatine\", \"amount\": 5, \"unit\": \"g\" }\n  ]\n}"
+              "raw": "{\n  \"name\": \"My Pre-Workout\",\n  \"kind\": \"product\",\n  \"defaultServing\": {\n    \"displayQuantity\": 1,\n    \"displayUnit\": \"scoop\",\n    \"canonicalQuantity\": 12,\n    \"canonicalUnit\": \"g\"\n  },\n  \"components\": [\n    { \"substance\": \"caffeine\", \"amount\": 200, \"unit\": \"mg\" },\n    { \"substance\": \"creatine\", \"amount\": 5, \"unit\": \"g\" }\n  ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/items",

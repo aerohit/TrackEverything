@@ -71,7 +71,6 @@ export interface InputItemSummary {
   id: string;
   name: string;
   kind: "product" | "recipe" | "simple" | "stack";
-  brand: string | null;
   defaultDisplayQuantity: number | null;
   defaultDisplayUnit: string | null;
   defaultCanonicalQuantity: number | null;
@@ -90,8 +89,6 @@ export interface ItemComponentDTO {
 
 /** An item plus its components (GET /api/items/:id). */
 export interface InputItemDetail extends InputItemSummary {
-  notes: string | null;
-  version: number;
   components: ItemComponentDTO[];
   quickLog: boolean;
   quickOrder: number | null;
@@ -169,14 +166,12 @@ export interface ComponentInput {
 export interface CreateItemBody {
   name: string;
   kind: "product" | "recipe" | "simple" | "stack";
-  brand?: string;
   defaultServing?: {
     displayQuantity?: number;
     displayUnit?: string;
     canonicalQuantity?: number;
     canonicalUnit?: string;
   };
-  notes?: string;
   components?: ComponentInput[];
 }
 

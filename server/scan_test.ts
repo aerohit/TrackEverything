@@ -11,7 +11,6 @@ Deno.test("extractJson: pulls JSON out of prose / code fences", () => {
 Deno.test("parseScannedItem: maps a label into an editable draft", () => {
   const draft = parseScannedItem({
     name: "  My Multivitamin ",
-    brand: "Acme",
     serving: { displayQuantity: 2, displayUnit: "tablet" },
     components: [
       { substance: "Vitamin D", amount: 25, unit: "mcg" },
@@ -23,7 +22,6 @@ Deno.test("parseScannedItem: maps a label into an editable draft", () => {
   });
   assertEquals(draft.name, "My Multivitamin");
   assertEquals(draft.kind, "product");
-  assertEquals(draft.brand, "Acme");
   assertEquals(draft.defaultServing, { displayQuantity: 2, displayUnit: "tablet" });
   assertEquals(draft.components, [
     { substance: "Vitamin D", amount: 25, unit: "mcg" },

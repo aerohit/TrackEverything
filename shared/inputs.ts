@@ -93,9 +93,7 @@ export type SetQuickLog = z.infer<typeof setQuickLogSchema>;
 export const createItemSchema = z.object({
   name: z.string().min(1),
   kind: z.enum(INPUT_KINDS),
-  brand: z.string().optional(),
   defaultServing: servingSchema.optional(),
-  notes: z.string().optional(),
   components: z.array(componentInputSchema).optional(),
 });
 export type CreateItem = z.infer<typeof createItemSchema>;
@@ -256,7 +254,6 @@ export interface InputItemSummary {
   id: string;
   name: string;
   kind: InputKind;
-  brand: string | null;
   defaultDisplayQuantity: number | null;
   defaultDisplayUnit: string | null;
   defaultCanonicalQuantity: number | null;
@@ -273,8 +270,6 @@ export interface ItemComponentDTO {
 }
 
 export interface InputItemDetail extends InputItemSummary {
-  notes: string | null;
-  version: number;
   components: ItemComponentDTO[];
   quickLog: boolean;
   quickOrder: number | null;

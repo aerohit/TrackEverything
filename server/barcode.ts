@@ -34,12 +34,6 @@ function num(v: unknown): number | undefined {
   return typeof n === "number" && Number.isFinite(n) && n > 0 ? n : undefined;
 }
 
-function firstBrand(brands: unknown): string | undefined {
-  if (typeof brands !== "string") return undefined;
-  const first = brands.split(",")[0]?.trim();
-  return first || undefined;
-}
-
 /**
  * Map an Open Food Facts response into an editable CreateItem draft, or null if
  * there's no usable product (unknown barcode / no name and no nutrition).
@@ -85,7 +79,6 @@ export function parseOffProduct(raw: unknown, _barcode: string): CreateItem | nu
   return {
     name,
     kind: "product",
-    brand: firstBrand(product.brands),
     defaultServing,
     components,
   };

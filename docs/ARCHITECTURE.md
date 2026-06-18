@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-18 (ADR-034: dropped input_item.primary_type and roles; added §4c diagrams)
+> **Last updated:** 2026-06-18 (ADR-035: dropped input_item.version/notes/brand + intake_event.item_version)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -161,8 +161,8 @@ rich analytical decomposition:
   `substance_type` (macronutrient/mineral/electrolyte/vitamin/stimulant/…), `canonical_unit`
   (g/mg/mcg/ml/kcal/iu), `aliases[]`.
 - **`input_item`** — a reusable thing (`kind`: product | recipe | simple | stack — see
-  [ADR-034](#adr-034) for why `kind` is the only structural axis we keep). Carries a default
-  serving (display + canonical), an optional `brand`, and a `version`. Mutable, soft-deletable.
+  [ADR-034](#adr-034)/[ADR-035](#adr-035) for why `kind` is the only descriptive column we keep).
+  Carries a default serving (display + canonical). Mutable, soft-deletable.
 - **`item_component`** — composition; each row is **exactly one of** a `substance` (actives /
   nutrients) **or** a `child_item` (recipe ingredients), with an amount + unit per serving.
 - **`intake_event`** — one thing consumed at one time. Optional `item_id` (freeform logs allowed),
@@ -397,7 +397,8 @@ two core docs.
 
 ### ADR-034
 **Title:** Drop `input_item.primary_type` and `roles`; `kind` is the only structural axis.
-**Status:** Accepted (2026-06-18). Updates R-DOM-4. Migration `0009`.
+**Status:** Accepted (2026-06-18). Updates R-DOM-4. Migration `0009`. **The "keep `brand`"
+part is superseded by [ADR-035](#adr-035)** — `brand` was later dropped too.
 **Context:** `input_item` carried three classifying columns. A usage audit found only `kind`
 drives behaviour — and within `kind`, only `stack` vs. not (it gates loading a stack's member
 items, the manage-screen split, and the single-vs-per-member capture choice; product/recipe/simple
@@ -412,6 +413,24 @@ instead of `kind · primary_type`.
 food/drink/supplement taxonomy is ever needed (e.g. to filter the Overview), it returns as a
 deliberate, used column rather than inferred-but-ignored metadata. Drop is destructive but the data
 was unused; the migration is idempotent.
+
+### ADR-035
+**Title:** Drop `input_item.version`, `notes`, `brand`, and `intake_event.item_version`.
+**Status:** Accepted (2026-06-18). Supersedes the "keep `brand`" clause of [ADR-034](#adr-034).
+Updates R-DOM-4, R-CAP-21. Migration `0010`.
+**Context:** Continuing the [ADR-034](#adr-034) audit. `version` snapshotted into
+`intake_event.item_version` at log time, but was **never incremented** on item edit and
+`item_version` was **never read** — item versioning was never actually implemented. `notes` was
+accepted at create, shown read-only in the detail modal, and had no edit path (write-once, never
+changed). `brand` was display-only metadata populated by the scan/barcode drafts and shown next to
+`kind` — useful-looking, but nothing depends on it and the owner opted to drop it.
+**Decision:** Remove all four columns. Drop the version-snapshot read in `createIntakeEvent`, the
+`notes`/`version` fields from `InputItemDetail`, `brand` from `InputItemSummary` + `CreateItem`, the
+brand population in `scan.ts`/`barcode.ts` (and the now-dead `firstBrand` helper), and the brand/notes
+display on the manage screen.
+**Consequences:** `input_item` is now name + `kind` + serving + Quick-Capture fields; the catalog row
+shows just `kind`. If true item versioning is ever needed it returns as a real, incremented-and-read
+column — not a dormant default. Destructive but the data was unused; the migration is idempotent.
 
 ### ADR-033
 **Title:** Occasional / "unresolved" items — capture by name now, resolve nutrition later.
@@ -844,8 +863,7 @@ analytical vocabulary, elemental units) and/or **child items** (recipe ingredien
 resolver ([`db/resolve.ts`](../db/resolve.ts)) expands item × quantity into substance amounts in
 canonical units — recursing recipes, scaling by serving, normalizing mass/volume/energy — and freezes
 them per event as **`resolved_amount`**, the snapshot that powers daily per-substance totals and stays
-stable when items are later edited (`item_version` is retained for explicit recompute). Items use
-`primary_type` + `roles[]` (not one rigid category); quantities keep display + canonical forms; every
+stable when items are later edited. Quantities keep display + canonical forms; every
 event and amount carries a `confidence`. Freeform logs (no item, optional manual substance amounts)
 are allowed for fast/rough capture and later refinement.
 **Consequences:** simple capture with granular, time-aware analysis from a single log; history is
