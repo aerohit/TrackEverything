@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-18 (ADR-036: slimmed intake_event — dropped canonical qty/unit, confidence, notes)
+> **Last updated:** 2026-06-18 (ADR-037: dropped item_component.prep_state)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -450,6 +450,21 @@ The fuzzy-time confirm card keeps its "· approx" hint but no longer logs a low-
 **Consequences:** `intake_event` is now display-level capture + provenance; all analysable numbers live
 on `resolved_amount`, removing a redundant cache that could drift from the snapshot. Confidence-aware
 ranges, if built later, derive from `resolved_amount`. Destructive but the data was unread; idempotent.
+
+### ADR-037
+**Title:** Drop `item_component.prep_state`.
+**Status:** Accepted (2026-06-18). Updates R-DOM-4. Migration `0012`.
+**Context:** `prep_state` (free text — "raw"/"cooked"/…) was accepted by `componentInputSchema` and
+rendered next to an ingredient if present, but **no capture path ever set it** (the item editor, scan,
+barcode, and recognize all build components as `{ substance, amount, unit }`) and nothing reads it in
+resolution — it was always null.
+**Decision:** Drop the column from the schema, the Zod contract, both `ItemComponentDTO`s, the create
+insert + detail read in `db/inputs.ts`, and the manage-screen ingredient row. Keep
+`item_component.position` — it's the component ordering used by `ORDER BY` for the ingredients list and
+stack-member checklist.
+**Consequences:** Component rows are now exactly `{ substance | child_item, amount, unit, position }`.
+If prep-aware nutrition (raw vs. cooked) is ever needed, it returns as a populated-and-read field.
+Destructive but the data was unused; idempotent.
 
 ### ADR-033
 **Title:** Occasional / "unresolved" items — capture by name now, resolve nutrition later.

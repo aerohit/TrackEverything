@@ -200,7 +200,7 @@ describe("api client", () => {
         id: "abc",
         name: "My Pre-Workout",
         kind: "product",
-        components: [{ substance: "caffeine", childItemId: null, amount: 200, unit: "mg", position: 0, prepState: null }],
+        components: [{ substance: "caffeine", childItemId: null, amount: 200, unit: "mg", position: 0 }],
       })
     );
     const item = await getItem("abc", { fetch, token: "t" });

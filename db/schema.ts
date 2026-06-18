@@ -97,7 +97,6 @@ export const itemComponent = pgTable("item_component", {
   amount: doublePrecision("amount").notNull(),
   unit: text("unit").notNull(),
   position: integer("position").notNull().default(0),
-  prepState: text("prep_state"),
 }, (t) => [index("item_component_parent_idx").on(t.parentItemId)]);
 
 export const intakeEvent = pgTable("intake_event", {

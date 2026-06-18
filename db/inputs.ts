@@ -115,7 +115,6 @@ export async function createItem(db: Db, input: CreateItem): Promise<string> {
         amount: c.amount,
         unit: c.unit,
         position: c.position ?? i,
-        prepState: c.prepState ?? null,
       });
     }
     await db.insert(itemComponent).values(rows);
@@ -495,7 +494,6 @@ export async function getItemDetail(db: Db, id: string): Promise<InputItemDetail
     amount: itemComponent.amount,
     unit: itemComponent.unit,
     position: itemComponent.position,
-    prepState: itemComponent.prepState,
   })
     .from(itemComponent)
     .leftJoin(substance, eq(itemComponent.substanceId, substance.id))

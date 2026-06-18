@@ -80,7 +80,6 @@ export interface ItemComponentDTO {
   amount: number;
   unit: string;
   position: number;
-  prepState: string | null;
 }
 
 /** An item plus its components (GET /api/items/:id). */
