@@ -1,5 +1,11 @@
 import { assert, assertEquals } from "@std/assert";
-import { convert, type ResolveGraph, type ResolveItem, resolveItem } from "./resolve.ts";
+import {
+  convert,
+  convertForSubstance,
+  type ResolveGraph,
+  type ResolveItem,
+  resolveItem,
+} from "./resolve.ts";
 import type { SubstanceUnit } from "../shared/inputs.ts";
 
 Deno.test("convert: normalizes within a dimension, rejects across", () => {
@@ -13,6 +19,20 @@ Deno.test("convert: normalizes within a dimension, rejects across", () => {
   assertEquals(convert(1, "scoop", "scoops"), 1);
   assertEquals(convert(2, "spoons", "spoon"), 2);
   assertEquals(convert(1, " tablet ", "tablets"), 1);
+});
+
+Deno.test("convertForSubstance: substance-specific IU → canonical, else generic", () => {
+  // Generic dimensional conversion still works (delegates to `convert`).
+  assertEquals(convertForSubstance(5, "mg", "mcg", "Anything"), 5000);
+  // IU → canonical for the known fat-soluble vitamins.
+  assertEquals(convertForSubstance(1000, "iu", "mcg", "Cholecalciferol"), 25); // vit D: ×0.025
+  assertEquals(convertForSubstance(400, "iu", "mcg", "Vitamin D"), 10);
+  assertEquals(convertForSubstance(3000, "iu", "mcg", "Retinol"), 900); // vit A: ×0.3
+  assertEquals(convertForSubstance(400, "iu", "mg", "Tocopherol"), 268); // vit E: ×0.67
+  // IU with no factor / wrong target unit / no name → null (still dropped, as before).
+  assertEquals(convertForSubstance(100, "iu", "mcg", "Caffeine"), null);
+  assertEquals(convertForSubstance(1000, "iu", "mg", "Cholecalciferol"), null); // factor is mcg
+  assertEquals(convertForSubstance(1000, "iu", "mcg"), null); // no substance name
 });
 
 function graph(

@@ -1,7 +1,7 @@
 # TrackEverything — Requirements
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this
-> stays current. **Last updated:** 2026-06-18 (ADR-038: curated 265-substance catalog + reconcile; added 'cfu' to substance units; ADR-037: dropped item_component.prep_state) **Owner:** aerohit
+> stays current. **Last updated:** 2026-06-18 (resolver: substance-specific IU→mcg/mg for vit D/A/E; ADR-038: curated 265-substance catalog + reconcile; added 'cfu' to substance units) **Owner:** aerohit
 > **Companion doc:** [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Each requirement has a stable ID (`R-<area>-<n>`) so it can be referenced from
@@ -287,3 +287,4 @@ This document is kept current by an explicit process, not by hope. See
 | 2026-06-18 | R-CAP-22 fix: Quick Capture **preset editor** now **auto-derives the label** from the amount (`"<qty> <unit>"`, editable via an override) instead of **silently dropping** rows that had no label — which is why amounts entered as just qty+unit never persisted (the prod `quick_preset` table was empty despite pinned items). New pure `presetLabel` + `preparePresets` helpers; the Save button still disables (with a reason) if a row lacks a positive quantity or a unit. Web-only; unit-tested. |
 | 2026-06-18 | Added **`cfu`** (colony-forming units) to the `substance_unit` enum (`SUBSTANCE_UNITS` in shared + web, migration `0013`) so probiotics use their standard unit. It's a count unit — the resolver matches it only to itself (like `iu`), no mass/volume conversion. |
 | 2026-06-18 | ADR-038: **curated 265-substance catalog** replaces the ad-hoc seed. Migration `0014` upserts the catalog (Title Case/scientific names, 11-enum types, English+Dutch aliases, de-duplicated keys) and clears unreferenced legacy rows → a fresh DB/PROD ends with exactly the catalog. One-off `db/scripts/reconcile_substances.ts` (QA only) repoints `item_component`/`resolved_amount` from legacy substances onto the catalog (name/alias match + 10 overrides, 3 → `Other`) and deletes them, preserving logged data. Substance names are now Title Case (tests updated). Updates R-DOM-4. |
+| 2026-06-18 | Resolver gains **substance-specific IU→mcg/mg conversion** for the fat-soluble vitamins commonly labelled in IU (D 0.025 mcg/IU, A 0.3 mcg/IU, E 0.67 mg/IU). Previously an IU component against a mcg/mg canonical unit was unconvertible → silently dropped from totals; now it resolves (e.g. 1000 IU vitamin D → 25 mcg). New `convertForSubstance` in `db/resolve.ts` (generic dimensional conversion, then the per-substance IU factor); applied in both the item-component and freeform-resolved paths. Unit + integration tests. Updates R-DOM-4. |
