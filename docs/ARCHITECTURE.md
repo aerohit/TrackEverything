@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-18 (ADR-033: occasional / 'unresolved' items — capture now, resolve later)
+> **Last updated:** 2026-06-18 (ADR-033: occasional items — capture + the 3-way Overview resolve, both phases shipped)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -392,7 +392,7 @@ two core docs.
 
 ### ADR-033
 **Title:** Occasional / "unresolved" items — capture by name now, resolve nutrition later.
-**Status:** Accepted (2026-06-18). Realizes R-CAP-30 (phase 1, capture) and R-CAP-31 (phase 2, resolve).
+**Status:** Accepted (2026-06-18). Realizes R-CAP-30 (phase 1, capture) and R-CAP-31 (phase 2, resolve) — **both shipped**.
 Migration `0008`.
 **Context:** Logging something not in your regulars (a restaurant dish, a one-off snack) must be
 1–3 seconds and must not force you to define an item first — but we still want it on the timeline and,

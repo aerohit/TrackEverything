@@ -263,6 +263,22 @@ export async function logIntake(body: CreateIntake, ctx: ApiCtx = {}): Promise<I
   return await res.json() as IntakeEvent;
 }
 
+/** Patch a live intake event and re-resolve it (PATCH /api/intake/:id) — used to resolve occasional items. */
+export async function updateIntake(
+  id: string,
+  body: Partial<CreateIntake> & { resolved?: { substance: string; amount: number; unit: string }[] },
+  ctx: ApiCtx = {},
+): Promise<IntakeEvent> {
+  const { f, token } = resolve(ctx);
+  const res = await f("/api/intake/" + encodeURIComponent(id), {
+    method: "PATCH",
+    headers: headers(token, true),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new ApiError(res.status, "Failed to update intake");
+  return await res.json() as IntakeEvent;
+}
+
 export async function listIntake(
   params: { from?: Date; to?: Date; limit?: number } = {},
   ctx: ApiCtx = {},
