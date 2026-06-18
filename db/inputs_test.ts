@@ -42,9 +42,9 @@ Deno.test({
           canonicalUnit: "g",
         },
         components: [
-          { substance: "caffeine", amount: 200, unit: "mg" },
-          { substance: "creatine", amount: 5, unit: "g" },
-          { substance: "sodium", amount: 300, unit: "mg" },
+          { substance: "Caffeine", amount: 200, unit: "mg" },
+          { substance: "Creatine", amount: 5, unit: "g" },
+          { substance: "Sodium", amount: 300, unit: "mg" },
         ],
       });
 
@@ -58,7 +58,7 @@ Deno.test({
           canonicalQuantity: 30,
           canonicalUnit: "g",
         },
-        components: [{ substance: "protein", amount: 24, unit: "g" }],
+        components: [{ substance: "Protein", amount: 24, unit: "g" }],
       });
       const smoothie = await createItem(db, {
         name: "Morning smoothie",
@@ -90,7 +90,7 @@ Deno.test({
         quantity: 1,
         unit: "cup",
         occurredAt: at(7),
-        resolved: [{ substance: "caffeine", amount: 120, unit: "mg" }],
+        resolved: [{ substance: "Caffeine", amount: 120, unit: "mg" }],
       });
 
       // The pre-workout event's snapshot is frozen + complete.
@@ -99,22 +99,22 @@ Deno.test({
       assertEquals(events[0].displayName, "Pre-workout"); // newest first (16:00)
       const preResolved = new Map(events[0].resolved.map((r) => [r.substance, r.amount]));
       assertEquals([
-        preResolved.get("caffeine"),
-        preResolved.get("creatine"),
-        preResolved.get("sodium"),
+        preResolved.get("Caffeine"),
+        preResolved.get("Creatine"),
+        preResolved.get("Sodium"),
       ], [200, 5, 300]);
 
       // Daily totals sum across events (caffeine: 200 pre + 120 coffee = 320; protein 24 from smoothie).
       let totals = totalsMap(await dailyTotals(db, day, nextDay));
-      assertEquals(totals.get("caffeine"), 320);
-      assertEquals(totals.get("creatine"), 5);
-      assertEquals(totals.get("protein"), 24);
+      assertEquals(totals.get("Caffeine"), 320);
+      assertEquals(totals.get("Creatine"), 5);
+      assertEquals(totals.get("Protein"), 24);
 
       // Edit the pre-workout to 2 scoops → snapshot re-resolves (caffeine doubles).
       assert(await updateIntakeEvent(db, preEvent, { quantity: 2, unit: "scoop" }));
       totals = totalsMap(await dailyTotals(db, day, nextDay));
-      assertEquals(totals.get("caffeine"), 520); // 400 pre + 120 coffee
-      assertEquals(totals.get("creatine"), 10);
+      assertEquals(totals.get("Caffeine"), 520); // 400 pre + 120 coffee
+      assertEquals(totals.get("Creatine"), 10);
 
       // Soft-delete the coffee → it drops out of totals, but the row remains.
       const coffee = (await listIntakeEvents(db, { from: day, to: nextDay })).find((e) =>
@@ -122,7 +122,7 @@ Deno.test({
       );
       assert(coffee && await softDeleteIntakeEvent(db, coffee.id));
       totals = totalsMap(await dailyTotals(db, day, nextDay));
-      assertEquals(totals.get("caffeine"), 400); // coffee's 120 gone
+      assertEquals(totals.get("Caffeine"), 400); // coffee's 120 gone
       assertEquals((await listIntakeEvents(db, { from: day, to: nextDay })).length, 2);
       const [{ count }] = await sql`select count(*)::int from intake_event`;
       assertEquals(count, 3); // soft delete, not hard
@@ -149,8 +149,8 @@ Deno.test({
         kind: "product",
         defaultServing: { displayQuantity: 2, displayUnit: "scoops" },
         components: [
-          { substance: "sodium", amount: 1034, unit: "mg" },
-          { substance: "potassium", amount: 306, unit: "mg" },
+          { substance: "Sodium", amount: 1034, unit: "mg" },
+          { substance: "Potassium", amount: 306, unit: "mg" },
         ],
       });
 
@@ -174,14 +174,14 @@ Deno.test({
       const events = await listIntakeEvents(db, { from, to });
       assertEquals(events.length, 2);
       for (const e of events) {
-        assertEquals(e.resolved.find((r) => r.substance === "sodium")?.amount, 517);
-        assertEquals(e.resolved.find((r) => r.substance === "potassium")?.amount, 153);
+        assertEquals(e.resolved.find((r) => r.substance === "Sodium")?.amount, 517);
+        assertEquals(e.resolved.find((r) => r.substance === "Potassium")?.amount, 153);
       }
 
       // Two half-servings sum to one full serving in the daily totals.
       const totals = totalsMap(await dailyTotals(db, from, to));
-      assertEquals(totals.get("sodium"), 1034);
-      assertEquals(totals.get("potassium"), 306);
+      assertEquals(totals.get("Sodium"), 1034);
+      assertEquals(totals.get("Potassium"), 306);
     } finally {
       await sql.end();
     }

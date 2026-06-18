@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-18 (ADR-037: dropped item_component.prep_state)
+> **Last updated:** 2026-06-18 (ADR-038: curated 265-substance catalog + legacy-ref reconcile)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -157,9 +157,11 @@ presentation-time filter over a shared log.
 "Input = anything intentionally put into the body." Two layers — a fast human-level log and a
 rich analytical decomposition:
 
-- **`substance`** — the analytical vocabulary (seeded; elemental forms only for now): `name`,
-  `substance_type` (macronutrient/mineral/electrolyte/vitamin/stimulant/…), `canonical_unit`
-  (g/mg/mcg/ml/kcal/iu/cfu — `cfu` is a count unit for probiotics, matches only itself), `aliases[]`.
+- **`substance`** — the analytical vocabulary (a curated 265-substance catalog, [ADR-038](#adr-038)):
+  `name` (Title Case / scientific), `substance_type` (macronutrient/mineral/electrolyte/vitamin/…),
+  `canonical_unit` (g/mg/mcg/ml/kcal/iu/cfu — `cfu` is a count unit for probiotics, matches only
+  itself), `aliases[]` (English + Dutch; de-duplicated so each normalized name/alias maps to one
+  substance). A component is matched to a substance by name or any alias, case-insensitively.
 - **`input_item`** — a reusable thing (`kind`: product | recipe | simple | stack — see
   [ADR-034](#adr-034)/[ADR-035](#adr-035) for why `kind` is the only descriptive column we keep).
   Carries a default serving (display + canonical). Mutable, soft-deletable.
@@ -465,6 +467,30 @@ stack-member checklist.
 **Consequences:** Component rows are now exactly `{ substance | child_item, amount, unit, position }`.
 If prep-aware nutrition (raw vs. cooked) is ever needed, it returns as a populated-and-read field.
 Destructive but the data was unused; idempotent.
+
+### ADR-038
+**Title:** Replace the substance seed with a curated 265-substance catalog; reconcile legacy refs by script.
+**Status:** Accepted (2026-06-18). Updates R-DOM-4. Migration `0014` + `db/scripts/reconcile_substances.ts`.
+**Context:** The original `0002` seed plus auto-created rows left ~76 inconsistent substances (lowercase
+snake_case names, sparse aliases, much dumped in `other`). We curated a 265-substance catalog with
+proper names (Title Case / scientific), the 11-value `substance_type` enum, English + Dutch aliases,
+and standard units. Two tables FK to `substance.id` (`item_component`, the frozen `resolved_amount`),
+so a blind delete+reseed would orphan logged data, and the new PROD DB is created fresh.
+**Decision:** Two artifacts.
+1. **Migration `0014`** (runs everywhere): upsert the 265 catalog rows by name, then delete any
+   non-catalog substance that nothing references. On a fresh DB / PROD this clears the `0002` seed →
+   exactly the catalog; on QA the still-referenced legacy rows survive for the script. Catalog keys
+   are de-duplicated so every normalized name/alias maps to exactly one substance (deterministic
+   resolution, per the name-or-alias matching rule).
+2. **`reconcile_substances.ts`** (run once, only where legacy data exists — QA): match each legacy
+   substance to the catalog by name then alias (case-insensitive), with a small override map for the
+   10 that don't auto-match (7 explicit targets; `unsaturated_fat`/`gold_poppy`/`polypodium_leucotomos`
+   → a catch-all `Other`). Dry-run by default; `--apply` repoints `item_component` + `resolved_amount`
+   in a transaction and deletes the legacy rows. `resolved_amount` amounts/units are left as-is (frozen
+   history). Idempotent.
+**Consequences:** PROD comes up with the clean 265-row catalog and needs no script; QA keeps all logged
+data, repointed onto canonical substances. Substance names are now Title Case, so resolution returns
+e.g. `Caffeine` not `caffeine` (tests updated). 3 dropped-from-catalog substances collapse into `Other`.
 
 ### ADR-033
 **Title:** Occasional / "unresolved" items — capture by name now, resolve nutrition later.

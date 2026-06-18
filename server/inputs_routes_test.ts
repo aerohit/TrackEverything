@@ -39,7 +39,7 @@ Deno.test({
       // The seeded vocabulary is listed.
       const subs =
         (await (await app.request("/api/substances", { headers: auth })).json()).substances;
-      assert(subs.length >= 20 && subs.some((s: { name: string }) => s.name === "caffeine"));
+      assert(subs.length >= 20 && subs.some((s: { name: string }) => s.name === "Caffeine"));
 
       // Create a product; the response carries its resolved components.
       const created = await app.request("/api/items", {
@@ -54,8 +54,8 @@ Deno.test({
             canonicalQuantity: 12,
             canonicalUnit: "g",
           },
-          components: [{ substance: "caffeine", amount: 200, unit: "mg" }, {
-            substance: "creatine",
+          components: [{ substance: "Caffeine", amount: 200, unit: "mg" }, {
+            substance: "Creatine",
             amount: 5,
             unit: "g",
           }],
@@ -102,7 +102,7 @@ Deno.test({
       });
       assertEquals(logged.status, 201);
       const ev = await logged.json();
-      assertEquals(byName(ev.resolved).get("caffeine"), 200);
+      assertEquals(byName(ev.resolved).get("Caffeine"), 200);
 
       // Freeform coffee with a manual caffeine amount (no item).
       await app.request("/api/intake", {
@@ -113,7 +113,7 @@ Deno.test({
           quantity: 1,
           unit: "cup",
           occurredAt: "2026-06-15T07:00:00.000Z",
-          resolved: [{ substance: "caffeine", amount: 120, unit: "mg" }],
+          resolved: [{ substance: "Caffeine", amount: 120, unit: "mg" }],
         }),
       });
 
@@ -124,7 +124,7 @@ Deno.test({
       );
       const totals =
         (await (await app.request(`/api/intake/totals?${DAY}`, { headers: auth })).json()).totals;
-      assertEquals(byName(totals).get("caffeine"), 320); // 200 pre + 120 coffee
+      assertEquals(byName(totals).get("Caffeine"), 320); // 200 pre + 120 coffee
 
       // totals requires the window.
       assertEquals((await app.request("/api/intake/totals", { headers: auth })).status, 400);
@@ -136,7 +136,7 @@ Deno.test({
         body: JSON.stringify({ quantity: 2, unit: "scoop" }),
       });
       assertEquals(patched.status, 200);
-      assertEquals(byName((await patched.json()).resolved).get("caffeine"), 400);
+      assertEquals(byName((await patched.json()).resolved).get("Caffeine"), 400);
 
       // Soft-delete → drops from totals; second delete is 404.
       assertEquals(
@@ -149,7 +149,7 @@ Deno.test({
       );
       const after =
         (await (await app.request(`/api/intake/totals?${DAY}`, { headers: auth })).json()).totals;
-      assertEquals(byName(after).get("caffeine"), 120); // only the coffee remains
+      assertEquals(byName(after).get("Caffeine"), 120); // only the coffee remains
     } finally {
       await sql.end();
     }
@@ -746,13 +746,13 @@ Deno.test({
       assert(ev, "the past log should still be listed");
       assertEquals(ev.displayName, "Old Protein Bar");
       assertEquals(
-        ev.resolved.find((r: { substance: string }) => r.substance === "protein")?.amount,
+        ev.resolved.find((r: { substance: string }) => r.substance === "Protein")?.amount,
         20,
       );
       const totals =
         (await (await app.request(`/api/intake/totals?${day}`, { headers: auth })).json()).totals;
       assertEquals(
-        totals.find((t: { substance: string }) => t.substance === "protein")?.amount,
+        totals.find((t: { substance: string }) => t.substance === "Protein")?.amount,
         20,
       );
     } finally {
@@ -838,7 +838,7 @@ Deno.test({
         body: JSON.stringify({
           name: "Coffee",
           kind: "simple",
-          components: [{ substance: "caffeine", amount: 95, unit: "mg" }],
+          components: [{ substance: "Caffeine", amount: 95, unit: "mg" }],
         }),
       })).json();
       const normal = await (await app.request("/api/intake", {
@@ -858,7 +858,7 @@ Deno.test({
       const totals =
         (await (await app.request(`/api/intake/totals?${day}`, { headers: auth })).json()).totals;
       assertEquals(totals.length, 1);
-      assertEquals(totals[0].substance, "caffeine");
+      assertEquals(totals[0].substance, "Caffeine");
       assertEquals(totals[0].amount, 95);
 
       // It's listed and carries the flag for the Overview.
@@ -897,7 +897,7 @@ Deno.test({
       const item = await post("/api/items", {
         name: "Latte",
         kind: "simple",
-        components: [{ substance: "caffeine", amount: 80, unit: "mg" }],
+        components: [{ substance: "Caffeine", amount: 80, unit: "mg" }],
       });
       const u1 = await post("/api/intake", {
         displayName: "cafe latte",
@@ -917,7 +917,7 @@ Deno.test({
       });
       assertEquals(r1.unresolved, false);
       assertEquals(
-        r1.resolved.find((x: { substance: string }) => x.substance === "caffeine")?.amount,
+        r1.resolved.find((x: { substance: string }) => x.substance === "Caffeine")?.amount,
         80,
       );
 
@@ -931,19 +931,19 @@ Deno.test({
         unresolved: true,
       });
       const r2 = await patch(u2.id, {
-        resolved: [{ substance: "sugar", amount: 25, unit: "g" }],
+        resolved: [{ substance: "Sugar", amount: 25, unit: "g" }],
         unresolved: false,
       });
       assertEquals(r2.unresolved, false);
-      assertEquals(r2.resolved[0].substance, "sugar");
+      assertEquals(r2.resolved[0].substance, "Sugar");
       assertEquals(r2.itemId, null); // no item stored for the ad-hoc path
 
       // Totals now reflect both resolved entries (day 2026-06-09).
       const day = "from=2026-06-09T00:00:00Z&to=2026-06-10T00:00:00Z";
       const totals =
         (await (await app.request(`/api/intake/totals?${day}`, { headers: auth })).json()).totals;
-      assertEquals(byName(totals).get("caffeine"), 80);
-      assertEquals(byName(totals).get("sugar"), 25);
+      assertEquals(byName(totals).get("Caffeine"), 80);
+      assertEquals(byName(totals).get("Sugar"), 25);
     } finally {
       await sql.end();
     }
