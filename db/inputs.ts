@@ -297,6 +297,8 @@ export async function updateIntakeEvent(
     confidence: merged.confidence,
     contextTags: patch.contextTags ?? current.contextTags,
     notes: patch.notes !== undefined ? patch.notes : current.notes,
+    // Resolving an occasional item clears the flag (R-CAP-31).
+    unresolved: patch.unresolved !== undefined ? patch.unresolved : current.unresolved,
     updatedAt: new Date(),
   }).where(eq(intakeEvent.id, id));
 

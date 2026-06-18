@@ -891,3 +891,79 @@ Deno.test({
     }
   },
 });
+
+Deno.test({
+  name: "inputs API: resolving an unresolved event clears the flag + re-resolves (R-CAP-31)",
+  ignore: !DATABASE_URL,
+  async fn() {
+    await migrate(DATABASE_URL);
+    const { sql, db } = connect(DATABASE_URL);
+    try {
+      const app = createApp(db, { token: TOKEN });
+      const post = async (p: string, b: unknown) =>
+        await (await app.request(p, { method: "POST", headers: auth, body: JSON.stringify(b) }))
+          .json();
+      const patch = async (id: string, b: unknown) =>
+        await (await app.request(`/api/intake/${id}`, {
+          method: "PATCH",
+          headers: auth,
+          body: JSON.stringify(b),
+        })).json();
+
+      // (a) link to an existing item.
+      const item = await post("/api/items", {
+        name: "Latte",
+        kind: "simple",
+        primaryType: "drink",
+        components: [{ substance: "caffeine", amount: 80, unit: "mg" }],
+      });
+      const u1 = await post("/api/intake", {
+        displayName: "cafe latte",
+        quantity: 1,
+        unit: "cup",
+        occurredAt: "2026-06-09T08:00:00Z",
+        source: "manual",
+        unresolved: true,
+      });
+      assertEquals(u1.unresolved, true);
+      const r1 = await patch(u1.id, {
+        itemId: item.id,
+        displayName: "Latte",
+        quantity: 1,
+        unit: "serving",
+        unresolved: false,
+      });
+      assertEquals(r1.unresolved, false);
+      assertEquals(
+        r1.resolved.find((x: { substance: string }) => x.substance === "caffeine")?.amount,
+        80,
+      );
+
+      // (c) enter nutrients ad-hoc (no item).
+      const u2 = await post("/api/intake", {
+        displayName: "office cake",
+        quantity: 1,
+        unit: "slice",
+        occurredAt: "2026-06-09T15:00:00Z",
+        source: "manual",
+        unresolved: true,
+      });
+      const r2 = await patch(u2.id, {
+        resolved: [{ substance: "sugar", amount: 25, unit: "g" }],
+        unresolved: false,
+      });
+      assertEquals(r2.unresolved, false);
+      assertEquals(r2.resolved[0].substance, "sugar");
+      assertEquals(r2.itemId, null); // no item stored for the ad-hoc path
+
+      // Totals now reflect both resolved entries (day 2026-06-09).
+      const day = "from=2026-06-09T00:00:00Z&to=2026-06-10T00:00:00Z";
+      const totals =
+        (await (await app.request(`/api/intake/totals?${day}`, { headers: auth })).json()).totals;
+      assertEquals(byName(totals).get("caffeine"), 80);
+      assertEquals(byName(totals).get("sugar"), 25);
+    } finally {
+      await sql.end();
+    }
+  },
+});
