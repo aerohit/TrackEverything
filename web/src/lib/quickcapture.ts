@@ -6,6 +6,40 @@
 import type { CreateIntake, QuickItem, QuickPreset } from "$lib/types";
 
 /**
+ * The label shown/saved for a preset row: the user's typed override if any,
+ * otherwise a "<qty> <unit>" label derived from the amount — so a row filled
+ * with just a quantity + unit still gets a sensible, editable label instead of
+ * being rejected. Returns "" only when the amount itself is incomplete.
+ */
+export function presetLabel(quantity: number, unit: string, override = ""): string {
+  const o = override.trim();
+  if (o) return o;
+  return quantity > 0 && unit.trim() ? `${quantity} ${unit.trim()}` : "";
+}
+
+/**
+ * Validate a favorite's amount presets before saving. Each needs a positive
+ * quantity, a unit, and a (server-mandatory) label — but since the UI auto-derives
+ * the label from the amount, a row only fails when the quantity/unit are missing.
+ * Rather than silently dropping partial rows we surface an error and let the UI
+ * block the save. Returns the trimmed presets when every row is complete.
+ */
+export function preparePresets(
+  presets: QuickPreset[],
+): { ok: true; presets: QuickPreset[] } | { ok: false; error: string } {
+  const cleaned: QuickPreset[] = [];
+  for (const p of presets) {
+    const label = p.label.trim();
+    const unit = p.unit.trim();
+    if (!(p.quantity > 0)) return { ok: false, error: "Each preset needs a quantity above 0." };
+    if (!unit) return { ok: false, error: "Each preset needs a unit." };
+    if (!label) return { ok: false, error: 'Each preset needs a label (e.g. "250 g").' };
+    cleaned.push({ label, quantity: p.quantity, unit });
+  }
+  return { ok: true, presets: cleaned };
+}
+
+/**
  * The intake payload for tapping a favorite. With a preset, log that amount;
  * otherwise fall back to the item's default serving (or "1 serving").
  */

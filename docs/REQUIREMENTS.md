@@ -1,7 +1,7 @@
 # TrackEverything — Requirements
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this
-> stays current. **Last updated:** 2026-06-18 (ADR-037: dropped item_component.prep_state; ADR-036: slimmed intake_event
+> stays current. **Last updated:** 2026-06-18 (R-CAP-22: Quick Capture presets auto-derive their label from the amount; ADR-037: dropped item_component.prep_state; ADR-036: slimmed intake_event
 > — canonical qty/unit, confidence, notes) **Owner:** aerohit
 > **Companion doc:** [ARCHITECTURE.md](ARCHITECTURE.md)
 
@@ -285,3 +285,4 @@ This document is kept current by an explicit process, not by hope. See
 | 2026-06-18 | ADR-035: **dropped `input_item.version`, `notes`, `brand`** and the dependent `intake_event.item_version` (migration `0010`). `version` was never incremented and `item_version` never read (item versioning was never implemented); `notes` was write-once display-only; `brand` was display-only metadata. Removed from schema, contract, scan/barcode drafts, DTOs, and the manage screen (`firstBrand` helper deleted). Catalog rows now show just `kind`. Supersedes the "keep brand" of ADR-034; updates R-CAP-21 + R-DOM-4. |
 | 2026-06-18 | ADR-036: **slimmed `intake_event`** — dropped `canonical_quantity`/`canonical_unit`, `confidence`, `notes` (migration `0011`). The canonical fields were an unread cache (totals sum `resolved_amount`); `confidence` was never displayed/used (exactness lives in `precision`); `notes` had no UI. Removed from schema, Zod contract, DTOs, resolver (`computeResolution`), and the fuzzy-time log path; `resolved_amount.confidence` + the `intake_confidence` enum stay. `source` kept as-is. Updates R-CAP-12 + R-CAP-27 + R-DOM-4. |
 | 2026-06-18 | ADR-037: **dropped `item_component.prep_state`** (migration `0012`). Accepted by the API and shown if present, but no capture path ever set it and nothing read it in resolution — always null. Removed from schema, contract, both DTOs, and the manage ingredient row. `item_component.position` (component ordering) stays. Updates R-DOM-4. |
+| 2026-06-18 | R-CAP-22 fix: Quick Capture **preset editor** now **auto-derives the label** from the amount (`"<qty> <unit>"`, editable via an override) instead of **silently dropping** rows that had no label — which is why amounts entered as just qty+unit never persisted (the prod `quick_preset` table was empty despite pinned items). New pure `presetLabel` + `preparePresets` helpers; the Save button still disables (with a reason) if a row lacks a positive quantity or a unit. Web-only; unit-tested. |
