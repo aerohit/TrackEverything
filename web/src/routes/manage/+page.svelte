@@ -39,6 +39,9 @@
 
   let substances = $state<Substance[]>([]);
   let items = $state<InputItemSummary[]>([]);
+  // Regular items vs stacks are listed separately.
+  const regularItems = $derived(items.filter((i) => i.kind !== "stack"));
+  const stacks = $derived(items.filter((i) => i.kind === "stack"));
   let saving = $state(false);
   let toast = $state<{ msg: string; err: boolean } | null>(null);
 
@@ -257,7 +260,7 @@
 
 <main class="layout">
   <section class="card">
-    <h2>Add item</h2>
+    <h2>Create Regular Item</h2>
     <p class="mut">Take or upload a photo of the label, or scan a barcode — the details are
       fetched and shown below for you to correct, then save.</p>
 
@@ -289,32 +292,23 @@
 
     {#if !hasDraft}
       <div class="or"><span>or build it yourself</span></div>
-      <div class="modes">
-        <button class="modebtn" onclick={newItem}>
-          <span class="ico">✏️</span><span>Create item</span>
-        </button>
-        <button class="modebtn" onclick={newStack}>
-          <span class="ico">🧩</span><span>Create stack</span>
-        </button>
-      </div>
+      <button class="primary" onclick={newItem}>✏️ Create regular item manually</button>
     {/if}
 
-    {#if hasDraft}
-      <div class="fieldlabel" style="margin-top:4px">
-        {formMode === "stack" ? "New stack" : "New item"}
-      </div>
-      <ItemDraftForm bind:draft {substances} {items} mode={formMode} />
+    {#if hasDraft && formMode === "item"}
+      <div class="fieldlabel" style="margin-top:4px">New regular item</div>
+      <ItemDraftForm bind:draft {substances} {items} mode="item" />
       <button class="primary" disabled={!draft.name.trim() || saving} onclick={save}>
-        {saving ? "Saving…" : formMode === "stack" ? "Save stack" : "Save item"}
+        {saving ? "Saving…" : "Save item"}
       </button>
       <button class="linklike" onclick={reset}>Cancel</button>
     {/if}
   </section>
 
   <section class="card">
-    <h2>Your items</h2>
-    {#if items.length}
-      {#each items as it}
+    <h2>Your Regular Items</h2>
+    {#if regularItems.length}
+      {#each regularItems as it}
         <button
           class="itemrow itembtn"
           onclick={() => openDetail(it)}
@@ -327,7 +321,40 @@
         </button>
       {/each}
     {:else}
-      <p class="mut">No items yet. Scan a label to add one.</p>
+      <p class="mut">No items yet. Scan a label or create one above.</p>
+    {/if}
+  </section>
+
+  <section class="card">
+    <h2>Your Stacks</h2>
+    {#if !hasDraft}
+      <button class="primary" onclick={newStack}>🧩 Create stack</button>
+    {/if}
+
+    {#if hasDraft && formMode === "stack"}
+      <div class="fieldlabel" style="margin-top:4px">New stack</div>
+      <ItemDraftForm bind:draft {substances} {items} mode="stack" />
+      <button class="primary" disabled={!draft.name.trim() || saving} onclick={save}>
+        {saving ? "Saving…" : "Save stack"}
+      </button>
+      <button class="linklike" onclick={reset}>Cancel</button>
+    {/if}
+
+    {#if stacks.length}
+      {#each stacks as it}
+        <button
+          class="itemrow itembtn"
+          onclick={() => openDetail(it)}
+          disabled={detailLoading === it.id}
+        >
+          <span>{it.name}</span>
+          <span class="meta">
+            {detailLoading === it.id ? "Loading…" : `stack · ${it.primaryType}`} ›
+          </span>
+        </button>
+      {/each}
+    {:else}
+      <p class="mut">No stacks yet. Tap Create stack to build one from your items.</p>
     {/if}
   </section>
 </main>
