@@ -382,7 +382,8 @@ try {
     if (ids.length) await tx`delete from substance where id in ${tx(ids)}`;
     const [{ n }] = await tx<{ n: number }[]>`
       select count(*)::int n from item_component ic
-       where not exists (select 1 from substance s where s.id = ic.substance_id)`;
+       where ic.substance_id is not null
+         and not exists (select 1 from substance s where s.id = ic.substance_id)`;
     if (n > 0) throw new Error("orphaned item_component refs remain — rolling back");
     console.log(`remapped ${plan.length} legacy substances; deleted ${ids.length}.`);
   });
