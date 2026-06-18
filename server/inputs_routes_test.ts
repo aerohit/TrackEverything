@@ -98,7 +98,6 @@ Deno.test({
           unit: "scoop",
           occurredAt: "2026-06-15T16:00:00.000Z",
           contextTags: ["pre_workout"],
-          confidence: "high",
         }),
       });
       assertEquals(logged.status, 201);

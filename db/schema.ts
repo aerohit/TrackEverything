@@ -108,11 +108,7 @@ export const intakeEvent = pgTable("intake_event", {
   itemId: uuid("item_id").references(() => inputItem.id, { onDelete: "set null" }),
   quantity: doublePrecision("quantity").notNull(),
   unit: text("unit").notNull(),
-  canonicalQuantity: doublePrecision("canonical_quantity"),
-  canonicalUnit: text("canonical_unit"),
-  confidence: intakeConfidence("confidence").notNull().default("medium"),
   contextTags: text("context_tags").array().notNull().default([]),
-  notes: text("notes"),
   source: intakeSource("source").notNull().default("manual"),
   precision: intakePrecision("precision").notNull().default("precise"),
   // An "occasional item" logged by name with no matching item + no known nutrition

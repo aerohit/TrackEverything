@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-18 (ADR-035: dropped input_item.version/notes/brand + intake_event.item_version)
+> **Last updated:** 2026-06-18 (ADR-036: slimmed intake_event — dropped canonical qty/unit, confidence, notes)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -166,17 +166,19 @@ rich analytical decomposition:
 - **`item_component`** — composition; each row is **exactly one of** a `substance` (actives /
   nutrients) **or** a `child_item` (recipe ingredients), with an amount + unit per serving.
 - **`intake_event`** — one thing consumed at one time. Optional `item_id` (freeform logs allowed),
-  display quantity/unit + resolved canonical quantity/unit, `confidence`, `context_tags[]`
-  (pre_workout, fasted, …). **Mutable** (edit + soft delete) for progressive refinement.
+  display `quantity`/`unit`, `source`, `precision` (precise/rough), `context_tags[]`
+  (pre_workout, fasted, …), `unresolved`. **Mutable** (edit + soft delete) for progressive refinement.
+  Carries no canonical quantity or confidence of its own — the per-substance `resolved_amount`
+  snapshot holds the analysable amounts + confidence ([ADR-036](#adr-036)).
 - **`resolved_amount`** — the analytical **snapshot** frozen per event (canonical units), produced
   by the resolver ([`db/resolve.ts`](../db/resolve.ts)): expand item × quantity → substances,
   recursing recipes, scaling by serving, normalizing mass/volume/energy. Re-computed on edit, never
   rewritten by later item edits. Powers daily per-substance totals.
 
 So the user logs **objects** ("1 scoop pre-workout") while the app analyses **components**
-(200 mg caffeine, 5 g creatine, …). Quantities keep both a display form and a canonical form; every
-event and amount carries a confidence. Compound→elemental conversion (magnesium glycinate → Mg) is
-deferred; tags are `text[]` for now.
+(200 mg caffeine, 5 g creatine, …). The event keeps the human display quantity; the resolver
+normalizes to canonical units inside `resolved_amount`, where each amount carries a confidence.
+Compound→elemental conversion (magnesium glycinate → Mg) is deferred; tags are `text[]` for now.
 
 **Diagrams.** The full table-and-FK layout (all 7 tables, including the isolated `subjective_state`
 and `quick_preset`) is in [diagrams/er-diagram.svg](diagrams/er-diagram.svg). How a single log flows
@@ -431,6 +433,23 @@ display on the manage screen.
 **Consequences:** `input_item` is now name + `kind` + serving + Quick-Capture fields; the catalog row
 shows just `kind`. If true item versioning is ever needed it returns as a real, incremented-and-read
 column — not a dormant default. Destructive but the data was unused; the migration is idempotent.
+
+### ADR-036
+**Title:** Slim `intake_event` — drop `canonical_quantity`/`canonical_unit`, `confidence`, `notes`.
+**Status:** Accepted (2026-06-18). Updates R-CAP-12, R-CAP-27, R-DOM-4. Migration `0011`.
+**Context:** Auditing `intake_event`. The event-level **`canonical_quantity`/`canonical_unit`** were a
+materialized cache of the normalized amount, but the analytical pipeline never reads them — daily
+totals and the macro/micro table sum **`resolved_amount`** (the frozen per-substance snapshot, also in
+canonical units). **`confidence`** was never displayed and never used in any calculation; the only
+thing that set it to a non-default was the fuzzy-time path (R-CAP-27), and `precision` (precise/rough,
+shown as the `~` tag) is the live exactness signal we keep. **`notes`** had no UI to set or display it.
+**Decision:** Drop all four columns. The resolver (`computeResolution`) stops emitting event canonical
+fields and an event confidence; `resolved_amount.confidence` (and its `intake_confidence` enum) stay.
+The fuzzy-time confirm card keeps its "· approx" hint but no longer logs a low-confidence flag.
+`source`, `precision`, `context_tags`, `unresolved` are unaffected.
+**Consequences:** `intake_event` is now display-level capture + provenance; all analysable numbers live
+on `resolved_amount`, removing a redundant cache that could drift from the snapshot. Confidence-aware
+ranges, if built later, derive from `resolved_amount`. Destructive but the data was unread; idempotent.
 
 ### ADR-033
 **Title:** Occasional / "unresolved" items — capture by name now, resolve nutrition later.
@@ -863,9 +882,9 @@ analytical vocabulary, elemental units) and/or **child items** (recipe ingredien
 resolver ([`db/resolve.ts`](../db/resolve.ts)) expands item × quantity into substance amounts in
 canonical units — recursing recipes, scaling by serving, normalizing mass/volume/energy — and freezes
 them per event as **`resolved_amount`**, the snapshot that powers daily per-substance totals and stays
-stable when items are later edited. Quantities keep display + canonical forms; every
-event and amount carries a `confidence`. Freeform logs (no item, optional manual substance amounts)
-are allowed for fast/rough capture and later refinement.
+stable when items are later edited. The event keeps only its display quantity; the canonical amounts
+and their `confidence` live on `resolved_amount`. Freeform logs (no item, optional manual substance
+amounts) are allowed for fast/rough capture and later refinement.
 **Consequences:** simple capture with granular, time-aware analysis from a single log; history is
 stable yet recomputable. Trade-offs: resolution depends on unit reconciliation (unreconcilable →
 no resolved amounts + `confidence: low`); **compound→elemental conversion is deferred** (substances

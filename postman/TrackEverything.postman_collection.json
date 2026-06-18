@@ -459,7 +459,7 @@
                   "language": "json"
                 }
               },
-              "raw": "{\n  \"displayName\": \"Pre-workout\",\n  \"itemId\": \"<item uuid, optional>\",\n  \"quantity\": 1,\n  \"unit\": \"scoop\",\n  \"occurredAt\": \"2026-06-16T08:00:00.000Z\",\n  \"contextTags\": [\"pre_workout\"],\n  \"confidence\": \"high\"\n}"
+              "raw": "{\n  \"displayName\": \"Pre-workout\",\n  \"itemId\": \"<item uuid, optional>\",\n  \"quantity\": 1,\n  \"unit\": \"scoop\",\n  \"occurredAt\": \"2026-06-16T08:00:00.000Z\",\n  \"contextTags\": [\"pre_workout\"]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/intake",
@@ -471,7 +471,7 @@
                 "intake"
               ]
             },
-            "description": "Log one intake. With `itemId`, it resolves the item's components and freezes a per-event snapshot. Freeform (no item) is allowed and may carry manual substance amounts, e.g.:\n{ \"displayName\": \"Coffee\", \"quantity\": 1, \"unit\": \"cup\", \"resolved\": [{ \"substance\": \"caffeine\", \"amount\": 120, \"unit\": \"mg\" }] }\n`occurredAt` defaults to now; `confidence` ∈ high|medium|low|unknown. Returns 201 with the event + resolved amounts."
+            "description": "Log one intake. With `itemId`, it resolves the item's components and freezes a per-event snapshot. Freeform (no item) is allowed and may carry manual substance amounts, e.g.:\n{ \"displayName\": \"Coffee\", \"quantity\": 1, \"unit\": \"cup\", \"resolved\": [{ \"substance\": \"caffeine\", \"amount\": 120, \"unit\": \"mg\" }] }\n`occurredAt` defaults to now. Returns 201 with the event + resolved amounts."
           }
         },
         {

@@ -81,7 +81,7 @@
       <text x="12" y="99">quantity  ·  unit</text>
       <text x="12" y="116">occurred_at  ·  recorded_at</text>
       <text x="12" y="133">source  ·  precision</text>
-      <text x="12" y="150">unresolved  ·  confidence</text>
+      <text x="12" y="150">context_tags  ·  unresolved</text>
       <text x="12" y="166" font-size="9" fill="#7a7a88">deleted_at (soft delete)</text>
     </g>
   </g>
