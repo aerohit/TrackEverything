@@ -115,9 +115,7 @@ export const createIntakeEventSchema = z.object({
   itemId: z.string().uuid().optional(),
   quantity: z.number().positive(),
   unit: z.string().min(1),
-  confidence: confidenceSchema.optional(),
   contextTags: z.array(z.string()).optional(),
-  notes: z.string().optional(),
   // How this was captured (provenance, R-CAP-12); defaults to "manual" server-side.
   source: intakeSourceSchema.optional(),
   // How exact it is (R-CAP-25); defaults from source server-side (photo/voice → rough).
@@ -223,11 +221,7 @@ export interface IntakeEvent {
   itemId: string | null;
   quantity: number;
   unit: string;
-  canonicalQuantity: number | null;
-  canonicalUnit: string | null;
-  confidence: Confidence;
   contextTags: string[];
-  notes: string | null;
   source: IntakeSource;
   precision: IntakePrecision;
   /** An occasional item with no matching item/nutrition yet — resolvable on the Overview (R-CAP-30). */

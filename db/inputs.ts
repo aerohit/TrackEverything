@@ -33,7 +33,7 @@ import {
   resolvedAmount,
   substance,
 } from "./schema.ts";
-import { convert, type ResolveGraph, type ResolveItem, resolveItem } from "./resolve.ts";
+import { convert, type ResolveGraph, resolveItem } from "./resolve.ts";
 
 interface SubstanceMeta {
   id: string;
@@ -162,28 +162,6 @@ interface ComputedResolution {
     confidence: Confidence;
     source: string;
   }[];
-  canonicalQuantity: number | null;
-  canonicalUnit: string | null;
-}
-
-/** The canonical (analysable) size of a logged quantity, if the item's serving allows. */
-function canonicalServing(
-  item: ResolveItem,
-  quantity: number,
-  unit: string,
-): { quantity: number; unit: string } | null {
-  if (!item.defaultCanonicalUnit || !item.defaultCanonicalQuantity) return null;
-  if (item.defaultDisplayUnit && item.defaultDisplayQuantity) {
-    const c = convert(quantity, unit, item.defaultDisplayUnit);
-    if (c !== null) {
-      return {
-        quantity: (c / item.defaultDisplayQuantity) * item.defaultCanonicalQuantity,
-        unit: item.defaultCanonicalUnit,
-      };
-    }
-  }
-  const direct = convert(quantity, unit, item.defaultCanonicalUnit);
-  return direct === null ? null : { quantity: direct, unit: item.defaultCanonicalUnit };
 }
 
 async function computeResolution(
@@ -192,21 +170,17 @@ async function computeResolution(
     itemId?: string;
     quantity: number;
     unit: string;
-    confidence?: Confidence;
     resolved?: CreateIntakeEvent["resolved"];
   },
 ): Promise<ComputedResolution> {
-  const baseConfidence = input.confidence ?? "medium";
+  // The per-substance snapshot rows still carry a confidence; events no longer do.
+  const baseConfidence: Confidence = "medium";
   if (input.itemId) {
     const graph = await loadGraph(db, input.itemId);
     const { amounts, complete } = resolveItem(input.itemId, input.quantity, input.unit, graph);
-    const item = graph.items.get(input.itemId);
-    const canonical = item ? canonicalServing(item, input.quantity, input.unit) : null;
     const confidence: Confidence = complete ? baseConfidence : "low";
     return {
       rows: amounts.map((a) => ({ ...a, confidence, source: "item" })),
-      canonicalQuantity: canonical?.quantity ?? null,
-      canonicalUnit: canonical?.unit ?? null,
     };
   }
   if (input.resolved?.length) {
@@ -224,9 +198,9 @@ async function computeResolution(
         source: "manual",
       });
     }
-    return { rows, canonicalQuantity: null, canonicalUnit: null };
+    return { rows };
   }
-  return { rows: [], canonicalQuantity: null, canonicalUnit: null };
+  return { rows: [] };
 }
 
 export async function createIntakeEvent(db: Db, input: CreateIntakeEvent): Promise<string> {
@@ -237,11 +211,7 @@ export async function createIntakeEvent(db: Db, input: CreateIntakeEvent): Promi
     itemId: input.itemId ?? null,
     quantity: input.quantity,
     unit: input.unit,
-    canonicalQuantity: resolution.canonicalQuantity,
-    canonicalUnit: resolution.canonicalUnit,
-    confidence: input.confidence ?? "medium",
     contextTags: input.contextTags ?? [],
-    notes: input.notes ?? null,
     source: input.source ?? "manual",
     // Photo/voice are estimates → rough by default; everything else is precise.
     precision: input.precision ??
@@ -269,7 +239,6 @@ export async function updateIntakeEvent(
     itemId: patch.itemId !== undefined ? patch.itemId : (current.itemId ?? undefined),
     quantity: patch.quantity ?? current.quantity,
     unit: patch.unit ?? current.unit,
-    confidence: patch.confidence ?? current.confidence,
     resolved: patch.resolved,
   };
   const resolution = await computeResolution(db, merged);
@@ -280,11 +249,7 @@ export async function updateIntakeEvent(
     itemId: merged.itemId ?? null,
     quantity: merged.quantity,
     unit: merged.unit,
-    canonicalQuantity: resolution.canonicalQuantity,
-    canonicalUnit: resolution.canonicalUnit,
-    confidence: merged.confidence,
     contextTags: patch.contextTags ?? current.contextTags,
-    notes: patch.notes !== undefined ? patch.notes : current.notes,
     // Resolving an occasional item clears the flag (R-CAP-31).
     unresolved: patch.unresolved !== undefined ? patch.unresolved : current.unresolved,
     updatedAt: new Date(),
@@ -418,11 +383,7 @@ function eventDto(
     itemId: e.itemId,
     quantity: e.quantity,
     unit: e.unit,
-    canonicalQuantity: e.canonicalQuantity,
-    canonicalUnit: e.canonicalUnit,
-    confidence: e.confidence,
     contextTags: e.contextTags,
-    notes: e.notes,
     source: e.source,
     precision: e.precision,
     unresolved: e.unresolved,

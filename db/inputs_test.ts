@@ -74,7 +74,6 @@ Deno.test({
         unit: "scoop",
         occurredAt: at(16),
         contextTags: ["pre_workout"],
-        confidence: "high",
       });
       // Log 1 smoothie at 08:00 (resolves through the child item).
       await createIntakeEvent(db, {
@@ -103,7 +102,6 @@ Deno.test({
         preResolved.get("creatine"),
         preResolved.get("sodium"),
       ], [200, 5, 300]);
-      assertEquals(events[0].canonicalQuantity, 12); // 1 scoop = 12 g
 
       // Daily totals sum across events (caffeine: 200 pre + 120 coffee = 320; protein 24 from smoothie).
       let totals = totalsMap(await dailyTotals(db, day, nextDay));

@@ -35,7 +35,7 @@
     hint?: string; // the spoken/typed phrase, shown for context
     source: IntakeSource; // how this intake was captured (provenance, R-CAP-12)
     baseQuantity: number; // the recognized quantity, so portion buttons scale from it
-    fuzzyTime: boolean; // the time was set from a vague bucket → log it low-confidence
+    fuzzyTime: boolean; // the time was set from a vague bucket → shows an "approx" hint
   };
 
   // Fuzzy "when" buckets for after-the-fact logging (R-CAP-27).
@@ -319,8 +319,6 @@
         unit: confirm.unit.trim() || "serving",
         occurredAt: new Date(confirm.when).toISOString(),
         source: confirm.source,
-        // A vague time → log it low-confidence (R-CAP-27).
-        ...(confirm.fuzzyTime ? { confidence: "low" as const } : {}),
       };
       if (sel.startsWith("item:")) {
         await logIntake({ ...base, displayName: confirm.name.trim(), itemId: sel.slice("item:".length) });

@@ -46,11 +46,7 @@ export interface IntakeEvent {
   itemId: string | null;
   quantity: number;
   unit: string;
-  canonicalQuantity: number | null;
-  canonicalUnit: string | null;
-  confidence: Confidence;
   contextTags: string[];
-  notes: string | null;
   source: IntakeSource;
   precision: IntakePrecision;
   /** An occasional item with no matching item/nutrition yet — resolvable on the Overview. */
@@ -131,7 +127,6 @@ export interface CreateIntake {
   unit: string;
   occurredAt?: string;
   contextTags?: string[];
-  notes?: string;
   source?: IntakeSource;
   precision?: IntakePrecision;
   unresolved?: boolean;
