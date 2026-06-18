@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { defaultAmountLabel, isStack, quickLogPayload, sizeLogPayload, stackLogPlan } from "./quickcapture";
+import {
+  defaultAmountLabel,
+  isStack,
+  preparePresets,
+  quickLogPayload,
+  sizeLogPayload,
+  stackLogPlan,
+} from "./quickcapture";
 import type { QuickItem } from "$lib/types";
 
 function qi(over: Partial<QuickItem> = {}): QuickItem {
@@ -111,5 +118,36 @@ describe("stackLogPlan", () => {
 
   it("falls back to a single quick log for a non-stack favorite", () => {
     expect(stackLogPlan(qi(), new Set(), "single")).toHaveLength(1);
+  });
+});
+
+describe("preparePresets", () => {
+  it("trims and accepts complete rows", () => {
+    const r = preparePresets([
+      { label: " 250 g ", quantity: 250, unit: " g " },
+      { label: "300 g", quantity: 300, unit: "g" },
+    ]);
+    expect(r).toEqual({
+      ok: true,
+      presets: [
+        { label: "250 g", quantity: 250, unit: "g" },
+        { label: "300 g", quantity: 300, unit: "g" },
+      ],
+    });
+  });
+
+  it("accepts an empty list", () => {
+    expect(preparePresets([])).toEqual({ ok: true, presets: [] });
+  });
+
+  it("blocks a row with a blank label (rather than dropping it)", () => {
+    const r = preparePresets([{ label: "   ", quantity: 250, unit: "g" }]);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/label/i);
+  });
+
+  it("blocks a non-positive quantity and a blank unit", () => {
+    expect(preparePresets([{ label: "250 g", quantity: 0, unit: "g" }]).ok).toBe(false);
+    expect(preparePresets([{ label: "250 g", quantity: 250, unit: "  " }]).ok).toBe(false);
   });
 });

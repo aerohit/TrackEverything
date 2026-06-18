@@ -19,6 +19,7 @@
   } from "$lib/types";
   import ItemDraftForm from "$lib/ItemDraftForm.svelte";
   import { draftFromBody, draftToBody, emptyDraft, type ItemDraft } from "$lib/itemDraft";
+  import { preparePresets } from "$lib/quickcapture";
   import { unitOptions } from "$lib/units";
 
   // photo + scan state
@@ -79,12 +80,20 @@
   function removePreset(i: number) {
     qPresets = qPresets.filter((_, idx) => idx !== i);
   }
+  // Validate presets only when pinned (unpinning clears them); blank rows block the
+  // save instead of being silently dropped (the server requires a label).
+  let presetCheck = $derived(
+    qPinned ? preparePresets(qPresets) : { ok: true as const, presets: [] as QuickPreset[] },
+  );
   async function saveQuick() {
     if (!detail) return;
+    if (!presetCheck.ok) {
+      flash(presetCheck.error, true);
+      return;
+    }
     qSaving = true;
     try {
-      const presets = qPresets.filter((p) => p.label.trim() && p.quantity > 0 && p.unit.trim());
-      await setQuickLog(detail.id, { quickLog: qPinned, presets });
+      await setQuickLog(detail.id, { quickLog: qPinned, presets: presetCheck.presets });
       flash(qPinned ? "Pinned to Quick Capture ✓" : "Removed from Quick Capture ✓");
       closeDetail();
     } catch (e) {
@@ -429,7 +438,10 @@
         {/each}
         <button class="ghostbtn" onclick={addPreset}>+ Add preset</button>
       {/if}
-      <button class="primary" disabled={qSaving} onclick={saveQuick}>
+      {#if !presetCheck.ok}
+        <p class="err-text" style="margin:6px 0 0; font-size:0.85rem">{presetCheck.error}</p>
+      {/if}
+      <button class="primary" disabled={qSaving || !presetCheck.ok} onclick={saveQuick}>
         {qSaving ? "Saving…" : "Save Quick Capture"}
       </button>
 

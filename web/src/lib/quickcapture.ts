@@ -6,6 +6,27 @@
 import type { CreateIntake, QuickItem, QuickPreset } from "$lib/types";
 
 /**
+ * Validate a favorite's amount presets before saving. The server requires every
+ * preset to have a label (plus a positive quantity and a unit), so rather than
+ * silently dropping partial rows we surface an error and let the UI block the
+ * save. Returns the trimmed presets when every row is complete.
+ */
+export function preparePresets(
+  presets: QuickPreset[],
+): { ok: true; presets: QuickPreset[] } | { ok: false; error: string } {
+  const cleaned: QuickPreset[] = [];
+  for (const p of presets) {
+    const label = p.label.trim();
+    const unit = p.unit.trim();
+    if (!label) return { ok: false, error: 'Each preset needs a label (e.g. "250 g").' };
+    if (!(p.quantity > 0)) return { ok: false, error: `Preset "${label}" needs a quantity above 0.` };
+    if (!unit) return { ok: false, error: `Preset "${label}" needs a unit.` };
+    cleaned.push({ label, quantity: p.quantity, unit });
+  }
+  return { ok: true, presets: cleaned };
+}
+
+/**
  * The intake payload for tapping a favorite. With a preset, log that amount;
  * otherwise fall back to the item's default serving (or "1 serving").
  */
