@@ -16,7 +16,6 @@
 
   // An item is product / recipe / simple; "stack" is its own dedicated form.
   const ITEM_KINDS = ["product", "recipe", "simple"] as const;
-  const TYPES = ["food", "drink", "supplement", "medication", "meal", "other"];
 
   // A stack can only be composed of simple / product / recipe items, never another stack.
   const memberItems = $derived(items.filter((i) => i.kind !== "stack"));
@@ -49,22 +48,16 @@
 <div class="fieldlabel">Name</div>
 <input class="field" placeholder={mode === "stack" ? "Stack name (e.g. Morning Stack)" : "Item name"} bind:value={draft.name} />
 
-<div class="row" style="margin-top:8px">
-  {#if mode === "item"}
+{#if mode === "item"}
+  <div class="row" style="margin-top:8px">
     <div style="flex:1">
       <div class="fieldlabel">Kind</div>
       <select class="field" bind:value={draft.kind}>
         {#each ITEM_KINDS as k}<option value={k}>{k}</option>{/each}
       </select>
     </div>
-  {/if}
-  <div style="flex:1">
-    <div class="fieldlabel">Type</div>
-    <select class="field" bind:value={draft.primaryType}>
-      {#each TYPES as t}<option value={t}>{t}</option>{/each}
-    </select>
   </div>
-</div>
+{/if}
 
 {#if mode === "item"}
   <div class="fieldlabel">Serving</div>

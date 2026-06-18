@@ -93,7 +93,7 @@ describe("api client", () => {
   it("createItem POSTs the item body and surfaces a server error message", async () => {
     const ok = vi.fn<typeof globalThis.fetch>(async () => jsonResponse({ id: "1", name: "X" }, true, 201));
     await createItem(
-      { name: "X", kind: "product", primaryType: "supplement", components: [{ substance: "caffeine", amount: 200, unit: "mg" }] },
+      { name: "X", kind: "product", components: [{ substance: "caffeine", amount: 200, unit: "mg" }] },
       { fetch: ok, token: "t" },
     );
     const [url, init] = ok.mock.calls[0];
@@ -102,13 +102,13 @@ describe("api client", () => {
     expect(JSON.parse(init?.body as string).components[0].substance).toBe("caffeine");
 
     const bad = vi.fn<typeof globalThis.fetch>(async () => jsonResponse({ error: "Unknown substance: x" }, false, 400));
-    await expect(createItem({ name: "X", kind: "simple", primaryType: "food" }, { fetch: bad, token: "t" }))
+    await expect(createItem({ name: "X", kind: "simple" }, { fetch: bad, token: "t" }))
       .rejects.toThrow("Unknown substance");
   });
 
   it("scanItem POSTs the image and returns the draft", async () => {
     const fetch = vi.fn<typeof globalThis.fetch>(async () =>
-      jsonResponse({ name: "Multivitamin", kind: "product", primaryType: "supplement", components: [] })
+      jsonResponse({ name: "Multivitamin", kind: "product", components: [] })
     );
     const draft = await scanItem("BASE64DATA", "image/png", { fetch, token: "t" });
     expect(draft.name).toBe("Multivitamin");
@@ -128,7 +128,7 @@ describe("api client", () => {
 
   it("lookupBarcode POSTs the barcode and returns the draft", async () => {
     const fetch = vi.fn<typeof globalThis.fetch>(async () =>
-      jsonResponse({ name: "Greek Yogurt", kind: "product", primaryType: "food", components: [] })
+      jsonResponse({ name: "Greek Yogurt", kind: "product", components: [] })
     );
     const draft = await lookupBarcode("5000112637939", { fetch, token: "t" });
     expect(draft.name).toBe("Greek Yogurt");
@@ -149,7 +149,7 @@ describe("api client", () => {
   it("recognizeIntake posts a photo source and returns recognition + matches", async () => {
     const fetch = vi.fn<typeof globalThis.fetch>(async () =>
       jsonResponse({
-        recognized: { name: "banana", quantity: 1, unit: "piece", primaryType: "food", draft: {} },
+        recognized: { name: "banana", quantity: 1, unit: "piece", draft: {} },
         matches: [{ id: "i1", name: "Banana" }],
       })
     );
@@ -167,7 +167,7 @@ describe("api client", () => {
 
   it("recognizeIntake posts a text source", async () => {
     const fetch = vi.fn<typeof globalThis.fetch>(async () =>
-      jsonResponse({ recognized: { name: "coffee", quantity: 1, unit: "cup", primaryType: "drink", draft: {} }, matches: [] })
+      jsonResponse({ recognized: { name: "coffee", quantity: 1, unit: "cup", draft: {} }, matches: [] })
     );
     await recognizeIntake({ text: "a coffee" }, { fetch, token: "t" });
     expect(JSON.parse(fetch.mock.calls[0][1]?.body as string)).toEqual({ source: "text", text: "a coffee" });
@@ -175,7 +175,7 @@ describe("api client", () => {
 
   it("recognizeIntake forwards the client's local time for resolving spoken times", async () => {
     const fetch = vi.fn<typeof globalThis.fetch>(async () =>
-      jsonResponse({ recognized: { name: "coffee", quantity: 1, unit: "cup", primaryType: "drink", draft: {} }, matches: [] })
+      jsonResponse({ recognized: { name: "coffee", quantity: 1, unit: "cup", draft: {} }, matches: [] })
     );
     await recognizeIntake({ text: "coffee at 10am", now: "2026-06-17T14:30" }, { fetch, token: "t" });
     expect(JSON.parse(fetch.mock.calls[0][1]?.body as string)).toEqual({
@@ -200,7 +200,6 @@ describe("api client", () => {
         id: "abc",
         name: "My Pre-Workout",
         kind: "product",
-        primaryType: "supplement",
         components: [{ substance: "caffeine", childItemId: null, amount: 200, unit: "mg", position: 0, prepState: null }],
       })
     );

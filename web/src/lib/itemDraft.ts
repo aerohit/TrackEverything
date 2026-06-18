@@ -13,7 +13,6 @@ export type MemberRow = { itemId: string; name: string; quantity: number; unit: 
 export type ItemDraft = {
   name: string;
   kind: "product" | "recipe" | "simple" | "stack";
-  primaryType: string;
   dispQty: number | null;
   dispUnit: string;
   // Optional analysable serving size, e.g. "1 steak = 250 g": canonQty 250, canonUnit "g".
@@ -29,7 +28,6 @@ export function emptyDraft(): ItemDraft {
   return {
     name: "",
     kind: "product",
-    primaryType: "supplement",
     dispQty: 1,
     dispUnit: "serving",
     canonQty: null,
@@ -44,7 +42,6 @@ export function draftFromBody(d: CreateItemBody): ItemDraft {
   return {
     name: d.name ?? "",
     kind: d.kind ?? "product",
-    primaryType: d.primaryType ?? "supplement",
     dispQty: d.defaultServing?.displayQuantity ?? 1,
     dispUnit: d.defaultServing?.displayUnit ?? "serving",
     canonQty: d.defaultServing?.canonicalQuantity ?? null,
@@ -76,7 +73,6 @@ export function draftToBody(d: ItemDraft): CreateItemBody {
   return {
     name: d.name.trim(),
     kind: d.kind,
-    primaryType: d.primaryType,
     defaultServing: Object.keys(serving).length ? serving : undefined,
     components,
   };

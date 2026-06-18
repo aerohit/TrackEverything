@@ -4,7 +4,7 @@
  * scan_anthropic.ts; this file keeps the seam + the pure parsing (so it's
  * unit-tested without the SDK or a network call).
  */
-import type { CreateItem, InputPrimaryType } from "../shared/inputs.ts";
+import type { CreateItem } from "../shared/inputs.ts";
 
 export interface ItemScanner {
   scan(args: { imageBase64: string; mediaType: string }): Promise<CreateItem>;
@@ -13,7 +13,6 @@ export interface ItemScanner {
 export const SCAN_SYSTEM_PROMPT =
   `You read a photo of a food or supplement label and extract it. Return JSON ONLY (no prose):
 {"name": string, "brand": string|null,
- "primaryType": "supplement"|"food"|"drink"|"medication"|"meal"|"other",
  "serving": {"displayQuantity": number, "displayUnit": string},
  "components": [{"substance": string, "amount": number, "unit": "mg"|"g"|"mcg"|"iu"|"ml"|"kcal"}]}.
 List EVERY active ingredient / nutrient in the facts panel with its amount PER SERVING and unit.
@@ -33,8 +32,6 @@ export function extractJson(text: string): unknown {
   }
 }
 
-const PRIMARY_TYPES = ["food", "drink", "supplement", "medication", "meal", "other"];
-
 function positive(v: unknown): number | undefined {
   return typeof v === "number" && Number.isFinite(v) && v > 0 ? v : undefined;
 }
@@ -44,9 +41,6 @@ export function parseScannedItem(raw: unknown): CreateItem {
   const o = (raw && typeof raw === "object" && !Array.isArray(raw))
     ? raw as Record<string, unknown>
     : {};
-  const primaryType: InputPrimaryType = PRIMARY_TYPES.includes(o.primaryType as string)
-    ? o.primaryType as InputPrimaryType
-    : "supplement";
 
   const s = (o.serving && typeof o.serving === "object")
     ? o.serving as Record<string, unknown>
@@ -64,9 +58,7 @@ export function parseScannedItem(raw: unknown): CreateItem {
   return {
     name: typeof o.name === "string" ? o.name.trim() : "",
     kind: "product",
-    primaryType,
     brand: typeof o.brand === "string" && o.brand.trim() ? o.brand.trim() : undefined,
-    roles: [],
     defaultServing: {
       displayQuantity: positive(s.displayQuantity) ?? 1,
       displayUnit: typeof s.displayUnit === "string" && s.displayUnit.trim()

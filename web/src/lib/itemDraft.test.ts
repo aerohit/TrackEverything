@@ -2,11 +2,10 @@ import { describe, expect, it } from "vitest";
 import { draftFromBody, draftToBody, emptyDraft } from "./itemDraft";
 
 describe("itemDraft converters", () => {
-  it("draftFromBody pre-fills name/kind/type/serving and keeps substance components", () => {
+  it("draftFromBody pre-fills name/kind/serving and keeps substance components", () => {
     const d = draftFromBody({
       name: "Pre-Workout",
       kind: "product",
-      primaryType: "supplement",
       defaultServing: { displayQuantity: 2, displayUnit: "scoops" },
       components: [
         { substance: "caffeine", amount: 200, unit: "mg" },
@@ -16,7 +15,6 @@ describe("itemDraft converters", () => {
     expect(d).toEqual({
       name: "Pre-Workout",
       kind: "product",
-      primaryType: "supplement",
       dispQty: 2,
       dispUnit: "scoops",
       canonQty: null,
@@ -27,10 +25,9 @@ describe("itemDraft converters", () => {
   });
 
   it("draftFromBody falls back to sane defaults when fields are missing", () => {
-    expect(draftFromBody({ name: "X", kind: "simple", primaryType: "food" })).toEqual({
+    expect(draftFromBody({ name: "X", kind: "simple" })).toEqual({
       name: "X",
       kind: "simple",
-      primaryType: "food",
       dispQty: 1,
       dispUnit: "serving",
       canonQty: null,
@@ -44,7 +41,6 @@ describe("itemDraft converters", () => {
     const d = draftFromBody({
       name: "Steak",
       kind: "simple",
-      primaryType: "food",
       defaultServing: { displayQuantity: 1, displayUnit: "steak", canonicalQuantity: 250, canonicalUnit: "g" },
       components: [{ substance: "protein", amount: 62, unit: "g" }],
     });
@@ -62,7 +58,6 @@ describe("itemDraft converters", () => {
     const body = draftToBody({
       name: "  Steak ",
       kind: "simple",
-      primaryType: "food",
       dispQty: 1,
       dispUnit: " steak ",
       canonQty: 250,
@@ -77,7 +72,6 @@ describe("itemDraft converters", () => {
     expect(body).toEqual({
       name: "Steak",
       kind: "simple",
-      primaryType: "food",
       defaultServing: { displayQuantity: 1, displayUnit: "steak", canonicalQuantity: 250, canonicalUnit: "g" },
       components: [{ substance: "protein", amount: 62, unit: "g" }],
     });

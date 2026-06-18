@@ -4,7 +4,7 @@
  * saved as new. The Claude implementation lives in recognize_anthropic.ts; this file
  * keeps the seam + the pure parsing so it's unit-tested without the SDK or a network call.
  */
-import type { CreateItem, InputPrimaryType, RecognizedIntake } from "../shared/inputs.ts";
+import type { CreateItem, RecognizedIntake } from "../shared/inputs.ts";
 
 /** Either a photo to look at, or a phrase (typed or transcribed) to read. */
 export type RecognizeInput =
@@ -19,8 +19,7 @@ export const RECOGNIZE_SYSTEM_PROMPT =
   `You identify ONE thing a person consumed — from a photo of food/drink, or a short phrase
 they spoke or typed (e.g. "two cups of coffee", "a bowl of oatmeal with banana"). Return JSON
 ONLY (no prose):
-{"name": string, "primaryType": "food"|"drink"|"supplement"|"medication"|"meal"|"other",
- "quantity": number, "unit": string, "when": string|null,
+{"name": string, "quantity": number, "unit": string, "when": string|null,
  "components": [{"substance": string, "amount": number, "unit": "mg"|"g"|"mcg"|"iu"|"ml"|"kcal"}]}.
 "name" is a short, human, lowercase-ish label ("banana", "chicken salad", "latte"). "quantity"
 and "unit" are how much was consumed in display terms ("1" + "bowl", "2" + "cup", "1" + "serving").
@@ -44,8 +43,6 @@ export function extractJson(text: string): unknown {
   }
 }
 
-const PRIMARY_TYPES = ["food", "drink", "supplement", "medication", "meal", "other"];
-
 function positive(v: unknown): number | undefined {
   return typeof v === "number" && Number.isFinite(v) && v > 0 ? v : undefined;
 }
@@ -55,9 +52,6 @@ export function parseRecognized(raw: unknown): RecognizedIntake {
   const o = (raw && typeof raw === "object" && !Array.isArray(raw))
     ? raw as Record<string, unknown>
     : {};
-  const primaryType: InputPrimaryType = PRIMARY_TYPES.includes(o.primaryType as string)
-    ? o.primaryType as InputPrimaryType
-    : "food";
   const name = typeof o.name === "string" ? o.name.trim() : "";
   const quantity = positive(o.quantity) ?? 1;
   const unit = typeof o.unit === "string" && o.unit.trim() ? o.unit.trim() : "serving";
@@ -81,11 +75,9 @@ export function parseRecognized(raw: unknown): RecognizedIntake {
     // Recognized intakes are whole foods/meals/drinks, not packaged products with a
     // facts panel — model them as a single "simple" item carrying estimated nutrients.
     kind: "simple",
-    primaryType,
-    roles: [],
     defaultServing: { displayQuantity: 1, displayUnit: unit },
     components,
   };
 
-  return { name, quantity, unit, primaryType, draft, when };
+  return { name, quantity, unit, draft, when };
 }

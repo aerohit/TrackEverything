@@ -34,8 +34,6 @@ Deno.test({
       const pre = await createItem(db, {
         name: "My Pre-workout",
         kind: "product",
-        primaryType: "supplement",
-        roles: ["drink", "stimulant", "workout_support"],
         defaultServing: {
           displayQuantity: 1,
           displayUnit: "scoop",
@@ -53,8 +51,6 @@ Deno.test({
       const whey = await createItem(db, {
         name: "Whey protein",
         kind: "product",
-        primaryType: "supplement",
-        roles: [],
         defaultServing: {
           displayQuantity: 30,
           displayUnit: "g",
@@ -66,8 +62,6 @@ Deno.test({
       const smoothie = await createItem(db, {
         name: "Morning smoothie",
         kind: "recipe",
-        primaryType: "meal",
-        roles: ["drink", "food"],
         defaultServing: { displayQuantity: 1, displayUnit: "glass" },
         components: [{ childItemId: whey, amount: 30, unit: "g" }],
       });
@@ -154,7 +148,6 @@ Deno.test({
       const id = await createItem(db, {
         name: "Bulk Electrolyte Powder",
         kind: "product",
-        primaryType: "supplement",
         defaultServing: { displayQuantity: 2, displayUnit: "scoops" },
         components: [
           { substance: "sodium", amount: 1034, unit: "mg" },

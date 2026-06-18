@@ -33,16 +33,6 @@ export type SubstanceUnit = (typeof SUBSTANCE_UNITS)[number];
 export const INPUT_KINDS = ["product", "recipe", "simple", "stack"] as const;
 export type InputKind = (typeof INPUT_KINDS)[number];
 
-export const INPUT_PRIMARY_TYPES = [
-  "food",
-  "drink",
-  "supplement",
-  "medication",
-  "meal",
-  "other",
-] as const;
-export type InputPrimaryType = (typeof INPUT_PRIMARY_TYPES)[number];
-
 export const CONFIDENCE_LEVELS = ["high", "medium", "low", "unknown"] as const;
 export type Confidence = (typeof CONFIDENCE_LEVELS)[number];
 
@@ -103,8 +93,6 @@ export type SetQuickLog = z.infer<typeof setQuickLogSchema>;
 export const createItemSchema = z.object({
   name: z.string().min(1),
   kind: z.enum(INPUT_KINDS),
-  primaryType: z.enum(INPUT_PRIMARY_TYPES),
-  roles: z.array(z.string()).optional(),
   brand: z.string().optional(),
   defaultServing: servingSchema.optional(),
   notes: z.string().optional(),
@@ -193,7 +181,6 @@ export interface RecognizedIntake {
   name: string;
   quantity: number;
   unit: string;
-  primaryType: InputPrimaryType;
   draft: CreateItem;
   /** A time the user stated ("at 10am", "an hour ago"), as a local "YYYY-MM-DDTHH:MM"; else absent. */
   when?: string;
@@ -269,8 +256,6 @@ export interface InputItemSummary {
   id: string;
   name: string;
   kind: InputKind;
-  primaryType: InputPrimaryType;
-  roles: string[];
   brand: string | null;
   defaultDisplayQuantity: number | null;
   defaultDisplayUnit: string | null;

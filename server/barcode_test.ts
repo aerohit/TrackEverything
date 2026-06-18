@@ -25,7 +25,6 @@ Deno.test("parseOffProduct: per-serving nutriments → draft with canonical gram
 
   assertEquals(draft?.name, "Greek Yogurt");
   assertEquals(draft?.kind, "product");
-  assertEquals(draft?.primaryType, "food");
   assertEquals(draft?.brand, "Fage"); // first of the comma list
   // Per-serving basis → 1 serving, with the known weight as the canonical serving.
   assertEquals(draft?.defaultServing, {
@@ -53,7 +52,6 @@ Deno.test("parseOffProduct: only per-100g figures → a 100 g serving", () => {
     },
   }, "5000112637939");
 
-  assertEquals(draft?.primaryType, "drink"); // beverage category
   assertEquals(draft?.defaultServing, { displayQuantity: 100, displayUnit: "g" });
   assertEquals(draft?.components, [
     { substance: "calories", amount: 45, unit: "kcal" },

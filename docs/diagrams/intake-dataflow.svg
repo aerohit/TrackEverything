@@ -1,0 +1,78 @@
+<svg viewBox="0 0 680 690" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif, system-ui, sans-serif" role="img">
+  <title>How one intake log flows through TrackEverything</title>
+  <desc>A vertical pipeline: an item defined in the catalog, then logged as an intake event, run through the resolver engine, frozen into resolved-amount snapshots, and aggregated into daily totals.</desc>
+
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#7a7a88"/>
+    </marker>
+  </defs>
+
+  <g stroke="#7a7a88" stroke-width="1.6" fill="none" marker-end="url(#arr)">
+    <line x1="340" y1="110" x2="340" y2="148"/>
+    <line x1="340" y1="228" x2="340" y2="260"/>
+    <line x1="340" y1="366" x2="340" y2="398"/>
+    <line x1="340" y1="492" x2="340" y2="522"/>
+  </g>
+  <g font-size="10" fill="#7a7a88" font-style="italic">
+    <text x="350" y="133">you log an amount</text>
+    <text x="350" y="248">resolver runs on save</text>
+    <text x="350" y="386">freeze a snapshot</text>
+    <text x="350" y="511">group by day + sum</text>
+  </g>
+
+  <g transform="translate(130,24)">
+    <rect width="420" height="86" rx="10" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+    <circle cx="28" cy="30" r="14" fill="#534AB7"/>
+    <text x="28" y="34" text-anchor="middle" font-size="13" font-weight="500" fill="#fff">1</text>
+    <text x="52" y="27" font-size="13" font-weight="500" fill="#3C3489">Catalog — define the item once</text>
+    <text x="52" y="48" font-size="10.5" fill="#26215C">input_item + item_component (a tree: nutrients &amp; child items)</text>
+    <text x="52" y="66" font-size="10" fill="#7a7a88">e.g. “Pre-workout” recipe = 200 ml coffee + 5 g creatine</text>
+  </g>
+
+  <g transform="translate(130,150)">
+    <rect width="420" height="78" rx="10" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+    <circle cx="28" cy="30" r="14" fill="#534AB7"/>
+    <text x="28" y="34" text-anchor="middle" font-size="13" font-weight="500" fill="#fff">2</text>
+    <text x="52" y="27" font-size="13" font-weight="500" fill="#3C3489">Capture — log what you took</text>
+    <text x="52" y="48" font-size="10.5" fill="#26215C">intake_event: quantity, unit, occurred_at, source, precision</text>
+    <text x="52" y="66" font-size="10" fill="#7a7a88">e.g. 1.5 servings, 7:05am, source = quick</text>
+  </g>
+
+  <g transform="translate(130,262)">
+    <rect width="420" height="104" rx="10" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1.5" stroke-dasharray="6 4"/>
+    <circle cx="28" cy="30" r="14" fill="#0F6E56"/>
+    <text x="28" y="34" text-anchor="middle" font-size="13" font-weight="500" fill="#fff">3</text>
+    <text x="52" y="27" font-size="13" font-weight="500" fill="#0F6E56">Resolve — the engine (pure function)</text>
+    <text x="52" y="48" font-size="10.5" fill="#085041">• walk item_component, recursing into child items</text>
+    <text x="52" y="65" font-size="10.5" fill="#085041">• scale every amount by servings logged</text>
+    <text x="52" y="82" font-size="10.5" fill="#085041">• convert each to its substance's canonical unit</text>
+    <text x="52" y="98" font-size="10" fill="#7a7a88">no item match? → event stays unresolved (skipped from totals)</text>
+  </g>
+
+  <g transform="translate(130,400)">
+    <rect width="420" height="92" rx="10" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1.5"/>
+    <circle cx="28" cy="30" r="14" fill="#0F6E56"/>
+    <text x="28" y="34" text-anchor="middle" font-size="13" font-weight="500" fill="#fff">4</text>
+    <text x="52" y="27" font-size="13" font-weight="500" fill="#0F6E56">Snapshot — freeze the result</text>
+    <text x="52" y="48" font-size="10.5" fill="#085041">resolved_amount rows, one per substance, per event</text>
+    <text x="52" y="66" font-size="10" fill="#7a7a88">e.g. caffeine 144 mg · creatine 7.5 g — frozen, won't drift</text>
+    <text x="52" y="82" font-size="10" fill="#7a7a88">later catalog edits never rewrite past logs</text>
+  </g>
+
+  <g transform="translate(130,524)">
+    <rect width="420" height="88" rx="10" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1.5"/>
+    <circle cx="28" cy="30" r="14" fill="#0F6E56"/>
+    <text x="28" y="34" text-anchor="middle" font-size="13" font-weight="500" fill="#fff">5</text>
+    <text x="52" y="27" font-size="13" font-weight="500" fill="#0F6E56">Aggregate — daily totals</text>
+    <text x="52" y="48" font-size="10.5" fill="#085041">sum resolved_amount by substance × day → the Overview</text>
+    <text x="52" y="66" font-size="10" fill="#7a7a88">e.g. today: caffeine 144 mg, creatine 7.5 g, …</text>
+  </g>
+
+  <g font-size="10" fill="#26215C">
+    <rect x="130" y="640" width="13" height="13" rx="3" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+    <text x="150" y="650">what you log</text>
+    <rect x="250" y="640" width="13" height="13" rx="3" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1.5"/>
+    <text x="270" y="650">analysis layer  ·  dashed = engine, not a table</text>
+  </g>
+</svg>

@@ -71,8 +71,6 @@ export interface InputItemSummary {
   id: string;
   name: string;
   kind: "product" | "recipe" | "simple" | "stack";
-  primaryType: string;
-  roles: string[];
   brand: string | null;
   defaultDisplayQuantity: number | null;
   defaultDisplayUnit: string | null;
@@ -171,8 +169,6 @@ export interface ComponentInput {
 export interface CreateItemBody {
   name: string;
   kind: "product" | "recipe" | "simple" | "stack";
-  primaryType: string;
-  roles?: string[];
   brand?: string;
   defaultServing?: {
     displayQuantity?: number;
@@ -189,7 +185,6 @@ export interface RecognizedIntake {
   name: string;
   quantity: number;
   unit: string;
-  primaryType: string;
   draft: CreateItemBody;
   /** A time the user stated, as a local "YYYY-MM-DDTHH:MM"; absent if none. */
   when?: string;

@@ -11,7 +11,6 @@ Deno.test("extractJson: pulls JSON out of prose / code fences", () => {
 Deno.test("parseRecognized: maps a recognized intake + draft item", () => {
   const r = parseRecognized({
     name: "  Chicken Salad ",
-    primaryType: "meal",
     quantity: 1,
     unit: "bowl",
     components: [
@@ -24,7 +23,6 @@ Deno.test("parseRecognized: maps a recognized intake + draft item", () => {
   assertEquals(r.name, "Chicken Salad");
   assertEquals(r.quantity, 1);
   assertEquals(r.unit, "bowl");
-  assertEquals(r.primaryType, "meal");
   assertEquals(r.draft.kind, "simple");
   assertEquals(r.draft.name, "Chicken Salad");
   assertEquals(r.draft.defaultServing, { displayQuantity: 1, displayUnit: "bowl" });
@@ -35,11 +33,10 @@ Deno.test("parseRecognized: maps a recognized intake + draft item", () => {
 });
 
 Deno.test("parseRecognized: tolerant defaults for garbage / missing fields", () => {
-  const r = parseRecognized({ primaryType: "nonsense" });
+  const r = parseRecognized({ quantity: -5 });
   assertEquals(r.name, "");
   assertEquals(r.quantity, 1); // non-positive/missing → 1
   assertEquals(r.unit, "serving");
-  assertEquals(r.primaryType, "food"); // bad enum → food default
   assertEquals(r.draft.components, []);
   assert(r.draft.kind === "simple");
 

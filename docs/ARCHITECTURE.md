@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-18 (ADR-033: occasional items — capture + the 3-way Overview resolve, both phases shipped)
+> **Last updated:** 2026-06-18 (ADR-034: dropped input_item.primary_type and roles; added §4c diagrams)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -160,9 +160,9 @@ rich analytical decomposition:
 - **`substance`** — the analytical vocabulary (seeded; elemental forms only for now): `name`,
   `substance_type` (macronutrient/mineral/electrolyte/vitamin/stimulant/…), `canonical_unit`
   (g/mg/mcg/ml/kcal/iu), `aliases[]`.
-- **`input_item`** — a reusable thing (`kind`: product | recipe | simple). Not forced into one
-  category: `primary_type` + `roles[]` (a smoothie is drink + food + meal). Carries a default
-  serving (display + canonical) and a `version`. Mutable, soft-deletable.
+- **`input_item`** — a reusable thing (`kind`: product | recipe | simple | stack — see
+  [ADR-034](#adr-034) for why `kind` is the only structural axis we keep). Carries a default
+  serving (display + canonical), an optional `brand`, and a `version`. Mutable, soft-deletable.
 - **`item_component`** — composition; each row is **exactly one of** a `substance` (actives /
   nutrients) **or** a `child_item` (recipe ingredients), with an amount + unit per serving.
 - **`intake_event`** — one thing consumed at one time. Optional `item_id` (freeform logs allowed),
@@ -177,6 +177,11 @@ So the user logs **objects** ("1 scoop pre-workout") while the app analyses **co
 (200 mg caffeine, 5 g creatine, …). Quantities keep both a display form and a canonical form; every
 event and amount carries a confidence. Compound→elemental conversion (magnesium glycinate → Mg) is
 deferred; tags are `text[]` for now.
+
+**Diagrams.** The full table-and-FK layout (all 7 tables, including the isolated `subjective_state`
+and `quick_preset`) is in [diagrams/er-diagram.svg](diagrams/er-diagram.svg). How a single log flows
+catalog → event → resolver → frozen snapshot → daily totals is in
+[diagrams/intake-dataflow.svg](diagrams/intake-dataflow.svg).
 
 ## 5. Source adapter layer
 
@@ -389,6 +394,24 @@ the owner verifies. No phase starts before the prior one is approved.
 **Consequences:** Slower nominal throughput but continuous verification and low
 risk of building the wrong thing. Requires keeping ROADMAP.md in sync with the
 two core docs.
+
+### ADR-034
+**Title:** Drop `input_item.primary_type` and `roles`; `kind` is the only structural axis.
+**Status:** Accepted (2026-06-18). Updates R-DOM-4. Migration `0009`.
+**Context:** `input_item` carried three classifying columns. A usage audit found only `kind`
+drives behaviour — and within `kind`, only `stack` vs. not (it gates loading a stack's member
+items, the manage-screen split, and the single-vs-per-member capture choice; product/recipe/simple
+are descriptive provenance, never branched on). `primary_type` was display-only metadata (a label +
+a scan/recognize default), branched on nowhere. `roles[]` was written as `[]` everywhere and never
+read — a reserved-for-future field that never came.
+**Decision:** Remove `primary_type` (and its `input_primary_type` enum) and `roles` from the schema,
+the Zod contract, the scan/barcode/recognize drafts, the DTOs, and the Add-Item / resolve forms.
+Keep `kind` (incl. `stack`) and `brand`. The catalog screens now show `kind` (+ `brand` when present)
+instead of `kind · primary_type`.
+**Consequences:** A smaller, honest contract — no fields masquerading as meaningful. If a
+food/drink/supplement taxonomy is ever needed (e.g. to filter the Overview), it returns as a
+deliberate, used column rather than inferred-but-ignored metadata. Drop is destructive but the data
+was unused; the migration is idempotent.
 
 ### ADR-033
 **Title:** Occasional / "unresolved" items — capture by name now, resolve nutrition later.
