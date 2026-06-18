@@ -35,6 +35,7 @@
   // editable draft (shown after a scan)
   let hasDraft = $state(false);
   let draft = $state<ItemDraft>(emptyDraft());
+  let formMode = $state<"item" | "stack">("item");
 
   let substances = $state<Substance[]>([]);
   let items = $state<InputItemSummary[]>([]);
@@ -134,13 +135,20 @@
     imageBase64 = await fileToBase64(file);
   }
 
-  function newBlank() {
+  function newItem() {
     draft = emptyDraft();
+    formMode = "item";
+    hasDraft = true;
+  }
+  function newStack() {
+    draft = { ...emptyDraft(), kind: "stack", primaryType: "supplement" };
+    formMode = "stack";
     hasDraft = true;
   }
 
   function applyDraft(d: CreateItemBody) {
     draft = draftFromBody(d);
+    formMode = "item"; // scan / barcode always produce an item, never a stack
     hasDraft = true;
   }
 
@@ -221,6 +229,7 @@
 
   function reset() {
     hasDraft = false;
+    formMode = "item";
     if (preview) URL.revokeObjectURL(preview);
     preview = null;
     imageBase64 = null;
@@ -280,14 +289,25 @@
 
     {#if !hasDraft}
       <div class="or"><span>or build it yourself</span></div>
-      <button class="ghostbtn" onclick={newBlank}>✏️ Create an item or stack manually</button>
+      <div class="modes">
+        <button class="modebtn" onclick={newItem}>
+          <span class="ico">✏️</span><span>Create item</span>
+        </button>
+        <button class="modebtn" onclick={newStack}>
+          <span class="ico">🧩</span><span>Create stack</span>
+        </button>
+      </div>
     {/if}
 
     {#if hasDraft}
-      <ItemDraftForm bind:draft {substances} {items} />
+      <div class="fieldlabel" style="margin-top:4px">
+        {formMode === "stack" ? "New stack" : "New item"}
+      </div>
+      <ItemDraftForm bind:draft {substances} {items} mode={formMode} />
       <button class="primary" disabled={!draft.name.trim() || saving} onclick={save}>
-        {saving ? "Saving…" : "Save item"}
+        {saving ? "Saving…" : formMode === "stack" ? "Save stack" : "Save item"}
       </button>
+      <button class="linklike" onclick={reset}>Cancel</button>
     {/if}
   </section>
 

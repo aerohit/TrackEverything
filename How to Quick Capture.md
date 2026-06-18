@@ -109,12 +109,12 @@ supplements, or a meal of a few foods. Tap it once and the whole thing is logged
 
 **Create a stack:**
 1. Make sure the member items exist first (e.g. *Vitamin D*, *Magnesium*,
-   *Omega-3*) — scan/barcode/create each as its own item.
-2. On **Add Item**, tap **"✏️ Create an item or stack manually."**
-3. Give it a name (*Morning Stack*) and set **Kind → stack**. A **Stack members**
-   section appears.
-4. Add each member by name (it autocompletes from your items), with how much of it
-   the stack contains. Save.
+   *Omega-3*) — scan/barcode/create each as its own item. (Stacks can only contain
+   items, not other stacks.)
+2. On **Add Item**, tap **🧩 Create stack** (next to **✏️ Create item**).
+3. Give it a name (*Morning Stack*) and a type.
+4. Under **Members**, add each item by name (it autocompletes from your items),
+   with how much of it the stack contains. Tap **Save stack**.
 5. Pin the stack to Quick Capture (same as any favorite — see step 1 above).
 
 **Log a stack — you choose how it's stored:**
