@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupTotals, substanceContributions } from "./totals";
+import { displaySubstance, groupTotals, substanceContributions } from "./totals";
 import type { DailyTotal, IntakeEvent } from "$lib/types";
 
 function t(substance: string, substanceType: string): DailyTotal {
@@ -13,28 +13,33 @@ function shape(totals: DailyTotal[]) {
 describe("groupTotals", () => {
   it("splits into Macros / Micros / Others with the right ordering", () => {
     const input: DailyTotal[] = [
-      t("water", "water"),
-      t("magnesium", "mineral"),
-      t("fat", "macronutrient"),
-      t("calories", "energy"),
-      t("vitamin_d", "vitamin"),
-      t("protein", "macronutrient"),
-      t("sodium", "electrolyte"),
-      t("carbohydrate", "macronutrient"),
-      t("caffeine", "stimulant"),
-      t("fiber", "macronutrient"), // a macronutrient, but not one of the 4 → Others
+      t("Water", "water"),
+      t("Magnesium", "mineral"),
+      t("Fat", "macronutrient"),
+      t("Energy", "energy"),
+      t("Vitamin D", "vitamin"),
+      t("Protein", "macronutrient"),
+      t("Sodium", "electrolyte"),
+      t("Carbohydrate", "macronutrient"),
+      t("Caffeine", "stimulant"),
+      t("Dietary Fiber", "macronutrient"), // a macronutrient, but not one of the 4 → Others
     ];
     expect(shape(input)).toEqual([
-      ["Macros", ["calories", "protein", "carbohydrate", "fat"]],
-      ["Micros", ["vitamin_d", "magnesium", "sodium"]], // vitamins first, then minerals/electrolytes
-      ["Others", ["caffeine", "fiber", "water"]], // alphabetical
+      ["Macros", ["Energy", "Protein", "Carbohydrate", "Fat"]],
+      ["Micros", ["Vitamin D", "Magnesium", "Sodium"]], // vitamins first, then minerals/electrolytes
+      ["Others", ["Caffeine", "Dietary Fiber", "Water"]], // alphabetical
     ]);
   });
 
   it("drops empty groups", () => {
-    expect(shape([t("calories", "energy"), t("protein", "macronutrient")])).toEqual([
-      ["Macros", ["calories", "protein"]],
+    expect(shape([t("Energy", "energy"), t("Protein", "macronutrient")])).toEqual([
+      ["Macros", ["Energy", "Protein"]],
     ]);
+  });
+
+  it("displaySubstance shows Energy as Calories, others unchanged", () => {
+    expect(displaySubstance("Energy")).toBe("Calories");
+    expect(displaySubstance("Protein")).toBe("Protein");
   });
 });
 
