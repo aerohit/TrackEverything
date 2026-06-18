@@ -174,8 +174,9 @@ rich analytical decomposition:
   snapshot holds the analysable amounts + confidence ([ADR-036](#adr-036)).
 - **`resolved_amount`** — the analytical **snapshot** frozen per event (canonical units), produced
   by the resolver ([`db/resolve.ts`](../db/resolve.ts)): expand item × quantity → substances,
-  recursing recipes, scaling by serving, normalizing mass/volume/energy. Re-computed on edit, never
-  rewritten by later item edits. Powers daily per-substance totals.
+  recursing recipes, scaling by serving, normalizing mass/volume/energy (+ substance-specific
+  IU→mcg/mg for the fat-soluble vitamins D/A/E, which labels often give in IU). Re-computed on edit,
+  never rewritten by later item edits. Powers daily per-substance totals.
 
 So the user logs **objects** ("1 scoop pre-workout") while the app analyses **components**
 (200 mg caffeine, 5 g creatine, …). The event keeps the human display quantity; the resolver

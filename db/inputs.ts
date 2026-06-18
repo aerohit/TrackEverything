@@ -33,11 +33,12 @@ import {
   resolvedAmount,
   substance,
 } from "./schema.ts";
-import { convert, type ResolveGraph, resolveItem } from "./resolve.ts";
+import { convertForSubstance, type ResolveGraph, resolveItem } from "./resolve.ts";
 
 interface SubstanceMeta {
   id: string;
   unit: SubstanceUnit;
+  name: string;
 }
 
 /** name + each alias (lowercased) → {id, canonical unit}. */
@@ -64,7 +65,7 @@ async function substanceIndex(db: Db): Promise<Map<string, SubstanceMeta>> {
   const rows = await db.select().from(substance);
   const m = new Map<string, SubstanceMeta>();
   for (const s of rows) {
-    const meta = { id: s.id, unit: s.canonicalUnit };
+    const meta = { id: s.id, unit: s.canonicalUnit, name: s.name };
     m.set(normalizeSubstance(s.name), meta);
     for (const a of s.aliases) m.set(normalizeSubstance(a), meta);
   }
@@ -89,7 +90,7 @@ async function resolveSubstanceId(
     if (!created) {
       [created] = await db.select().from(substance).where(eq(substance.name, key));
     }
-    meta = { id: created.id, unit: created.canonicalUnit };
+    meta = { id: created.id, unit: created.canonicalUnit, name: created.name };
     index.set(key, meta);
   }
   return meta.id;
@@ -131,7 +132,11 @@ export async function createItem(db: Db, input: CreateItem): Promise<string> {
 /** Load an item + all descendant items + substance units into a resolve graph. */
 async function loadGraph(db: Db, rootId: string): Promise<ResolveGraph> {
   const substanceUnit = new Map<string, SubstanceUnit>();
-  for (const s of await db.select().from(substance)) substanceUnit.set(s.id, s.canonicalUnit);
+  const substanceName = new Map<string, string>();
+  for (const s of await db.select().from(substance)) {
+    substanceUnit.set(s.id, s.canonicalUnit);
+    substanceName.set(s.id, s.name);
+  }
 
   const items: ResolveGraph["items"] = new Map();
   const toLoad = [rootId];
@@ -156,7 +161,7 @@ async function loadGraph(db: Db, rootId: string): Promise<ResolveGraph> {
     });
     for (const c of comps) if (c.childItemId) toLoad.push(c.childItemId);
   }
-  return { items, substanceUnit };
+  return { items, substanceUnit, substanceName };
 }
 
 interface ComputedResolution {
@@ -194,7 +199,7 @@ async function computeResolution(
     for (const r of input.resolved) {
       const substanceId = await resolveSubstanceId(db, subs, r.substance, r.unit);
       const meta = subs.get(normalizeSubstance(r.substance)) as SubstanceMeta;
-      const amt = convert(r.amount, r.unit, meta.unit) ?? r.amount;
+      const amt = convertForSubstance(r.amount, r.unit, meta.unit, meta.name) ?? r.amount;
       rows.push({
         substanceId,
         amount: Math.round(amt * 1000) / 1000,

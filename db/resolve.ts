@@ -36,6 +36,52 @@ export function convert(amount: number, from: string, to: string): number | null
   return null;
 }
 
+/**
+ * IU ↔ mass conversion is substance-specific (1 IU of vitamin D ≠ 1 IU of vitamin E),
+ * so it can't live in the generic `convert`. This table gives, per substance (matched
+ * by normalized name), how much of its canonical unit one IU equals — for the
+ * fat-soluble vitamins commonly labelled in IU. Extend as needed.
+ */
+const IU_TO_CANONICAL: Record<string, { factor: number; unit: SubstanceUnit }> = {
+  // Vitamin D (D2 & D3): 40 IU = 1 mcg → 1 IU = 0.025 mcg.
+  cholecalciferol: { factor: 0.025, unit: "mcg" },
+  ergocalciferol: { factor: 0.025, unit: "mcg" },
+  vitamin_d: { factor: 0.025, unit: "mcg" },
+  // Vitamin A (retinol): 1 IU = 0.3 mcg RAE.
+  retinol: { factor: 0.3, unit: "mcg" },
+  vitamin_a: { factor: 0.3, unit: "mcg" },
+  // Vitamin E (alpha-tocopherol, natural d-form): 1 IU = 0.67 mg.
+  tocopherol: { factor: 0.67, unit: "mg" },
+  alpha_tocopherol: { factor: 0.67, unit: "mg" },
+  mixed_tocopherols: { factor: 0.67, unit: "mg" },
+  vitamin_e: { factor: 0.67, unit: "mg" },
+};
+
+function normName(s: string): string {
+  return s.trim().toLowerCase().replace(/[\s-]+/g, "_");
+}
+
+/**
+ * Convert `amount` to a substance's canonical unit. Tries the generic dimensional
+ * conversion first; if that fails because the source is `iu`, falls back to the
+ * substance-specific IU factor above (so e.g. "1000 IU" of vitamin D resolves to
+ * 25 mcg instead of being dropped). Returns null when neither applies.
+ */
+export function convertForSubstance(
+  amount: number,
+  from: string,
+  to: string,
+  substanceName?: string,
+): number | null {
+  const direct = convert(amount, from, to);
+  if (direct !== null) return direct;
+  if (from.trim().toLowerCase() === "iu" && substanceName) {
+    const iu = IU_TO_CANONICAL[normName(substanceName)];
+    if (iu && iu.unit === to.trim().toLowerCase()) return amount * iu.factor;
+  }
+  return null;
+}
+
 export interface ResolveComponent {
   substanceId: string | null;
   childItemId: string | null;
@@ -56,6 +102,8 @@ export interface ResolveGraph {
   items: Map<string, ResolveItem>;
   /** substanceId → its canonical unit. */
   substanceUnit: Map<string, SubstanceUnit>;
+  /** substanceId → its name (for substance-specific IU conversion); optional. */
+  substanceName?: Map<string, string>;
 }
 
 export interface ResolvedEntry {
@@ -117,7 +165,12 @@ export function resolveItem(
           complete = false;
           continue;
         }
-        const amt = convert(c.amount, c.unit, canonical);
+        const amt = convertForSubstance(
+          c.amount,
+          c.unit,
+          canonical,
+          graph.substanceName?.get(c.substanceId),
+        );
         if (amt === null) {
           complete = false;
           continue;

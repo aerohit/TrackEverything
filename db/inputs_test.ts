@@ -235,3 +235,41 @@ Deno.test({
     }
   },
 });
+
+Deno.test({
+  // A label in IU (vitamin D/A/E) resolves to the substance's canonical unit via the
+  // substance-specific IU factor — instead of being dropped as unconvertible.
+  name: "inputs: an IU-labelled vitamin resolves to its canonical unit",
+  ignore: !DATABASE_URL,
+  async fn() {
+    await migrate(DATABASE_URL!);
+    const { sql, db } = connect(DATABASE_URL!);
+    try {
+      await sql`truncate resolved_amount, intake_event, item_component, input_item cascade`;
+      // Cholecalciferol is in the catalog with canonical unit mcg; log it labelled in IU.
+      const id = await createItem(db, {
+        name: "Vitamin D3 1000 IU",
+        kind: "product",
+        defaultServing: { displayQuantity: 1, displayUnit: "softgel" },
+        components: [{ substance: "Cholecalciferol", amount: 1000, unit: "iu" }],
+      });
+      await createIntakeEvent(db, {
+        displayName: "Vitamin D3",
+        itemId: id,
+        quantity: 1,
+        unit: "softgel",
+        occurredAt: "2026-06-22T08:00:00.000Z",
+      });
+      const [ev] = await listIntakeEvents(db, {
+        from: new Date("2026-06-22T00:00:00.000Z"),
+        to: new Date("2026-06-23T00:00:00.000Z"),
+      });
+      // 1000 IU × 0.025 = 25 mcg, reported under the canonical name + unit (not dropped).
+      const d = ev.resolved.find((r) => r.substance === "Cholecalciferol");
+      assertEquals(d?.amount, 25);
+      assertEquals(d?.unit, "mcg");
+    } finally {
+      await sql.end();
+    }
+  },
+});
