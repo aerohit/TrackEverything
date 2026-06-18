@@ -34,8 +34,6 @@ Deno.test("createItem: accepts a product with actives", () => {
     createItemSchema.safeParse({
       name: "My Pre-workout",
       kind: "product",
-      primaryType: "supplement",
-      roles: ["stimulant"],
       defaultServing: {
         displayQuantity: 1,
         displayUnit: "scoop",
@@ -46,7 +44,7 @@ Deno.test("createItem: accepts a product with actives", () => {
     }).success,
   );
   assert(
-    !createItemSchema.safeParse({ name: "x", kind: "potion", primaryType: "supplement" }).success,
+    !createItemSchema.safeParse({ name: "x", kind: "potion" }).success,
   );
 });
 

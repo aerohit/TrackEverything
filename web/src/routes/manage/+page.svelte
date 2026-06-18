@@ -144,7 +144,7 @@
     hasDraft = true;
   }
   function newStack() {
-    draft = { ...emptyDraft(), kind: "stack", primaryType: "supplement" };
+    draft = { ...emptyDraft(), kind: "stack" };
     formMode = "stack";
     hasDraft = true;
   }
@@ -163,7 +163,7 @@
       flash("Scanned — review and save ✓");
     } catch (e) {
       // Still let the user fill it in by hand.
-      applyDraft({ name: "", kind: "product", primaryType: "supplement", components: [] });
+      applyDraft({ name: "", kind: "product", components: [] });
       flash((e as Error).message || "Scan failed — enter it manually.", true);
     } finally {
       scanning = false;
@@ -316,7 +316,7 @@
         >
           <span>{it.name}</span>
           <span class="meta">
-            {detailLoading === it.id ? "Loading…" : `${it.kind} · ${it.primaryType}`} ›
+            {detailLoading === it.id ? "Loading…" : it.kind} ›
           </span>
         </button>
       {/each}
@@ -349,7 +349,7 @@
         >
           <span>{it.name}</span>
           <span class="meta">
-            {detailLoading === it.id ? "Loading…" : `stack · ${it.primaryType}`} ›
+            {detailLoading === it.id ? "Loading…" : "stack"} ›
           </span>
         </button>
       {/each}
@@ -374,7 +374,7 @@
         <div>
           <div class="modal-title">{detail.name}</div>
           <div class="meta">
-            {detail.kind} · {detail.primaryType}{detail.brand ? ` · ${detail.brand}` : ""}
+            {detail.kind}
           </div>
         </div>
         <button class="iconbtn" aria-label="Close" onclick={closeDetail}>✕</button>
@@ -397,11 +397,6 @@
         {/each}
       {:else}
         <p class="mut">No ingredients recorded for this item.</p>
-      {/if}
-
-      {#if detail.notes}
-        <div class="fieldlabel">Notes</div>
-        <p class="mut" style="margin:0">{detail.notes}</p>
       {/if}
 
       <div class="fieldlabel" style="margin-top:14px">Quick Capture</div>

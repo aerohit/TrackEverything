@@ -5,7 +5,7 @@
  * barcode_off.ts; this file keeps the seam + the pure parsing of an Open Food
  * Facts product into a CreateItem (so it's unit-tested without a network call).
  */
-import type { CreateItem, InputPrimaryType } from "../shared/inputs.ts";
+import type { CreateItem } from "../shared/inputs.ts";
 
 export interface ProductLookup {
   /** Resolve a barcode to a draft item, or null if no usable product is found. */
@@ -32,17 +32,6 @@ const NUTRIMENT_MAP: { key: string; substance: string; unit: string }[] = [
 function num(v: unknown): number | undefined {
   const n = typeof v === "string" ? Number(v) : v;
   return typeof n === "number" && Number.isFinite(n) && n > 0 ? n : undefined;
-}
-
-function firstBrand(brands: unknown): string | undefined {
-  if (typeof brands !== "string") return undefined;
-  const first = brands.split(",")[0]?.trim();
-  return first || undefined;
-}
-
-function isDrink(product: Record<string, unknown>): boolean {
-  const tags = Array.isArray(product.categories_tags) ? product.categories_tags : [];
-  return tags.some((t) => typeof t === "string" && (t.includes("beverage") || t.includes("drink")));
 }
 
 /**
@@ -87,14 +76,9 @@ export function parseOffProduct(raw: unknown, _barcode: string): CreateItem | nu
     }
     : { displayQuantity: 100, displayUnit: "g" };
 
-  const primaryType: InputPrimaryType = isDrink(product) ? "drink" : "food";
-
   return {
     name,
     kind: "product",
-    primaryType,
-    brand: firstBrand(product.brands),
-    roles: [],
     defaultServing,
     components,
   };

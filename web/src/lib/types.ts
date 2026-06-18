@@ -71,9 +71,6 @@ export interface InputItemSummary {
   id: string;
   name: string;
   kind: "product" | "recipe" | "simple" | "stack";
-  primaryType: string;
-  roles: string[];
-  brand: string | null;
   defaultDisplayQuantity: number | null;
   defaultDisplayUnit: string | null;
   defaultCanonicalQuantity: number | null;
@@ -92,8 +89,6 @@ export interface ItemComponentDTO {
 
 /** An item plus its components (GET /api/items/:id). */
 export interface InputItemDetail extends InputItemSummary {
-  notes: string | null;
-  version: number;
   components: ItemComponentDTO[];
   quickLog: boolean;
   quickOrder: number | null;
@@ -171,16 +166,12 @@ export interface ComponentInput {
 export interface CreateItemBody {
   name: string;
   kind: "product" | "recipe" | "simple" | "stack";
-  primaryType: string;
-  roles?: string[];
-  brand?: string;
   defaultServing?: {
     displayQuantity?: number;
     displayUnit?: string;
     canonicalQuantity?: number;
     canonicalUnit?: string;
   };
-  notes?: string;
   components?: ComponentInput[];
 }
 
@@ -189,7 +180,6 @@ export interface RecognizedIntake {
   name: string;
   quantity: number;
   unit: string;
-  primaryType: string;
   draft: CreateItemBody;
   /** A time the user stated, as a local "YYYY-MM-DDTHH:MM"; absent if none. */
   when?: string;

@@ -23,7 +23,6 @@ import { SUBJECTIVE_KINDS } from "../shared/subjective_state.ts";
 import {
   CONFIDENCE_LEVELS,
   INPUT_KINDS,
-  INPUT_PRIMARY_TYPES,
   INTAKE_PRECISIONS,
   INTAKE_SOURCES,
   SUBSTANCE_TYPES,
@@ -49,7 +48,6 @@ export type NewSubjectiveStateRow = typeof subjectiveState.$inferInsert;
 export const substanceType = pgEnum("substance_type", SUBSTANCE_TYPES);
 export const substanceUnit = pgEnum("substance_unit", SUBSTANCE_UNITS);
 export const inputKind = pgEnum("input_kind", INPUT_KINDS);
-export const inputPrimaryType = pgEnum("input_primary_type", INPUT_PRIMARY_TYPES);
 export const intakeConfidence = pgEnum("intake_confidence", CONFIDENCE_LEVELS);
 export const intakeSource = pgEnum("intake_source", INTAKE_SOURCES);
 export const intakePrecision = pgEnum("intake_precision", INTAKE_PRECISIONS);
@@ -67,15 +65,10 @@ export const inputItem = pgTable("input_item", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   kind: inputKind("kind").notNull(),
-  primaryType: inputPrimaryType("primary_type").notNull(),
-  roles: text("roles").array().notNull().default([]),
-  brand: text("brand"),
   defaultDisplayQuantity: doublePrecision("default_display_quantity"),
   defaultDisplayUnit: text("default_display_unit"),
   defaultCanonicalQuantity: doublePrecision("default_canonical_quantity"),
   defaultCanonicalUnit: text("default_canonical_unit"),
-  version: integer("version").notNull().default(1),
-  notes: text("notes"),
   // Quick Capture (v2-C1): pinned one-tap favorite + its position on the grid.
   quickLog: boolean("quick_log").notNull().default(false),
   quickOrder: integer("quick_order"),
@@ -113,7 +106,6 @@ export const intakeEvent = pgTable("intake_event", {
   recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull().defaultNow(),
   displayName: text("display_name").notNull(),
   itemId: uuid("item_id").references(() => inputItem.id, { onDelete: "set null" }),
-  itemVersion: integer("item_version"),
   quantity: doublePrecision("quantity").notNull(),
   unit: text("unit").notNull(),
   canonicalQuantity: doublePrecision("canonical_quantity"),

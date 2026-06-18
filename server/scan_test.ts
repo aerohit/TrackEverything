@@ -11,8 +11,6 @@ Deno.test("extractJson: pulls JSON out of prose / code fences", () => {
 Deno.test("parseScannedItem: maps a label into an editable draft", () => {
   const draft = parseScannedItem({
     name: "  My Multivitamin ",
-    brand: "Acme",
-    primaryType: "supplement",
     serving: { displayQuantity: 2, displayUnit: "tablet" },
     components: [
       { substance: "Vitamin D", amount: 25, unit: "mcg" },
@@ -24,8 +22,6 @@ Deno.test("parseScannedItem: maps a label into an editable draft", () => {
   });
   assertEquals(draft.name, "My Multivitamin");
   assertEquals(draft.kind, "product");
-  assertEquals(draft.primaryType, "supplement");
-  assertEquals(draft.brand, "Acme");
   assertEquals(draft.defaultServing, { displayQuantity: 2, displayUnit: "tablet" });
   assertEquals(draft.components, [
     { substance: "Vitamin D", amount: 25, unit: "mcg" },
@@ -34,9 +30,8 @@ Deno.test("parseScannedItem: maps a label into an editable draft", () => {
 });
 
 Deno.test("parseScannedItem: tolerant defaults for garbage / missing fields", () => {
-  const draft = parseScannedItem({ primaryType: "nonsense" });
-  assertEquals(draft.name, ""); // user fills it in
-  assertEquals(draft.primaryType, "supplement"); // bad enum → default
+  const draft = parseScannedItem({ name: 123 });
+  assertEquals(draft.name, ""); // non-string → user fills it in
   assertEquals(draft.defaultServing, { displayQuantity: 1, displayUnit: "serving" });
   assertEquals(draft.components, []);
   assert(draft.kind === "product");

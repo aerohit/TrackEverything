@@ -104,7 +104,7 @@
     resolveMode = "link";
     linkQuery = e.displayName;
     linkResults = [];
-    resolveDraft = { ...emptyDraft(), name: e.displayName, primaryType: "food" };
+    resolveDraft = { ...emptyDraft(), name: e.displayName };
     nutrients = [{ substance: "", amount: 1, unit: "g" }];
     runLinkSearch();
   }

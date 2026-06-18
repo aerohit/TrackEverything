@@ -48,8 +48,6 @@ Deno.test({
         body: JSON.stringify({
           name: "My Pre-workout",
           kind: "product",
-          primaryType: "supplement",
-          roles: ["stimulant"],
           defaultServing: {
             displayQuantity: 1,
             displayUnit: "scoop",
@@ -74,7 +72,6 @@ Deno.test({
         body: JSON.stringify({
           name: "Greens powder",
           kind: "simple",
-          primaryType: "supplement",
           components: [{ substance: "Spirulina", amount: 1, unit: "g" }],
         }),
       });
@@ -183,8 +180,6 @@ Deno.test({
         scan: async () => ({
           name: "Scanned Multi",
           kind: "product" as const,
-          primaryType: "supplement" as const,
-          roles: [],
           defaultServing: { displayQuantity: 1, displayUnit: "tablet" },
           components: [{ substance: "niacin", amount: 16, unit: "mg" }],
         }),
@@ -235,8 +230,6 @@ Deno.test("inputs API: barcode lookup returns a draft, 404 when unknown, 503 whe
         ? {
           name: "Greek Yogurt",
           kind: "product" as const,
-          primaryType: "food" as const,
-          roles: [],
           defaultServing: { displayQuantity: 1, displayUnit: "serving" },
           components: [{ substance: "protein", amount: 17, unit: "g" }],
         }
@@ -312,7 +305,6 @@ Deno.test({
         body: JSON.stringify({
           name: "Banana",
           kind: "simple",
-          primaryType: "food",
           components: [{ substance: "calories", amount: 105, unit: "kcal" }],
         }),
       });
@@ -324,12 +316,9 @@ Deno.test({
             name: "banana",
             quantity: 1,
             unit: "piece",
-            primaryType: "food" as const,
             draft: {
               name: "banana",
               kind: "simple" as const,
-              primaryType: "food" as const,
-              roles: [],
               defaultServing: { displayQuantity: 1, displayUnit: "piece" },
               components: [{ substance: "calories", amount: 105, unit: "kcal" }],
             },
@@ -422,7 +411,7 @@ Deno.test({
         await app.request("/api/items", {
           method: "POST",
           headers: auth,
-          body: JSON.stringify({ name, kind: "product", primaryType: "supplement" }),
+          body: JSON.stringify({ name, kind: "product" }),
         });
       }
 
@@ -463,7 +452,6 @@ Deno.test({
         body: JSON.stringify({
           name: "Water",
           kind: "simple",
-          primaryType: "drink",
           defaultServing: { displayQuantity: 500, displayUnit: "ml" },
         }),
       })).json();
@@ -548,7 +536,7 @@ Deno.test({
       const item = await (await app.request("/api/items", {
         method: "POST",
         headers: auth,
-        body: JSON.stringify({ name: "Espresso", kind: "simple", primaryType: "drink" }),
+        body: JSON.stringify({ name: "Espresso", kind: "simple" }),
       })).json();
 
       // A quick-source log carries its provenance back on read.
@@ -627,20 +615,19 @@ Deno.test({
     const { sql, db } = connect(DATABASE_URL);
     try {
       const app = createApp(db, { token: TOKEN });
-      const mk = async (name: string, primaryType: string) =>
+      const mk = async (name: string) =>
         (await (await app.request("/api/items", {
           method: "POST",
           headers: auth,
           body: JSON.stringify({
             name,
             kind: "simple",
-            primaryType,
             defaultServing: { displayQuantity: 1, displayUnit: "tablet" },
           }),
         })).json()).id as string;
 
-      const vd = await mk("Vitamin D", "supplement");
-      const mg = await mk("Magnesium", "supplement");
+      const vd = await mk("Vitamin D");
+      const mg = await mk("Magnesium");
 
       // A "Morning Stack" — a stack-kind item whose components are those items.
       const stack = await (await app.request("/api/items", {
@@ -649,7 +636,6 @@ Deno.test({
         body: JSON.stringify({
           name: "Morning Stack",
           kind: "stack",
-          primaryType: "supplement",
           components: [
             { childItemId: vd, amount: 1, unit: "tablet" },
             { childItemId: mg, amount: 2, unit: "capsule" },
@@ -714,7 +700,6 @@ Deno.test({
         body: JSON.stringify({
           name: "Old Protein Bar",
           kind: "product",
-          primaryType: "food",
           defaultServing: { displayQuantity: 1, displayUnit: "bar" },
           components: [{ substance: "protein", amount: 20, unit: "g" }],
         }),
@@ -854,7 +839,6 @@ Deno.test({
         body: JSON.stringify({
           name: "Coffee",
           kind: "simple",
-          primaryType: "drink",
           components: [{ substance: "caffeine", amount: 95, unit: "mg" }],
         }),
       })).json();
@@ -914,7 +898,6 @@ Deno.test({
       const item = await post("/api/items", {
         name: "Latte",
         kind: "simple",
-        primaryType: "drink",
         components: [{ substance: "caffeine", amount: 80, unit: "mg" }],
       });
       const u1 = await post("/api/intake", {

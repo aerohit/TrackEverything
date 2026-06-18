@@ -1,0 +1,136 @@
+<svg viewBox="0 0 680 790" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif, system-ui, sans-serif" role="img">
+  <title>TrackEverything database ER diagram</title>
+  <desc>Seven tables in two domains. Subjective_state is isolated. The Inputs domain links substance, input_item, item_component, quick_preset, intake_event and resolved_amount via foreign keys, each a one-to-many relationship.</desc>
+
+  <g stroke="#7a7a88" stroke-width="1.4" fill="none">
+    <polyline points="300,146 300,174 180,174 180,200"/>
+    <polyline points="450,82 665,82 665,486 652,486"/>
+    <line x1="70" y1="430" x2="70" y2="340"/>
+    <line x1="212" y1="430" x2="212" y2="340" stroke-dasharray="5 4"/>
+    <line x1="280" y1="470" x2="390" y2="360"/>
+    <line x1="520" y1="372" x2="520" y2="430"/>
+    <line x1="150" y1="572" x2="150" y2="618"/>
+  </g>
+  <g fill="#534AB7" font-size="11" font-weight="500">
+    <text x="306" y="142">1</text><text x="186" y="197">∞</text>
+    <text x="456" y="92">1</text><text x="640" y="481">∞</text>
+    <text x="60" y="426">1</text><text x="60" y="352">∞</text>
+    <text x="202" y="426">1</text><text x="202" y="352">∞</text>
+    <text x="270" y="466">1</text><text x="376" y="368">∞</text>
+    <text x="524" y="386">1</text><text x="524" y="427">∞</text>
+    <text x="138" y="570">1</text><text x="138" y="615">∞</text>
+  </g>
+  <g fill="#7a7a88" font-size="9">
+    <text x="208" y="170" text-anchor="end">substance_id</text>
+    <text x="470" y="76">substance_id</text>
+    <text x="74" y="392">parent_item_id</text>
+    <text x="216" y="392">child_item_id</text>
+    <text x="300" y="432">item_id (nullable)</text>
+    <text x="525" y="408">event_id</text>
+    <text x="156" y="606">item_id</text>
+  </g>
+
+  <g transform="translate(20,20)">
+    <rect width="185" height="126" rx="10" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+    <text x="12" y="22" font-size="12.5" font-weight="500" fill="#3C3489">subjective_state</text>
+    <line x1="0" y1="31" x2="185" y2="31" stroke="#534AB7" stroke-opacity="0.35"/>
+    <g font-size="10.5" fill="#26215C">
+      <text x="12" y="48">id<tspan dx="6" font-size="9" fill="#7a7a88">pk</tspan></text>
+      <text x="12" y="65">kind  ·  rating</text>
+      <text x="12" y="82">note</text>
+      <text x="12" y="99">recorded_at</text>
+      <text x="12" y="118" font-size="9" fill="#7a7a88">no FKs — joined at query time</text>
+    </g>
+  </g>
+
+  <g transform="translate(250,20)">
+    <rect width="200" height="126" rx="10" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1.5"/>
+    <text x="12" y="22" font-size="12.5" font-weight="500" fill="#0F6E56">substance</text>
+    <line x1="0" y1="31" x2="200" y2="31" stroke="#0F6E56" stroke-opacity="0.35"/>
+    <g font-size="10.5" fill="#085041">
+      <text x="12" y="48">id<tspan dx="6" font-size="9" fill="#7a7a88">pk</tspan></text>
+      <text x="12" y="65">name  (unique)</text>
+      <text x="12" y="82">substance_type</text>
+      <text x="12" y="99">canonical_unit</text>
+      <text x="12" y="116">aliases[]</text>
+    </g>
+  </g>
+
+  <g transform="translate(20,200)">
+    <rect width="260" height="140" rx="10" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+    <text x="12" y="22" font-size="12.5" font-weight="500" fill="#3C3489">item_component</text>
+    <line x1="0" y1="31" x2="260" y2="31" stroke="#534AB7" stroke-opacity="0.35"/>
+    <g font-size="10.5" fill="#26215C">
+      <text x="12" y="48">id<tspan dx="6" font-size="9" fill="#7a7a88">pk</tspan></text>
+      <text x="12" y="65">parent_item_id<tspan dx="4" fill="#7a7a88">→ input_item</tspan></text>
+      <text x="12" y="82">substance_id<tspan dx="4" fill="#7a7a88">→ substance</tspan></text>
+      <text x="12" y="99">child_item_id<tspan dx="4" fill="#7a7a88">→ input_item</tspan></text>
+      <text x="12" y="116">amount  ·  unit</text>
+      <text x="12" y="133" font-size="9" fill="#7a7a88">exactly one of substance / child_item</text>
+    </g>
+  </g>
+
+  <g transform="translate(390,200)">
+    <rect width="260" height="172" rx="10" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+    <text x="12" y="22" font-size="12.5" font-weight="500" fill="#3C3489">intake_event</text>
+    <line x1="0" y1="31" x2="260" y2="31" stroke="#534AB7" stroke-opacity="0.35"/>
+    <g font-size="10.5" fill="#26215C">
+      <text x="12" y="48">id<tspan dx="6" font-size="9" fill="#7a7a88">pk</tspan></text>
+      <text x="12" y="65">item_id<tspan dx="4" fill="#7a7a88">→ input_item (set null)</tspan></text>
+      <text x="12" y="82">display_name</text>
+      <text x="12" y="99">quantity  ·  unit</text>
+      <text x="12" y="116">occurred_at  ·  recorded_at</text>
+      <text x="12" y="133">source  ·  precision</text>
+      <text x="12" y="150">unresolved  ·  confidence</text>
+      <text x="12" y="166" font-size="9" fill="#7a7a88">deleted_at (soft delete)</text>
+    </g>
+  </g>
+
+  <g transform="translate(20,430)">
+    <rect width="260" height="142" rx="10" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+    <text x="12" y="22" font-size="12.5" font-weight="500" fill="#3C3489">input_item</text>
+    <text x="248" y="22" text-anchor="end" font-size="9" fill="#7a7a88">catalog</text>
+    <line x1="0" y1="31" x2="260" y2="31" stroke="#534AB7" stroke-opacity="0.35"/>
+    <g font-size="10.5" fill="#26215C">
+      <text x="12" y="48">id<tspan dx="6" font-size="9" fill="#7a7a88">pk</tspan></text>
+      <text x="12" y="65">name</text>
+      <text x="12" y="82">kind  ⟨product / recipe / simple / stack⟩</text>
+      <text x="12" y="99">default serving (qty · unit)</text>
+      <text x="12" y="116">canonical serving  ·  quick_log</text>
+      <text x="12" y="133" font-size="9" fill="#7a7a88">deleted_at (soft delete)</text>
+    </g>
+  </g>
+
+  <g transform="translate(390,430)">
+    <rect width="260" height="112" rx="10" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1.5"/>
+    <text x="12" y="22" font-size="12.5" font-weight="500" fill="#0F6E56">resolved_amount</text>
+    <text x="248" y="22" text-anchor="end" font-size="9" fill="#7a7a88">frozen snapshot</text>
+    <line x1="0" y1="31" x2="260" y2="31" stroke="#0F6E56" stroke-opacity="0.35"/>
+    <g font-size="10.5" fill="#085041">
+      <text x="12" y="48">id<tspan dx="6" font-size="9" fill="#7a7a88">pk</tspan></text>
+      <text x="12" y="65">event_id<tspan dx="4" fill="#7a7a88">→ intake_event (cascade)</tspan></text>
+      <text x="12" y="82">substance_id<tspan dx="4" fill="#7a7a88">→ substance</tspan></text>
+      <text x="12" y="99">amount  ·  unit (canonical)</text>
+    </g>
+  </g>
+
+  <g transform="translate(20,618)">
+    <rect width="260" height="110" rx="10" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+    <text x="12" y="22" font-size="12.5" font-weight="500" fill="#3C3489">quick_preset</text>
+    <line x1="0" y1="31" x2="260" y2="31" stroke="#534AB7" stroke-opacity="0.35"/>
+    <g font-size="10.5" fill="#26215C">
+      <text x="12" y="48">id<tspan dx="6" font-size="9" fill="#7a7a88">pk</tspan></text>
+      <text x="12" y="65">item_id<tspan dx="4" fill="#7a7a88">→ input_item (cascade)</tspan></text>
+      <text x="12" y="82">label  ·  quantity  ·  unit</text>
+      <text x="12" y="99" font-size="9" fill="#7a7a88">one-tap amounts for a favorite</text>
+    </g>
+  </g>
+
+  <g font-size="10" fill="#26215C">
+    <rect x="320" y="600" width="13" height="13" rx="3" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+    <text x="340" y="610">things you log / your catalog</text>
+    <rect x="320" y="624" width="13" height="13" rx="3" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1.5"/>
+    <text x="340" y="634">nutrition-analysis layer</text>
+    <text x="320" y="660" font-size="9" fill="#7a7a88">1 ──&lt; ∞   = one-to-many (foreign key)</text>
+  </g>
+</svg>
