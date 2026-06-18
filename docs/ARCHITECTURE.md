@@ -440,8 +440,8 @@ wants to **choose at capture** whether a stack is stored as one combined entry o
 and to **see the member items** of a combined entry in the Overview.
 **Decision:**
 - **Kind:** add `stack` to the `input_kind` enum (migration `0006`, additive `ADD VALUE`). A stack is a
-  `stack`-kind item whose components are child items; the item editor's *Stack members* section and the
-  Quick Capture member loading now key off `kind = 'stack'` (not `recipe`). Recipes go back to meaning
+  `stack`-kind item whose components are child items; the item editor offers **separate Create item / Create stack forms** (an `ItemDraftForm` `mode`; the
+  stack form has only members and excludes other stacks), and Quick Capture member loading keys off `kind = 'stack'` (not `recipe`). Recipes go back to meaning
   food-from-ingredients.
 - **Capture choice (`stackLogPlan(item, included, mode)`):** tapping a stack card logs it as a **single
   entry** (one `intake_event` against the stack — the default); an **"Log as separate items"** action in the
