@@ -4,7 +4,21 @@
  * ingredients before saving. These pure converters map to/from the API's
  * CreateItemBody so the form logic is unit-tested.
  */
-import type { CreateItemBody } from "$lib/types";
+import type { CreateItemBody, InputItemSummary } from "$lib/types";
+
+/**
+ * Which catalog items may be added as members of a draft of this mode:
+ * a **recipe** accepts only `product` items (a recipe is built from products);
+ * a **stack** accepts any non-stack item (products and recipes, never another stack).
+ */
+export function eligibleMembers(
+  items: InputItemSummary[],
+  mode: "recipe" | "stack",
+): InputItemSummary[] {
+  return mode === "recipe"
+    ? items.filter((i) => i.kind === "product")
+    : items.filter((i) => i.kind !== "stack");
+}
 
 export type CompRow = { substance: string; amount: number; unit: string };
 // A member of a stack/recipe: another item, by id (resolved from its name in the editor).

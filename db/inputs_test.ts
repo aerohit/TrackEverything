@@ -1,4 +1,4 @@
-import { assert, assertEquals } from "@std/assert";
+import { assert, assertEquals, assertRejects } from "@std/assert";
 import { connect } from "./client.ts";
 import { migrate } from "./migrate.ts";
 import {
@@ -268,6 +268,65 @@ Deno.test({
       const d = ev.resolved.find((r) => r.substance === "Cholecalciferol");
       assertEquals(d?.amount, 25);
       assertEquals(d?.unit, "mcg");
+    } finally {
+      await sql.end();
+    }
+  },
+});
+
+Deno.test({
+  // A recipe may only contain existing product items (ADR-041).
+  name: "inputs: createItem rejects a recipe with non-product / missing members",
+  ignore: !DATABASE_URL,
+  async fn() {
+    await migrate(DATABASE_URL!);
+    const { sql, db } = connect(DATABASE_URL!);
+    try {
+      await sql`truncate resolved_amount, intake_event, item_component, input_item cascade`;
+
+      const banana = await createItem(db, { name: "Banana", kind: "product" });
+      const aStack = await createItem(db, { name: "A Stack", kind: "stack" });
+
+      // A product member is allowed.
+      const ok = await createItem(db, {
+        name: "Banana Bowl",
+        kind: "recipe",
+        components: [{ childItemId: banana, amount: 1, unit: "serving" }],
+      });
+      const detail = await getItemDetail(db, ok);
+      assert(detail);
+      assertEquals(detail.kind, "recipe");
+      assertEquals(detail.components.length, 1);
+
+      // A non-product member (a stack) is rejected.
+      await assertRejects(
+        () =>
+          createItem(db, {
+            name: "Bad Recipe",
+            kind: "recipe",
+            components: [{ childItemId: aStack, amount: 1, unit: "serving" }],
+          }),
+        Error,
+        "only contain product",
+      );
+
+      // A member that doesn't exist is rejected.
+      await assertRejects(
+        () =>
+          createItem(db, {
+            name: "Ghost Recipe",
+            kind: "recipe",
+            components: [
+              { childItemId: "00000000-0000-0000-0000-000000000000", amount: 1, unit: "serving" },
+            ],
+          }),
+        Error,
+        "existing item",
+      );
+
+      // The rejected recipes left nothing half-created (only the 3 valid items remain).
+      const [{ n }] = await sql<{ n: number }[]>`select count(*)::int n from input_item`;
+      assertEquals(n, 3);
     } finally {
       await sql.end();
     }

@@ -97,6 +97,27 @@ async function resolveSubstanceId(
 }
 
 export async function createItem(db: Db, input: CreateItem): Promise<string> {
+  const components = input.components ?? [];
+
+  // Rule (ADR-041): a recipe is composed of products — every child item it lists must
+  // be an existing, non-deleted `product`. Validate before inserting anything so a bad
+  // member can't leave a half-created item behind.
+  if (input.kind === "recipe") {
+    const childIds = components.flatMap((c) => (c.childItemId ? [c.childItemId] : []));
+    if (childIds.length) {
+      const found = await db
+        .select({ id: inputItem.id, kind: inputItem.kind })
+        .from(inputItem)
+        .where(and(inArray(inputItem.id, childIds), isNull(inputItem.deletedAt)));
+      const kindById = new Map(found.map((r) => [r.id, r.kind]));
+      for (const id of childIds) {
+        const kind = kindById.get(id);
+        if (kind === undefined) throw new Error("a recipe member must be an existing item");
+        if (kind !== "product") throw new Error("a recipe can only contain product items");
+      }
+    }
+  }
+
   const [item] = await db.insert(inputItem).values({
     name: input.name,
     kind: input.kind,
@@ -106,7 +127,6 @@ export async function createItem(db: Db, input: CreateItem): Promise<string> {
     defaultCanonicalUnit: input.defaultServing?.canonicalUnit ?? null,
   }).returning();
 
-  const components = input.components ?? [];
   if (components.length) {
     const subs = await substanceIndex(db);
     const rows = [];

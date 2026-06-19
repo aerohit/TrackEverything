@@ -1,24 +1,34 @@
 <script lang="ts">
   import type { InputItemSummary, Substance } from "$lib/types";
-  import type { ItemDraft } from "$lib/itemDraft";
+  import { eligibleMembers, type ItemDraft } from "$lib/itemDraft";
   import { measureUnitOptions, substanceUnitOptions, unitOptions } from "$lib/units";
 
-  // Editable item fields shared by the Add Item screen and the Log screen's "save
-  // as a new item" flow. `mode` picks the form: an **item** (product or recipe,
-  // with a serving + substance ingredients) or a **stack** (composed only of other
-  // non-stack items).
+  // Editable item fields shared by the Add Item screen and the Log screen's "save as a
+  // new item" flow. `mode` picks the form:
+  //   item   — a **product** (serving + substance ingredients);
+  //   recipe — a dish built from **product** members (serving + product members);
+  //   stack  — a routine of any non-stack items (members only, no serving).
   let { draft = $bindable(), substances = [], items = [], mode = "item" }: {
     draft: ItemDraft;
     substances?: Substance[];
-    items?: InputItemSummary[]; // catalog, for picking stack members
-    mode?: "item" | "stack";
+    items?: InputItemSummary[]; // catalog, for picking recipe/stack members
+    mode?: "item" | "recipe" | "stack";
   } = $props();
 
-  // An item is a product or a recipe; "stack" is its own dedicated form.
-  const ITEM_KINDS = ["product", "recipe"] as const;
+  const hasServing = $derived(mode === "item" || mode === "recipe");
+  const hasMembers = $derived(mode === "recipe" || mode === "stack");
+  // Recipes accept only products; stacks accept any non-stack item.
+  const memberItems = $derived(
+    mode === "item" ? [] : eligibleMembers(items, mode),
+  );
 
-  // A stack can only be composed of product / recipe items, never another stack.
-  const memberItems = $derived(items.filter((i) => i.kind !== "stack"));
+  const namePlaceholder = $derived(
+    mode === "stack"
+      ? "Stack name (e.g. Morning Stack)"
+      : mode === "recipe"
+      ? "Recipe name (e.g. Protein Smoothie)"
+      : "Item name",
+  );
 
   function addComp() {
     draft.comps = [...draft.comps, { substance: "", amount: 1, unit: "mg" }];
@@ -33,7 +43,7 @@
   function removeMember(i: number) {
     draft.members = draft.members.filter((_, idx) => idx !== i);
   }
-  // Resolve a typed member name to a (non-stack) catalog item; prefill its unit/qty.
+  // Resolve a typed member name to an eligible catalog item; prefill its unit/qty.
   function onMemberName(i: number) {
     const n = draft.members[i].name.trim().toLowerCase();
     const it = memberItems.find((x) => x.name.toLowerCase() === n);
@@ -46,20 +56,9 @@
 </script>
 
 <div class="fieldlabel">Name</div>
-<input class="field" placeholder={mode === "stack" ? "Stack name (e.g. Morning Stack)" : "Item name"} bind:value={draft.name} />
+<input class="field" placeholder={namePlaceholder} bind:value={draft.name} />
 
-{#if mode === "item"}
-  <div class="row" style="margin-top:8px">
-    <div style="flex:1">
-      <div class="fieldlabel">Kind</div>
-      <select class="field" bind:value={draft.kind}>
-        {#each ITEM_KINDS as k}<option value={k}>{k}</option>{/each}
-      </select>
-    </div>
-  </div>
-{/if}
-
-{#if mode === "item"}
+{#if hasServing}
   <div class="fieldlabel">Serving</div>
   <div class="row">
     <input class="field" type="number" min="0" step="any" placeholder="qty" bind:value={draft.dispQty} />
@@ -80,7 +79,9 @@
       {#each measureUnitOptions(draft.canonUnit) as u}<option value={u}>{u}</option>{/each}
     </select>
   </div>
+{/if}
 
+{#if mode === "item"}
   <div class="fieldlabel">Ingredients (per serving)</div>
   {#each draft.comps as c, i}
     <div class="row" style="margin-top:6px">
@@ -96,19 +97,26 @@
     {#each substances as s}<option value={s.name}></option>{/each}
   </datalist>
   <button class="ghostbtn" onclick={addComp}>+ Add ingredient</button>
-{:else}
-  <div class="fieldlabel">Members (items in this stack)</div>
+{/if}
+
+{#if hasMembers}
+  <div class="fieldlabel">{mode === "recipe" ? "Ingredients (products, per serving)" : "Members (items in this stack)"}</div>
   <p class="mut" style="margin:0 0 4px">
-    A stack is built from items you've already added — e.g. a "Morning Stack" of your supplements.
-    One tap on the stack logs them all (and you can skip any on the day). Stacks can't contain other
-    stacks.
+    {#if mode === "recipe"}
+      A recipe is built from <b>products</b> you've already added — e.g. a smoothie of Whey + Milk +
+      Banana. Only products in your catalog can be added (add the product first if it's missing).
+    {:else}
+      A stack is built from items you've already added — e.g. a "Morning Stack" of your supplements.
+      One tap on the stack logs them all (and you can skip any on the day). Stacks can't contain other
+      stacks.
+    {/if}
   </p>
   {#each draft.members as m, i}
     <div class="row" style="margin-top:6px">
       <input
         class="field"
         style="flex:2"
-        placeholder="item name"
+        placeholder={mode === "recipe" ? "product name" : "item name"}
         list="df-members"
         bind:value={m.name}
         oninput={() => onMemberName(i)}
@@ -120,11 +128,17 @@
       <button class="iconbtn" aria-label="Remove member" onclick={() => removeMember(i)}>✕</button>
     </div>
     {#if m.name.trim() && !m.itemId}
-      <p class="mut" style="margin:2px 0 0; color:var(--danger)">No item named "{m.name}" — add it first (stacks can't be members).</p>
+      <p class="mut" style="margin:2px 0 0; color:var(--danger)">
+        {#if mode === "recipe"}
+          No product named "{m.name}" — only products already in your catalog can be added.
+        {:else}
+          No item named "{m.name}" — add it first (stacks can't be members).
+        {/if}
+      </p>
     {/if}
   {/each}
   <datalist id="df-members">
     {#each memberItems as it}<option value={it.name}></option>{/each}
   </datalist>
-  <button class="ghostbtn" onclick={addMember}>+ Add member</button>
+  <button class="ghostbtn" onclick={addMember}>+ Add {mode === "recipe" ? "product" : "member"}</button>
 {/if}
