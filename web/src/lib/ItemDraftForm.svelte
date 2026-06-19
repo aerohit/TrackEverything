@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { InputItemSummary, Substance } from "$lib/types";
-  import { eligibleMembers, type ItemDraft } from "$lib/itemDraft";
+  import { eligibleMembers, type ItemDraft, searchMembers } from "$lib/itemDraft";
   import { measureUnitOptions, substanceUnitOptions, unitOptions } from "$lib/units";
 
   // Editable item fields shared by the Add Item screen and the Log screen's "save as a
@@ -52,6 +52,22 @@
       draft.members[i].unit = it.defaultDisplayUnit ?? "serving";
       if (!(draft.members[i].quantity > 0)) draft.members[i].quantity = it.defaultDisplayQuantity ?? 1;
     }
+  }
+
+  // Custom member typeahead — `<datalist>` autocomplete is unreliable on mobile
+  // (iOS Safari shows nothing as you type), so we render our own tap-friendly list.
+  let openRow = $state(-1);
+  let closeTimer: ReturnType<typeof setTimeout> | undefined;
+  function pickMember(i: number, it: InputItemSummary) {
+    draft.members[i].name = it.name;
+    onMemberName(i);
+    clearTimeout(closeTimer);
+    openRow = -1;
+  }
+  // Close after a tick so a tap on an option registers before blur hides the list.
+  function closeMenuSoon() {
+    clearTimeout(closeTimer);
+    closeTimer = setTimeout(() => (openRow = -1), 150);
   }
 </script>
 
@@ -113,14 +129,38 @@
   </p>
   {#each draft.members as m, i}
     <div class="row" style="margin-top:6px">
-      <input
-        class="field"
-        style="flex:2"
-        placeholder={mode === "recipe" ? "product name" : "item name"}
-        list="df-members"
-        bind:value={m.name}
-        oninput={() => onMemberName(i)}
-      />
+      <div class="ac" style="flex:2">
+        <input
+          class="field"
+          style="width:100%"
+          placeholder={mode === "recipe" ? "search products" : "search items"}
+          autocomplete="off"
+          bind:value={m.name}
+          oninput={() => {
+            onMemberName(i);
+            openRow = i;
+          }}
+          onfocus={() => (openRow = i)}
+          onblur={closeMenuSoon}
+        />
+        {#if openRow === i}
+          {@const opts = searchMembers(memberItems, m.name)}
+          {#if opts.length}
+            <ul class="acmenu">
+              {#each opts as it}
+                <li>
+                  <button
+                    type="button"
+                    class="acitem"
+                    onpointerdown={(e) => e.preventDefault()}
+                    onclick={() => pickMember(i, it)}
+                  >{it.name}</button>
+                </li>
+              {/each}
+            </ul>
+          {/if}
+        {/if}
+      </div>
       <input class="field" style="flex:1" type="number" min="0" step="any" placeholder="qty" bind:value={m.quantity} />
       <select class="field" style="flex:1" aria-label="Member unit" bind:value={m.unit}>
         {#each unitOptions(m.unit) as u}<option value={u}>{u}</option>{/each}
@@ -137,8 +177,50 @@
       </p>
     {/if}
   {/each}
-  <datalist id="df-members">
-    {#each memberItems as it}<option value={it.name}></option>{/each}
-  </datalist>
   <button class="ghostbtn" onclick={addMember}>+ Add {mode === "recipe" ? "product" : "member"}</button>
 {/if}
+
+<style>
+  /* Tap-friendly member typeahead (replaces <datalist>, which is unreliable on mobile). */
+  .ac {
+    position: relative;
+  }
+  .acmenu {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    /* Grow wider than the (narrow) name column so product names fit on one line;
+       it's a popup layered above the fields below, so overlapping them is fine. */
+    min-width: min(260px, 84vw);
+    max-width: 84vw;
+    z-index: 40;
+    margin: 0;
+    padding: 4px;
+    list-style: none;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    max-height: 240px;
+    overflow-y: auto;
+  }
+  .acitem {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 10px 12px;
+    border: 0;
+    border-radius: 7px;
+    background: none;
+    font: inherit;
+    color: var(--fg);
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .acitem:hover,
+  .acitem:focus {
+    background: var(--accent-soft);
+  }
+</style>

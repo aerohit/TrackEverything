@@ -20,6 +20,20 @@ export function eligibleMembers(
     : items.filter((i) => i.kind !== "stack");
 }
 
+/**
+ * Up to 8 catalog items whose name matches the query (case-insensitive substring);
+ * an empty/blank query returns the first few. Powers the member typeahead (a custom
+ * dropdown, since `<datalist>` autocomplete is unreliable on mobile browsers).
+ */
+export function searchMembers(
+  items: InputItemSummary[],
+  query: string,
+): InputItemSummary[] {
+  const q = query.trim().toLowerCase();
+  const pool = q ? items.filter((it) => it.name.toLowerCase().includes(q)) : items;
+  return pool.slice(0, 8);
+}
+
 export type CompRow = { substance: string; amount: number; unit: string };
 // A member of a stack/recipe: another item, by id (resolved from its name in the editor).
 export type MemberRow = { itemId: string; name: string; quantity: number; unit: string };

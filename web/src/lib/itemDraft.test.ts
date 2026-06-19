@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { draftFromBody, draftToBody, eligibleMembers, emptyDraft } from "./itemDraft";
+import { draftFromBody, draftToBody, eligibleMembers, emptyDraft, searchMembers } from "./itemDraft";
 import type { InputItemSummary } from "$lib/types";
 
 function summary(over: Partial<InputItemSummary>): InputItemSummary {
@@ -29,6 +29,29 @@ describe("eligibleMembers", () => {
 
   it("a stack accepts any non-stack item (products and recipes)", () => {
     expect(eligibleMembers(catalog, "stack").map((i) => i.id)).toEqual(["p1", "p2", "r1"]);
+  });
+});
+
+describe("searchMembers", () => {
+  const products = [
+    summary({ id: "a", name: "Whey Protein" }),
+    summary({ id: "b", name: "Banana" }),
+    summary({ id: "c", name: "Greek Yogurt" }),
+  ];
+
+  it("matches a case-insensitive substring of the name", () => {
+    expect(searchMembers(products, "yo").map((i) => i.id)).toEqual(["c"]);
+    expect(searchMembers(products, "PROTEIN").map((i) => i.id)).toEqual(["a"]);
+  });
+
+  it("returns the full pool for a blank query, and caps at 8", () => {
+    expect(searchMembers(products, "  ").map((i) => i.id)).toEqual(["a", "b", "c"]);
+    const many = Array.from({ length: 20 }, (_, n) => summary({ id: `i${n}`, name: `Item ${n}` }));
+    expect(searchMembers(many, "item")).toHaveLength(8);
+  });
+
+  it("returns nothing when nothing matches", () => {
+    expect(searchMembers(products, "zzz")).toEqual([]);
   });
 });
 
