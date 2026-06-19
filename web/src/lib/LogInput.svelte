@@ -4,21 +4,19 @@
     createItem,
     listSubstances,
     logIntake,
-    recentItems,
     recognizeIntake,
     searchItems,
   } from "$lib/api";
-  import type { CreateItemBody, IntakeSource, RecentItem, Substance } from "$lib/types";
+  import type { CreateItemBody, IntakeSource, Substance } from "$lib/types";
   import { type FuzzyTime, FUZZY_TIMES, fuzzyWhen } from "$lib/fuzzytime";
-  import { iconForInput } from "$lib/icons";
   import { unitOptions } from "$lib/units";
   import { type Match, selectedName, servingUnitChoices } from "$lib/log";
   import ItemDraftForm from "$lib/ItemDraftForm.svelte";
   import { draftFromBody, draftToBody, emptyDraft, type ItemDraft } from "$lib/itemDraft";
 
-  // One way to log: snap/upload a photo, speak or type a phrase, or tap a recent
-  // item. The result is reviewed in a confirm card before it's saved (ADR-020),
-  // where it's matched against existing items so it can attach to one or save anew.
+  // Quick "in a hurry" capture: snap/upload a photo, or speak/type a phrase or item.
+  // The result is reviewed in a confirm card before it's saved (ADR-020), where it's
+  // matched against existing items so it can attach to one or save anew.
 
   type Confirm = {
     name: string;
@@ -67,7 +65,6 @@
   let manualUnit = $state("serving");
   let manualEl = $state<HTMLInputElement | null>(null);
   let confirm = $state<Confirm | null>(null);
-  let recents = $state<RecentItem[]>([]);
   let substances = $state<Substance[]>([]); // for the "save as a new item" editor
   let newDraft = $state<ItemDraft>(emptyDraft()); // editable item when saving anew
   let saving = $state(false);
@@ -102,14 +99,6 @@
       r.onerror = () => reject(r.error);
       r.readAsDataURL(blob);
     });
-  }
-
-  async function loadRecents() {
-    try {
-      recents = await recentItems(10);
-    } catch {
-      recents = [];
-    }
   }
 
   // Open the confirm card and search the catalog for existing items to attach to.
@@ -295,17 +284,6 @@
     }
   }
 
-  function fromRecent(r: RecentItem) {
-    openConfirm({
-      name: r.displayName,
-      quantity: r.quantity,
-      unit: r.unit,
-      draft: null,
-      preferItemId: r.itemId,
-      source: "recent",
-    });
-  }
-
   async function save() {
     if (!confirm || !(confirm.quantity > 0)) return;
     const sel = confirm.sel;
@@ -334,7 +312,6 @@
       flash(sel === "freeform" ? "Logged — resolve its nutrition later ✓" : "Logged ✓");
       confirm = null;
       newDraft = emptyDraft();
-      await loadRecents();
     } catch (err) {
       flash((err as Error).message || "Couldn't log.", true);
     } finally {
@@ -343,16 +320,15 @@
   }
 
   onMount(() => {
-    loadRecents();
     listSubstances().then((s) => (substances = s)).catch(() => {});
   });
 </script>
 
 <section class="card">
-  <h2>Log an input</h2>
+  <h2>In a hurry …</h2>
 
   {#if !confirm}
-    <p class="mut">Take a photo, upload one, say or type it, or tap something you've logged before.</p>
+    <p class="mut">Log quickly now, resolve it later</p>
 
     <div class="modes">
       <label class="modebtn" class:busy={!!busy}>
@@ -419,20 +395,6 @@
 
     {#if busy}
       <p class="mut" aria-live="polite">{busy}</p>
-    {/if}
-
-    <div class="fieldlabel">Recent</div>
-    {#if recents.length}
-      <div class="chips">
-        {#each recents as r}
-          <button class="chip" onclick={() => fromRecent(r)}>
-            <span class="chipicon" aria-hidden="true">{iconForInput(r.displayName)}</span>
-            {r.displayName}<span class="meta">{r.quantity} {r.unit}</span>
-          </button>
-        {/each}
-      </div>
-    {:else}
-      <p class="mut">Nothing logged yet — use a photo or your voice to start.</p>
     {/if}
   {:else}
     {#if confirm.hint}

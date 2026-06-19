@@ -42,7 +42,6 @@
 
   const tabs = [
     { href: "/", label: "Log" },
-    { href: "/capture", label: "Quick Capture" },
     { href: "/overview", label: "Overview" },
     { href: "/manage", label: "Regular Items" },
     { href: "/ask", label: "Ask LLM" },

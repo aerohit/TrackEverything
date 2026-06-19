@@ -164,109 +164,107 @@
   onMount(load);
 </script>
 
-<main class="layout">
-  {#if timeSugg.length}
-    <section class="card">
-      <h2>Around now you usually log</h2>
-      <div class="chips">
-        {#each timeSugg as s}
-          <button class="chip" disabled={busyId === s.itemId} onclick={() => logSuggestion(s)}>
-            <span class="chipicon" aria-hidden="true">{iconForInput(s.displayName)}</span>
-            {s.displayName}<span class="meta">{s.quantity} {s.unit}</span>
-          </button>
-        {/each}
-      </div>
-    </section>
-  {/if}
-
+{#if timeSugg.length}
   <section class="card">
-    <h2>Quick Capture</h2>
-    <p class="mut">Tap a favorite to log it instantly. A stack logs all its items in one tap — expand it
-      to skip any today. Pin items from <a href="/manage">Add Item</a>.</p>
+    <h2>Around now you usually log</h2>
+    <div class="chips">
+      {#each timeSugg as s}
+        <button class="chip" disabled={busyId === s.itemId} onclick={() => logSuggestion(s)}>
+          <span class="chipicon" aria-hidden="true">{iconForInput(s.displayName)}</span>
+          {s.displayName}<span class="meta">{s.quantity} {s.unit}</span>
+        </button>
+      {/each}
+    </div>
+  </section>
+{/if}
 
-    {#if loading}
-      <p class="mut">Loading…</p>
-    {:else if items.length}
-      <div class="qgrid">
-        {#each items as it}
-          <div class="qcard">
-            <button class="qmain" disabled={busyId === it.id} onclick={() => log(it)}>
-              <span class="qicon" aria-hidden="true">{iconForInput(it.name)}</span>
-              <span class="qname">{it.name}</span>
-              <span class="qamt">{isStack(it) ? stackCountLabel(it) : defaultAmountLabel(it)}</span>
-            </button>
-            {#if isStack(it)}
-              <div class="qpresets">
-                <button class="qpreset" onclick={() => toggleExpand(it.id)}>
-                  {expanded[it.id] ? "Hide" : "Options"}
+<section class="card">
+  <h2>Quick Capture</h2>
+  <p class="mut">Tap a favorite to log it instantly. A stack logs all its items in one tap — expand it
+    to skip any today. Pin items from <a href="/manage">Add Item</a>.</p>
+
+  {#if loading}
+    <p class="mut">Loading…</p>
+  {:else if items.length}
+    <div class="qgrid">
+      {#each items as it}
+        <div class="qcard">
+          <button class="qmain" disabled={busyId === it.id} onclick={() => log(it)}>
+            <span class="qicon" aria-hidden="true">{iconForInput(it.name)}</span>
+            <span class="qname">{it.name}</span>
+            <span class="qamt">{isStack(it) ? stackCountLabel(it) : defaultAmountLabel(it)}</span>
+          </button>
+          {#if isStack(it)}
+            <div class="qpresets">
+              <button class="qpreset" onclick={() => toggleExpand(it.id)}>
+                {expanded[it.id] ? "Hide" : "Options"}
+              </button>
+            </div>
+            {#if expanded[it.id]}
+              <div class="stackitems">
+                {#each it.stack as m}
+                  <label class="stackitem">
+                    <input
+                      type="checkbox"
+                      checked={isIncluded(it.id, m.itemId)}
+                      onchange={() => toggleMember(it.id, m.itemId)}
+                    />
+                    <span>{m.name}</span>
+                    <span class="mut">{m.quantity} {m.unit}</span>
+                  </label>
+                {/each}
+                <button
+                  class="qpreset"
+                  disabled={busyId === it.id}
+                  onclick={() => log(it, undefined, "separate")}
+                >
+                  Log as separate items
                 </button>
               </div>
-              {#if expanded[it.id]}
-                <div class="stackitems">
-                  {#each it.stack as m}
-                    <label class="stackitem">
-                      <input
-                        type="checkbox"
-                        checked={isIncluded(it.id, m.itemId)}
-                        onchange={() => toggleMember(it.id, m.itemId)}
-                      />
-                      <span>{m.name}</span>
-                      <span class="mut">{m.quantity} {m.unit}</span>
-                    </label>
-                  {/each}
-                  <button
-                    class="qpreset"
-                    disabled={busyId === it.id}
-                    onclick={() => log(it, undefined, "separate")}
-                  >
-                    Log as separate items
-                  </button>
-                </div>
-              {/if}
-            {:else if it.quickPresets.length}
-              <div class="qpresets">
-                {#each it.quickPresets as p}
-                  <button class="qpreset" disabled={busyId === it.id} onclick={() => log(it, p)}>
-                    {p.label}
-                  </button>
-                {/each}
-              </div>
-            {:else}
-              <!-- Size scaler: tap the card for 1×; these log a smaller/larger portion. -->
-              <div class="qpresets">
-                {#each SIZES as sz}
-                  <button class="qpreset" disabled={busyId === it.id} onclick={() => logSize(it, sz)}>
-                    {sz.label}
-                  </button>
-                {/each}
-              </div>
             {/if}
-          </div>
-        {/each}
-      </div>
-    {:else}
-      <p class="mut">
-        No favorites yet. Open <a href="/manage">Add Item</a>, tap an item, and pin it to Quick
-        Capture.
-      </p>
-    {/if}
-  </section>
-
-  {#if suggestions.length}
-    <section class="card">
-      <h2>You log these a lot</h2>
-      <p class="mut">Pin one for one-tap logging.</p>
-      {#each suggestions as s}
-        <div class="itemrow">
-          <span><span class="chipicon" aria-hidden="true">{iconForInput(s.name)}</span> {s.name}</span>
-          <button class="ghostbtn" disabled={pinningId === s.id} onclick={() => pin(s)}>
-            {pinningId === s.id ? "Pinning…" : `Pin · ${s.count}×`}
-          </button>
+          {:else if it.quickPresets.length}
+            <div class="qpresets">
+              {#each it.quickPresets as p}
+                <button class="qpreset" disabled={busyId === it.id} onclick={() => log(it, p)}>
+                  {p.label}
+                </button>
+              {/each}
+            </div>
+          {:else}
+            <!-- Size scaler: tap the card for 1×; these log a smaller/larger portion. -->
+            <div class="qpresets">
+              {#each SIZES as sz}
+                <button class="qpreset" disabled={busyId === it.id} onclick={() => logSize(it, sz)}>
+                  {sz.label}
+                </button>
+              {/each}
+            </div>
+          {/if}
         </div>
       {/each}
-    </section>
+    </div>
+  {:else}
+    <p class="mut">
+      No favorites yet. Open <a href="/manage">Add Item</a>, tap an item, and pin it to Quick
+      Capture.
+    </p>
   {/if}
-</main>
+</section>
+
+{#if suggestions.length}
+  <section class="card">
+    <h2>You log these a lot</h2>
+    <p class="mut">Pin one for one-tap logging.</p>
+    {#each suggestions as s}
+      <div class="itemrow">
+        <span><span class="chipicon" aria-hidden="true">{iconForInput(s.name)}</span> {s.name}</span>
+        <button class="ghostbtn" disabled={pinningId === s.id} onclick={() => pin(s)}>
+          {pinningId === s.id ? "Pinning…" : `Pin · ${s.count}×`}
+        </button>
+      </div>
+    {/each}
+  </section>
+{/if}
 
 {#if toast}
   <div class="toast" class:err={toast.err}>
