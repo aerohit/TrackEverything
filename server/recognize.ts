@@ -72,9 +72,9 @@ export function parseRecognized(raw: unknown): RecognizedIntake {
 
   const draft: CreateItem = {
     name,
-    // Recognized intakes are whole foods/meals/drinks, not packaged products with a
-    // facts panel — model them as a single "simple" item carrying estimated nutrients.
-    kind: "simple",
+    // A recognized whole food/meal/drink is a single atomic item carrying estimated
+    // nutrients — modelled as `product` (the one atomic kind, ADR-039).
+    kind: "product",
     defaultServing: { displayQuantity: 1, displayUnit: unit },
     components,
   };

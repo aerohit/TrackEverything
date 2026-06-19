@@ -25,9 +25,9 @@ describe("itemDraft converters", () => {
   });
 
   it("draftFromBody falls back to sane defaults when fields are missing", () => {
-    expect(draftFromBody({ name: "X", kind: "simple" })).toEqual({
+    expect(draftFromBody({ name: "X", kind: "product" })).toEqual({
       name: "X",
-      kind: "simple",
+      kind: "product",
       dispQty: 1,
       dispUnit: "serving",
       canonQty: null,
@@ -40,7 +40,7 @@ describe("itemDraft converters", () => {
   it("draftFromBody / draftToBody round-trip a canonical serving (\"1 steak = 250 g\")", () => {
     const d = draftFromBody({
       name: "Steak",
-      kind: "simple",
+      kind: "product",
       defaultServing: { displayQuantity: 1, displayUnit: "steak", canonicalQuantity: 250, canonicalUnit: "g" },
       components: [{ substance: "protein", amount: 62, unit: "g" }],
     });
@@ -57,7 +57,7 @@ describe("itemDraft converters", () => {
   it("draftToBody trims, builds the serving (incl. canonical), and drops blank/zero rows", () => {
     const body = draftToBody({
       name: "  Steak ",
-      kind: "simple",
+      kind: "product",
       dispQty: 1,
       dispUnit: " steak ",
       canonQty: 250,
@@ -71,7 +71,7 @@ describe("itemDraft converters", () => {
     });
     expect(body).toEqual({
       name: "Steak",
-      kind: "simple",
+      kind: "product",
       defaultServing: { displayQuantity: 1, displayUnit: "steak", canonicalQuantity: 250, canonicalUnit: "g" },
       components: [{ substance: "protein", amount: 62, unit: "g" }],
     });

@@ -12,7 +12,7 @@ export type MemberRow = { itemId: string; name: string; quantity: number; unit: 
 
 export type ItemDraft = {
   name: string;
-  kind: "product" | "recipe" | "simple" | "stack";
+  kind: "product" | "recipe" | "stack";
   dispQty: number | null;
   dispUnit: string;
   // Optional analysable serving size, e.g. "1 steak = 250 g": canonQty 250, canonUnit "g".

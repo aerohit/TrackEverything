@@ -94,7 +94,7 @@
     <g font-size="10.5" fill="#26215C">
       <text x="12" y="48">id<tspan dx="6" font-size="9" fill="#7a7a88">pk</tspan></text>
       <text x="12" y="65">name</text>
-      <text x="12" y="82">kind  ⟨product / recipe / simple / stack⟩</text>
+      <text x="12" y="82">kind  ⟨product / recipe / stack⟩</text>
       <text x="12" y="99">default serving (qty · unit)</text>
       <text x="12" y="116">canonical serving  ·  quick_log</text>
       <text x="12" y="133" font-size="9" fill="#7a7a88">deleted_at (soft delete)</text>

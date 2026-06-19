@@ -4,7 +4,7 @@
   import { measureUnitOptions, substanceUnitOptions, unitOptions } from "$lib/units";
 
   // Editable item fields shared by the Add Item screen and the Log screen's "save
-  // as a new item" flow. `mode` picks the form: an **item** (product/recipe/simple,
+  // as a new item" flow. `mode` picks the form: an **item** (product or recipe,
   // with a serving + substance ingredients) or a **stack** (composed only of other
   // non-stack items).
   let { draft = $bindable(), substances = [], items = [], mode = "item" }: {
@@ -14,10 +14,10 @@
     mode?: "item" | "stack";
   } = $props();
 
-  // An item is product / recipe / simple; "stack" is its own dedicated form.
-  const ITEM_KINDS = ["product", "recipe", "simple"] as const;
+  // An item is a product or a recipe; "stack" is its own dedicated form.
+  const ITEM_KINDS = ["product", "recipe"] as const;
 
-  // A stack can only be composed of simple / product / recipe items, never another stack.
+  // A stack can only be composed of product / recipe items, never another stack.
   const memberItems = $derived(items.filter((i) => i.kind !== "stack"));
 
   function addComp() {

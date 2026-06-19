@@ -23,7 +23,7 @@ Deno.test("parseRecognized: maps a recognized intake + draft item", () => {
   assertEquals(r.name, "Chicken Salad");
   assertEquals(r.quantity, 1);
   assertEquals(r.unit, "bowl");
-  assertEquals(r.draft.kind, "simple");
+  assertEquals(r.draft.kind, "product");
   assertEquals(r.draft.name, "Chicken Salad");
   assertEquals(r.draft.defaultServing, { displayQuantity: 1, displayUnit: "bowl" });
   assertEquals(r.draft.components, [
@@ -38,7 +38,7 @@ Deno.test("parseRecognized: tolerant defaults for garbage / missing fields", () 
   assertEquals(r.quantity, 1); // non-positive/missing → 1
   assertEquals(r.unit, "serving");
   assertEquals(r.draft.components, []);
-  assert(r.draft.kind === "simple");
+  assert(r.draft.kind === "product");
 
   const empty = parseRecognized(null);
   assertEquals(empty.name, "");

@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-18 (ADR-038: curated 265-substance catalog + legacy-ref reconcile)
+> **Last updated:** 2026-06-18 (ADR-039: merged item kind `simple` into `product`)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -162,9 +162,11 @@ rich analytical decomposition:
   `canonical_unit` (g/mg/mcg/ml/kcal/iu/cfu — `cfu` is a count unit for probiotics, matches only
   itself), `aliases[]` (English + Dutch; de-duplicated so each normalized name/alias maps to one
   substance). A component is matched to a substance by name or any alias, case-insensitively.
-- **`input_item`** — a reusable thing (`kind`: product | recipe | simple | stack — see
-  [ADR-034](#adr-034)/[ADR-035](#adr-035) for why `kind` is the only descriptive column we keep).
-  Carries a default serving (display + canonical). Mutable, soft-deletable.
+- **`input_item`** — a reusable thing (`kind`: **product** = atomic (one set of nutrients —
+  whole foods *and* packaged products), **recipe** / **stack** = composites of other items; see
+  [ADR-039](#adr-039) for the `simple`→`product` merge, and [ADR-034](#adr-034)/[ADR-035](#adr-035)
+  for why `kind` is the only descriptive column we keep). Carries a default serving (display +
+  canonical). Mutable, soft-deletable.
 - **`item_component`** — composition; each row is **exactly one of** a `substance` (actives /
   nutrients) **or** a `child_item` (recipe ingredients), with an amount + unit per serving.
 - **`intake_event`** — one thing consumed at one time. Optional `item_id` (freeform logs allowed),
@@ -492,6 +494,24 @@ so a blind delete+reseed would orphan logged data, and the new PROD DB is create
 **Consequences:** PROD comes up with the clean 265-row catalog and needs no script; QA keeps all logged
 data, repointed onto canonical substances. Substance names are now Title Case, so resolution returns
 e.g. `Caffeine` not `caffeine` (tests updated). 3 dropped-from-catalog substances collapse into `Other`.
+
+### ADR-039
+**Title:** Merge `input_item.kind` `simple` into `product`.
+**Status:** Accepted (2026-06-18). Updates R-DOM-4, R-CAP-23. Data fix via `db/scripts/collapse_simple_to_product.ts`.
+**Context:** `kind` had four values: `product`, `recipe`, `simple`, `stack`. But `simple` and `product`
+were **structurally and behaviourally identical** — both are *atomic* items whose `item_component` rows
+point at substances, and nothing in the code branches on `simple` vs `product` (only `stack` vs not is
+load-bearing, per the [ADR-034](#adr-034) audit). The `simple`/`product` split was a *categorization*
+(whole food vs packaged) smuggled into the *composition* axis — the same mistake `primary_type` made.
+**Decision:** Collapse the two into a single atomic kind, **`product`** (so `kind` ∈ `product` | `recipe`
+| `stack`). Dropped `simple` from `INPUT_KINDS` (shared Zod), the web types, and the item-form kind
+dropdown; the photo/voice recognizer now drafts `product`. A one-off manual script repoints existing
+`simple` rows to `product` and recreates the `input_kind` enum without `simple`. If a food-vs-supplement
+grouping is ever wanted, it returns as a separate optional *category* field — never back in `kind`.
+**Consequences:** `product` now means "an atomic item (one set of nutrients)" — whole foods and packaged
+products alike. Recipe/stack (composites) are unchanged. Slight naming oddity (a recognized banana is a
+`product`), accepted for the simpler model. The enum recreation is destructive but only runs after the
+data fix; idempotent.
 
 ### ADR-033
 **Title:** Occasional / "unresolved" items — capture by name now, resolve nutrition later.

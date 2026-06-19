@@ -7,7 +7,7 @@
  *   POST /intake/recognize                 photo/phrase → recognized intake + matches (ADR-020)
  *   GET  /items ?search&limit              reusable items (summaries)
  *   GET  /items/:id                        one item + its components
- *   POST /items                            create a product / recipe / simple item
+ *   POST /items                            create a product / recipe / stack item
  *   POST /intake                           log an intake (resolves + snapshots)
  *   GET  /intake/recent-items ?limit       recent distinct items for quick re-log (ADR-020)
  *   GET  /intake ?from&to&limit            live intake events (with resolution)
