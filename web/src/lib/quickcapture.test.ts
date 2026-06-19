@@ -51,14 +51,19 @@ describe("quickLogPayload", () => {
   });
 
   it("logs the chosen preset's amount over the default", () => {
-    expect(quickLogPayload(qi(), { label: "1 L", quantity: 1000, unit: "ml" })).toMatchObject({
-      quantity: 1000,
-      unit: "ml",
-    });
+    expect(quickLogPayload(qi(), { label: "1 L", quantity: 1000, unit: "ml" }))
+      .toMatchObject({
+        quantity: 1000,
+        unit: "ml",
+      });
   });
 
   it("falls back to 1 serving when the item has no default amount", () => {
-    expect(quickLogPayload(qi({ defaultDisplayQuantity: null, defaultDisplayUnit: null }))).toMatchObject({
+    expect(
+      quickLogPayload(
+        qi({ defaultDisplayQuantity: null, defaultDisplayUnit: null }),
+      ),
+    ).toMatchObject({
       quantity: 1,
       unit: "serving",
     });
@@ -67,16 +72,36 @@ describe("quickLogPayload", () => {
 
 describe("sizeLogPayload", () => {
   it("scales the default serving by the factor (Small / Large)", () => {
-    expect(sizeLogPayload(qi({ defaultDisplayQuantity: 1, defaultDisplayUnit: "serving" }), 0.5))
+    expect(
+      sizeLogPayload(
+        qi({ defaultDisplayQuantity: 1, defaultDisplayUnit: "serving" }),
+        0.5,
+      ),
+    )
       .toMatchObject({ quantity: 0.5, unit: "serving" });
-    expect(sizeLogPayload(qi({ defaultDisplayQuantity: 50, defaultDisplayUnit: "g" }), 2))
+    expect(
+      sizeLogPayload(
+        qi({ defaultDisplayQuantity: 50, defaultDisplayUnit: "g" }),
+        2,
+      ),
+    )
       .toMatchObject({ quantity: 100, unit: "g" });
   });
 
   it("defaults the base to 1 serving and rounds", () => {
-    expect(sizeLogPayload(qi({ defaultDisplayQuantity: null, defaultDisplayUnit: null }), 0.5))
+    expect(
+      sizeLogPayload(
+        qi({ defaultDisplayQuantity: null, defaultDisplayUnit: null }),
+        0.5,
+      ),
+    )
       .toMatchObject({ quantity: 0.5, unit: "serving" });
-    expect(sizeLogPayload(qi({ defaultDisplayQuantity: 1, defaultDisplayUnit: "serving" }), 1 / 3).quantity)
+    expect(
+      sizeLogPayload(
+        qi({ defaultDisplayQuantity: 1, defaultDisplayUnit: "serving" }),
+        1 / 3,
+      ).quantity,
+    )
       .toBe(0.333);
   });
 });
@@ -84,7 +109,11 @@ describe("sizeLogPayload", () => {
 describe("defaultAmountLabel", () => {
   it("formats the default amount, with a sensible fallback", () => {
     expect(defaultAmountLabel(qi())).toBe("500 ml");
-    expect(defaultAmountLabel(qi({ defaultDisplayQuantity: null, defaultDisplayUnit: null }))).toBe("1 serving");
+    expect(
+      defaultAmountLabel(
+        qi({ defaultDisplayQuantity: null, defaultDisplayUnit: null }),
+      ),
+    ).toBe("1 serving");
   });
 });
 
@@ -96,34 +125,39 @@ describe("stackLogPlan", () => {
     expect(isStack(qi())).toBe(false);
   });
 
-  it("single mode with all members → ONE event against the stack item", () => {
-    const plan = stackLogPlan(STACK, all, "single");
-    expect(plan).toHaveLength(1);
-    expect(plan[0]).toMatchObject({ itemId: "stack-1", displayName: "Morning Stack", source: "quick" });
+  it("logs one event per member, each against the member item (never the stack)", () => {
+    const plan = stackLogPlan(STACK, all);
+    expect(plan.map((p) => p.displayName)).toEqual([
+      "Vitamin D",
+      "Magnesium",
+      "Omega-3",
+    ]);
+    expect(plan.map((p) => p.itemId)).toEqual(["vd", "mg", "o3"]);
+    expect(plan[0]).toMatchObject({ source: "quick" });
   });
 
-  it("separate mode → one event per member, even when all are included", () => {
-    const plan = stackLogPlan(STACK, all, "separate");
-    expect(plan.map((p) => p.displayName)).toEqual(["Vitamin D", "Magnesium", "Omega-3"]);
-  });
-
-  it("a skip always logs per included member (single can't represent a partial stack)", () => {
-    const plan = stackLogPlan(STACK, new Set(["vd", "o3"]), "single"); // skip Magnesium
+  it("logs only the included members when some are skipped", () => {
+    const plan = stackLogPlan(STACK, new Set(["vd", "o3"])); // skip Magnesium
     expect(plan.map((p) => p.displayName)).toEqual(["Vitamin D", "Omega-3"]);
-    expect(plan[1]).toMatchObject({ itemId: "o3", quantity: 2, unit: "softgel", source: "quick" });
+    expect(plan[1]).toMatchObject({
+      itemId: "o3",
+      quantity: 2,
+      unit: "softgel",
+      source: "quick",
+    });
   });
 
   it("logs nothing when every member is skipped", () => {
-    expect(stackLogPlan(STACK, new Set(), "single")).toEqual([]);
+    expect(stackLogPlan(STACK, new Set())).toEqual([]);
   });
 
   it("falls back to a single quick log for a non-stack favorite", () => {
-    expect(stackLogPlan(qi(), new Set(), "single")).toHaveLength(1);
+    expect(stackLogPlan(qi(), new Set())).toHaveLength(1);
   });
 });
 
 describe("presetLabel", () => {
-  it("derives \"<qty> <unit>\" when no override is given", () => {
+  it('derives "<qty> <unit>" when no override is given', () => {
     expect(presetLabel(250, "g")).toBe("250 g");
     expect(presetLabel(500, " ml ")).toBe("500 ml");
   });
@@ -168,7 +202,9 @@ describe("preparePresets", () => {
   });
 
   it("blocks a non-positive quantity and a blank unit", () => {
-    expect(preparePresets([{ label: "250 g", quantity: 0, unit: "g" }]).ok).toBe(false);
-    expect(preparePresets([{ label: "250 g", quantity: 250, unit: "  " }]).ok).toBe(false);
+    expect(preparePresets([{ label: "250 g", quantity: 0, unit: "g" }]).ok)
+      .toBe(false);
+    expect(preparePresets([{ label: "250 g", quantity: 250, unit: "  " }]).ok)
+      .toBe(false);
   });
 });

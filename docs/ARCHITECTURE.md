@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-18 (ADR-039: merged item kind `simple` into `product`)
+> **Last updated:** 2026-06-19 (ADR-040: stacks log as separate per-member events)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -495,6 +495,26 @@ so a blind delete+reseed would orphan logged data, and the new PROD DB is create
 data, repointed onto canonical substances. Substance names are now Title Case, so resolution returns
 e.g. `Caffeine` not `caffeine` (tests updated). 3 dropped-from-catalog substances collapse into `Other`.
 
+### ADR-040
+**Title:** Log a stack as separate per-member events (drop the single combined-entry mode).
+**Status:** Accepted (2026-06-19). Supersedes the capture-choice half of [ADR-030](#adr-030) (the `stack`
+kind and member model from ADR-030 stand). Updates R-CAP-23.
+**Context:** ADR-030 let a stack be logged either as one combined `intake_event` (the resolver expands it
+into a single summed snapshot) or as separate per-member events. The combined entry only stores the *summed*
+nutrition, so the Overview could only show the stack as one opaque row — not its members as first-class
+entries. The owner wants a stack of e.g. "Whey + Multivitamin" to appear as **two line items**, each with
+its own nutrition.
+**Decision:** A stack is just a one-tap shortcut for logging its members, so tapping it **always logs one
+`intake_event` per included member** (`stackLogPlan(item, included)` — the `mode`/`StackMode` is gone, as is
+the "Log as separate items" button). Each member is a normal event (itemId = the member item) that resolves
+to its own nutrition and renders as its own Overview row — no Overview change needed. The expandable
+**checklist** ("Skip items?") still drives `included` to skip a member today. Products and recipes are
+unchanged (one line each).
+**Consequences:** Stacks gain full per-member fidelity (own breakdown, undo, resolve); daily totals are
+unchanged (same members summed). The DTO's `stackItems` join + the resolver's stack expansion remain only
+for **legacy** events logged as a combined entry before this change; no new event uses them. One tap still
+logs the whole stack (undo removes all the member events).
+
 ### ADR-039
 **Title:** Merge `input_item.kind` `simple` into `product`.
 **Status:** Accepted (2026-06-18). Updates R-DOM-4, R-CAP-23. Data fix via `db/scripts/collapse_simple_to_product.ts`.
@@ -580,8 +600,9 @@ still be referenced by *new* logs if something holds a stale id, but no UI surfa
 
 ### ADR-030
 **Title:** Stack is a first-class item kind, with a single-vs-individual capture choice and Overview expansion.
-**Status:** Accepted (2026-06-17). Phase **v2-C2.1**; refines [ADR-029](#adr-029) (whose whole-vs-per-member
-logging mechanism is kept). Realizes the extended R-CAP-23.
+**Status:** Accepted (2026-06-17), **capture-choice half superseded by [ADR-040](#adr-040)** (stacks now
+always log per-member; the `stack` kind + member model below stand). Phase **v2-C2.1**; refines
+[ADR-029](#adr-029) (whose whole-vs-per-member logging mechanism is kept). Realizes the extended R-CAP-23.
 **Context:** ADR-029 modelled a stack as a `recipe`, which overloaded "recipe" (a food made of
 ingredients) with "a routine of items" and gave no clean signal for stack-specific behaviour. The owner also
 wants to **choose at capture** whether a stack is stored as one combined entry or as separate item entries,
