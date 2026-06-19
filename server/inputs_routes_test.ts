@@ -71,7 +71,7 @@ Deno.test({
         headers: auth,
         body: JSON.stringify({
           name: "Greens powder",
-          kind: "simple",
+          kind: "product",
           components: [{ substance: "Spirulina", amount: 1, unit: "g" }],
         }),
       });
@@ -303,7 +303,7 @@ Deno.test({
         headers: auth,
         body: JSON.stringify({
           name: "Banana",
-          kind: "simple",
+          kind: "product",
           components: [{ substance: "calories", amount: 105, unit: "kcal" }],
         }),
       });
@@ -317,7 +317,7 @@ Deno.test({
             unit: "piece",
             draft: {
               name: "banana",
-              kind: "simple" as const,
+              kind: "product" as const,
               defaultServing: { displayQuantity: 1, displayUnit: "piece" },
               components: [{ substance: "calories", amount: 105, unit: "kcal" }],
             },
@@ -450,7 +450,7 @@ Deno.test({
         headers: auth,
         body: JSON.stringify({
           name: "Water",
-          kind: "simple",
+          kind: "product",
           defaultServing: { displayQuantity: 500, displayUnit: "ml" },
         }),
       })).json();
@@ -535,7 +535,7 @@ Deno.test({
       const item = await (await app.request("/api/items", {
         method: "POST",
         headers: auth,
-        body: JSON.stringify({ name: "Espresso", kind: "simple" }),
+        body: JSON.stringify({ name: "Espresso", kind: "product" }),
       })).json();
 
       // A quick-source log carries its provenance back on read.
@@ -620,7 +620,7 @@ Deno.test({
           headers: auth,
           body: JSON.stringify({
             name,
-            kind: "simple",
+            kind: "product",
             defaultServing: { displayQuantity: 1, displayUnit: "tablet" },
           }),
         })).json()).id as string;
@@ -837,7 +837,7 @@ Deno.test({
         headers: auth,
         body: JSON.stringify({
           name: "Coffee",
-          kind: "simple",
+          kind: "product",
           components: [{ substance: "Caffeine", amount: 95, unit: "mg" }],
         }),
       })).json();
@@ -896,7 +896,7 @@ Deno.test({
       // (a) link to an existing item.
       const item = await post("/api/items", {
         name: "Latte",
-        kind: "simple",
+        kind: "product",
         components: [{ substance: "Caffeine", amount: 80, unit: "mg" }],
       });
       const u1 = await post("/api/intake", {

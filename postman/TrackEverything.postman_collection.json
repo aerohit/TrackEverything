@@ -343,7 +343,7 @@
                 "items"
               ]
             },
-            "description": "Create an item. `kind` ∈ product|recipe|simple|stack. Each component is exactly one of `substance` (name; auto-created if unknown) or `childItemId` (uuid). Returns 201 with the item + resolved components."
+            "description": "Create an item. `kind` ∈ product|recipe|stack. Each component is exactly one of `substance` (name; auto-created if unknown) or `childItemId` (uuid). Returns 201 with the item + resolved components."
           }
         },
         {

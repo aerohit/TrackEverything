@@ -3,7 +3,7 @@ import { type Match, selectedName, servingUnitChoices } from "./log";
 
 const results: Match[] = [
   { id: "a1", name: "Dope-Max Pre-Workout", kind: "product" },
-  { id: "b2", name: "Greek Yogurt", kind: "simple" },
+  { id: "b2", name: "Greek Yogurt", kind: "product" },
 ];
 
 describe("selectedName", () => {

@@ -34,7 +34,10 @@ export type SubstanceType = (typeof SUBSTANCE_TYPES)[number];
 export const SUBSTANCE_UNITS = ["g", "mg", "mcg", "ml", "kcal", "iu", "cfu"] as const;
 export type SubstanceUnit = (typeof SUBSTANCE_UNITS)[number];
 
-export const INPUT_KINDS = ["product", "recipe", "simple", "stack"] as const;
+// `product` = an atomic item (one set of nutrients) — covers whole foods and packaged
+// products alike; `recipe`/`stack` are composites of other items (ADR-039 merged the
+// old `simple` into `product`, since they were structurally and behaviourally identical).
+export const INPUT_KINDS = ["product", "recipe", "stack"] as const;
 export type InputKind = (typeof INPUT_KINDS)[number];
 
 export const CONFIDENCE_LEVELS = ["high", "medium", "low", "unknown"] as const;
@@ -53,7 +56,7 @@ export const intakePrecisionSchema = z.enum(INTAKE_PRECISIONS);
 export const substanceUnitSchema = z.enum(SUBSTANCE_UNITS);
 export const confidenceSchema = z.enum(CONFIDENCE_LEVELS);
 
-// ---- creating reusable items (products / recipes / simple foods) ----
+// ---- creating reusable items (products / recipes / stacks) ----
 
 /** A component is exactly one of: a substance (by name) or a child item (by id). */
 export const componentInputSchema = z

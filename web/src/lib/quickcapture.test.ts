@@ -14,7 +14,7 @@ function qi(over: Partial<QuickItem> = {}): QuickItem {
   return {
     id: "11111111-1111-1111-1111-111111111111",
     name: "Water",
-    kind: "simple",
+    kind: "product",
     defaultDisplayQuantity: 500,
     defaultDisplayUnit: "ml",
     defaultCanonicalQuantity: null,
@@ -91,7 +91,7 @@ describe("defaultAmountLabel", () => {
 describe("stackLogPlan", () => {
   const all = new Set(["vd", "mg", "o3"]);
 
-  it("flags stacks vs simple favorites", () => {
+  it("flags stacks vs non-stack favorites", () => {
     expect(isStack(STACK)).toBe(true);
     expect(isStack(qi())).toBe(false);
   });

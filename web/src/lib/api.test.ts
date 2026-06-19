@@ -102,7 +102,7 @@ describe("api client", () => {
     expect(JSON.parse(init?.body as string).components[0].substance).toBe("caffeine");
 
     const bad = vi.fn<typeof globalThis.fetch>(async () => jsonResponse({ error: "Unknown substance: x" }, false, 400));
-    await expect(createItem({ name: "X", kind: "simple" }, { fetch: bad, token: "t" }))
+    await expect(createItem({ name: "X", kind: "product" }, { fetch: bad, token: "t" }))
       .rejects.toThrow("Unknown substance");
   });
 

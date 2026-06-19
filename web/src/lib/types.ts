@@ -66,7 +66,7 @@ export interface DailyTotal {
 export interface InputItemSummary {
   id: string;
   name: string;
-  kind: "product" | "recipe" | "simple" | "stack";
+  kind: "product" | "recipe" | "stack";
   defaultDisplayQuantity: number | null;
   defaultDisplayUnit: string | null;
   defaultCanonicalQuantity: number | null;
@@ -159,7 +159,7 @@ export interface ComponentInput {
 
 export interface CreateItemBody {
   name: string;
-  kind: "product" | "recipe" | "simple" | "stack";
+  kind: "product" | "recipe" | "stack";
   defaultServing?: {
     displayQuantity?: number;
     displayUnit?: string;
