@@ -11,12 +11,15 @@
   import { iconForInput } from "$lib/icons";
   import { type TimeSuggestion, suggestionPayload, timeSuggestions } from "$lib/suggest";
   import {
+    applyOccurredAt,
     defaultAmountLabel,
     isStack,
+    occurredAtFrom,
     quickLogPayload,
     SIZES,
     sizeLogPayload,
     stackLogPlan,
+    toLocalInput,
   } from "$lib/quickcapture";
   import type { FavoriteSuggestion, QuickItem, QuickPreset } from "$lib/types";
 
@@ -33,10 +36,29 @@
   let toast = $state<{ msg: string; eventIds?: string[]; err: boolean } | null>(null);
   let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
+  // The time a tap logs at. "" = now (no occurredAt → the server stamps it); a
+  // `datetime-local` value backdates the log. Persists across taps so you can
+  // backfill several at the same time, until you reset to Now.
+  let logTime = $state("");
+  const occurredAt = $derived(occurredAtFrom(logTime));
+
   function flash(msg: string, opts: { eventIds?: string[]; err?: boolean } = {}) {
     clearTimeout(toastTimer);
     toast = { msg, eventIds: opts.eventIds, err: opts.err ?? false };
     toastTimer = setTimeout(() => (toast = null), 5000);
+  }
+
+  /** A short, friendly label for the chosen time, for the "Logged …" toast. */
+  function timeLabel(): string {
+    const d = new Date(logTime);
+    const t = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    return d.toDateString() === new Date().toDateString()
+      ? t
+      : `${d.toLocaleDateString([], { month: "short", day: "numeric" })}, ${t}`;
+  }
+  /** Append the chosen time to a toast message when a non-now time is set. */
+  function withTime(msg: string): string {
+    return occurredAt ? `${msg} · ${timeLabel()}` : msg;
   }
 
   async function load() {
@@ -84,9 +106,10 @@
   async function log(it: QuickItem, preset?: QuickPreset) {
     busyId = it.id;
     try {
-      const payloads = isStack(it)
-        ? stackLogPlan(it, included[it.id] ?? new Set())
-        : [quickLogPayload(it, preset)];
+      const payloads = applyOccurredAt(
+        isStack(it) ? stackLogPlan(it, included[it.id] ?? new Set()) : [quickLogPayload(it, preset)],
+        occurredAt,
+      );
       if (!payloads.length) {
         flash("Nothing selected to log.", { err: true });
         return;
@@ -100,7 +123,7 @@
       } else {
         amt = preset ? preset.label : defaultAmountLabel(it);
       }
-      flash(`Logged ${it.name} · ${amt}`, { eventIds: ids });
+      flash(withTime(`Logged ${it.name} · ${amt}`), { eventIds: ids });
     } catch {
       flash(`Couldn't log ${it.name}.`, { err: true });
     } finally {
@@ -112,9 +135,10 @@
   async function logSuggestion(s: TimeSuggestion) {
     busyId = s.itemId;
     try {
-      const ev = await logIntake(suggestionPayload(s));
+      const [payload] = applyOccurredAt([suggestionPayload(s)], occurredAt);
+      const ev = await logIntake(payload);
       timeSugg = timeSugg.filter((x) => x.itemId !== s.itemId);
-      flash(`Logged ${s.displayName}`, { eventIds: [ev.id] });
+      flash(withTime(`Logged ${s.displayName}`), { eventIds: [ev.id] });
     } catch {
       flash(`Couldn't log ${s.displayName}.`, { err: true });
     } finally {
@@ -126,8 +150,9 @@
   async function logSize(it: QuickItem, size: { label: string; factor: number }) {
     busyId = it.id;
     try {
-      const ev = await logIntake(sizeLogPayload(it, size.factor));
-      flash(`Logged ${it.name} · ${size.label}`, { eventIds: [ev.id] });
+      const [payload] = applyOccurredAt([sizeLogPayload(it, size.factor)], occurredAt);
+      const ev = await logIntake(payload);
+      flash(withTime(`Logged ${it.name} · ${size.label}`), { eventIds: [ev.id] });
     } catch {
       flash(`Couldn't log ${it.name}.`, { err: true });
     } finally {
@@ -180,6 +205,24 @@
   <h2>Quick Capture</h2>
   <p class="mut">Tap a favorite to log it instantly. A stack logs all its items in one tap — expand it
     to skip any today. Pin items from <a href="/manage">Add Item</a>.</p>
+
+  <div class="qtime">
+    {#if logTime}
+      <span class="qtimelbl">Logging at</span>
+      <input
+        type="datetime-local"
+        class="field qtimeinput"
+        aria-label="Time to log at"
+        bind:value={logTime}
+        max={toLocalInput(new Date())}
+      />
+      <button class="linklike" onclick={() => (logTime = "")}>↺ Now</button>
+    {:else}
+      <button class="ghostbtn qtimebtn" onclick={() => (logTime = toLocalInput(new Date()))}>
+        🕑 Logging now — tap to pick a time
+      </button>
+    {/if}
+  </div>
 
   {#if loading}
     <p class="mut">Loading…</p>
@@ -266,3 +309,25 @@
     {/if}
   </div>
 {/if}
+
+<style>
+  /* Shared "log at this time" control for the Quick Capture taps. */
+  .qtime {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 0 0 10px;
+  }
+  .qtimelbl {
+    color: var(--mut);
+    font-size: 0.85rem;
+  }
+  .qtimeinput {
+    flex: 1;
+    min-width: 150px;
+  }
+  .qtimebtn {
+    width: 100%;
+  }
+</style>

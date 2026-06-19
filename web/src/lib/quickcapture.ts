@@ -115,3 +115,30 @@ export function stackLogPlan(
     source: "quick" as const,
   }));
 }
+
+// ---- choosing when a quick-logged item was consumed (default: server's "now") ----
+
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
+/** A Date → a local `YYYY-MM-DDTHH:MM` value for a `datetime-local` input. */
+export function toLocalInput(d: Date): string {
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${
+    pad2(d.getMinutes())
+  }`;
+}
+
+/**
+ * A `datetime-local` value ("YYYY-MM-DDTHH:MM", local) → an ISO `occurredAt`, or
+ * `undefined` for a blank/invalid value (= let the server stamp "now").
+ */
+export function occurredAtFrom(localDateTime: string): string | undefined {
+  const s = localDateTime.trim();
+  if (!s) return undefined;
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
+}
+
+/** Stamp a chosen `occurredAt` onto each payload (a no-op when it's undefined). */
+export function applyOccurredAt(payloads: CreateIntake[], occurredAt?: string): CreateIntake[] {
+  return occurredAt ? payloads.map((p) => ({ ...p, occurredAt })) : payloads;
+}
