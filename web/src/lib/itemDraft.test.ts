@@ -1,5 +1,58 @@
 import { describe, expect, it } from "vitest";
-import { draftFromBody, draftToBody, emptyDraft } from "./itemDraft";
+import { draftFromBody, draftToBody, eligibleMembers, emptyDraft } from "./itemDraft";
+import type { InputItemSummary } from "$lib/types";
+
+function summary(over: Partial<InputItemSummary>): InputItemSummary {
+  return {
+    id: "x",
+    name: "X",
+    kind: "product",
+    defaultDisplayQuantity: null,
+    defaultDisplayUnit: null,
+    defaultCanonicalQuantity: null,
+    defaultCanonicalUnit: null,
+    ...over,
+  };
+}
+
+describe("eligibleMembers", () => {
+  const catalog = [
+    summary({ id: "p1", name: "Whey", kind: "product" }),
+    summary({ id: "p2", name: "Banana", kind: "product" }),
+    summary({ id: "r1", name: "Smoothie", kind: "recipe" }),
+    summary({ id: "s1", name: "Morning Stack", kind: "stack" }),
+  ];
+
+  it("a recipe accepts only product items", () => {
+    expect(eligibleMembers(catalog, "recipe").map((i) => i.id)).toEqual(["p1", "p2"]);
+  });
+
+  it("a stack accepts any non-stack item (products and recipes)", () => {
+    expect(eligibleMembers(catalog, "stack").map((i) => i.id)).toEqual(["p1", "p2", "r1"]);
+  });
+});
+
+describe("recipe draft", () => {
+  it("draftToBody builds a recipe from product members (childItemId components)", () => {
+    const body = draftToBody({
+      ...emptyDraft(),
+      name: "Protein Smoothie",
+      kind: "recipe",
+      dispQty: 1,
+      dispUnit: "bowl",
+      members: [
+        { itemId: "whey-id", name: "Whey", quantity: 1, unit: "scoop" },
+        { itemId: "banana-id", name: "Banana", quantity: 1, unit: "medium" },
+        { itemId: "", name: "Typo", quantity: 1, unit: "serving" }, // dropped (not in catalog)
+      ],
+    });
+    expect(body.kind).toBe("recipe");
+    expect(body.components).toEqual([
+      { childItemId: "whey-id", amount: 1, unit: "scoop" },
+      { childItemId: "banana-id", amount: 1, unit: "medium" },
+    ]);
+  });
+});
 
 describe("itemDraft converters", () => {
   it("draftFromBody pre-fills name/kind/serving and keeps substance components", () => {

@@ -36,12 +36,13 @@
   // editable draft (shown after a scan)
   let hasDraft = $state(false);
   let draft = $state<ItemDraft>(emptyDraft());
-  let formMode = $state<"item" | "stack">("item");
+  let formMode = $state<"item" | "recipe" | "stack">("item");
 
   let substances = $state<Substance[]>([]);
   let items = $state<InputItemSummary[]>([]);
-  // Regular items vs stacks are listed separately.
-  const regularItems = $derived(items.filter((i) => i.kind !== "stack"));
+  // Products, recipes, and stacks are listed (and created) separately.
+  const regularItems = $derived(items.filter((i) => i.kind === "product"));
+  const recipes = $derived(items.filter((i) => i.kind === "recipe"));
   const stacks = $derived(items.filter((i) => i.kind === "stack"));
   let saving = $state(false);
   let toast = $state<{ msg: string; err: boolean } | null>(null);
@@ -160,6 +161,11 @@
   function newItem() {
     draft = emptyDraft();
     formMode = "item";
+    hasDraft = true;
+  }
+  function newRecipe() {
+    draft = { ...emptyDraft(), kind: "recipe" };
+    formMode = "recipe";
     hasDraft = true;
   }
   function newStack() {
@@ -341,6 +347,39 @@
       {/each}
     {:else}
       <p class="mut">No items yet. Scan a label or create one above.</p>
+    {/if}
+  </section>
+
+  <section class="card">
+    <h2>Your Recipes</h2>
+    {#if !hasDraft}
+      <button class="primary" onclick={newRecipe}>🍲 Create recipe</button>
+    {/if}
+
+    {#if hasDraft && formMode === "recipe"}
+      <div class="fieldlabel" style="margin-top:4px">New recipe</div>
+      <ItemDraftForm bind:draft {substances} {items} mode="recipe" />
+      <button class="primary" disabled={!draft.name.trim() || saving} onclick={save}>
+        {saving ? "Saving…" : "Save recipe"}
+      </button>
+      <button class="linklike" onclick={reset}>Cancel</button>
+    {/if}
+
+    {#if recipes.length}
+      {#each recipes as it}
+        <button
+          class="itemrow itembtn"
+          onclick={() => openDetail(it)}
+          disabled={detailLoading === it.id}
+        >
+          <span>{it.name}</span>
+          <span class="meta">
+            {detailLoading === it.id ? "Loading…" : "recipe"} ›
+          </span>
+        </button>
+      {/each}
+    {:else}
+      <p class="mut">No recipes yet. Tap Create recipe to build one from your products.</p>
     {/if}
   </section>
 
