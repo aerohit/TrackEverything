@@ -1,14 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyOccurredAt,
   defaultAmountLabel,
   isStack,
+  occurredAtFrom,
   preparePresets,
   presetLabel,
   quickLogPayload,
   sizeLogPayload,
   stackLogPlan,
+  toLocalInput,
 } from "./quickcapture";
-import type { QuickItem } from "$lib/types";
+import type { CreateIntake, QuickItem } from "$lib/types";
 
 function qi(over: Partial<QuickItem> = {}): QuickItem {
   return {
@@ -206,5 +209,43 @@ describe("preparePresets", () => {
       .toBe(false);
     expect(preparePresets([{ label: "250 g", quantity: 250, unit: "  " }]).ok)
       .toBe(false);
+  });
+});
+
+describe("toLocalInput", () => {
+  it("formats a Date as a local YYYY-MM-DDTHH:MM value, zero-padded", () => {
+    expect(toLocalInput(new Date(2026, 5, 9, 8, 5))).toBe("2026-06-09T08:05");
+    expect(toLocalInput(new Date(2026, 11, 31, 23, 59))).toBe("2026-12-31T23:59");
+  });
+});
+
+describe("occurredAtFrom", () => {
+  it("returns undefined for a blank value (= log at the server's now)", () => {
+    expect(occurredAtFrom("")).toBeUndefined();
+    expect(occurredAtFrom("   ")).toBeUndefined();
+  });
+
+  it("converts a datetime-local value to its ISO instant", () => {
+    expect(occurredAtFrom("2026-06-20T08:30")).toBe(new Date("2026-06-20T08:30").toISOString());
+  });
+
+  it("returns undefined for an unparseable value", () => {
+    expect(occurredAtFrom("not a date")).toBeUndefined();
+  });
+});
+
+describe("applyOccurredAt", () => {
+  const base: CreateIntake[] = [
+    { displayName: "A", quantity: 1, unit: "serving" },
+    { displayName: "B", quantity: 2, unit: "g" },
+  ];
+
+  it("stamps occurredAt onto every payload when set", () => {
+    const out = applyOccurredAt(base, "2026-06-20T08:30:00.000Z");
+    expect(out.every((p) => p.occurredAt === "2026-06-20T08:30:00.000Z")).toBe(true);
+  });
+
+  it("is a no-op (returns the same list) when occurredAt is undefined", () => {
+    expect(applyOccurredAt(base, undefined)).toBe(base);
   });
 });
