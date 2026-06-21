@@ -335,6 +335,55 @@ Deno.test({
 });
 
 Deno.test({
+  // An item logged in a unit that can't reconcile with its serving resolves to nothing
+  // — flag it `unresolved` so it surfaces on the Overview instead of a silent blank.
+  name: "inputs: item logged in an incompatible unit is flagged unresolved",
+  ignore: !DATABASE_URL,
+  async fn() {
+    await migrate(DATABASE_URL!);
+    const { sql, db } = connect(DATABASE_URL!);
+    try {
+      await sql`truncate resolved_amount, intake_event, item_component, input_item cascade`;
+      // Serving is "1 serving" (no gram/piece equivalent), with one nutrient.
+      const item = await createItem(db, {
+        name: "Mystery Dish",
+        kind: "recipe",
+        defaultServing: { displayQuantity: 1, displayUnit: "serving" },
+        components: [{ substance: "Energy", amount: 200, unit: "kcal" }],
+      });
+      const day = { from: new Date("2026-06-20T00:00:00Z"), to: new Date("2026-06-21T00:00:00Z") };
+
+      // Logged correctly as "1 serving" → resolves, not flagged.
+      await createIntakeEvent(db, {
+        displayName: "Mystery Dish",
+        itemId: item,
+        quantity: 1,
+        unit: "serving",
+        occurredAt: "2026-06-20T08:00:00.000Z",
+      });
+      // Logged as "4 piece" → "piece" can't reconcile with "serving" → nothing resolves.
+      await createIntakeEvent(db, {
+        displayName: "Mystery Dish",
+        itemId: item,
+        quantity: 4,
+        unit: "piece",
+        occurredAt: "2026-06-20T09:00:00.000Z",
+      });
+
+      const events = await listIntakeEvents(db, day);
+      const ok = events.find((e) => e.unit === "serving")!;
+      const bad = events.find((e) => e.unit === "piece")!;
+      assertEquals(ok.unresolved, false);
+      assertEquals(ok.resolved.length, 1);
+      assertEquals(bad.unresolved, true); // surfaced, not silent
+      assertEquals(bad.resolved.length, 0);
+    } finally {
+      await sql.end();
+    }
+  },
+});
+
+Deno.test({
   // Items carry search aliases (other / Dutch names) and are findable by them.
   name: "inputs: items are searchable by name and aliases",
   ignore: !DATABASE_URL,
