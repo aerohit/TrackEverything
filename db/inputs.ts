@@ -193,6 +193,18 @@ interface ComputedResolution {
     confidence: Confidence;
     source: string;
   }[];
+  /** False when resolving an item couldn't finish (missing item, a unit that doesn't
+   * reconcile with its serving, an unconvertible substance) — used to flag the event. */
+  complete: boolean;
+}
+
+/**
+ * An item-based log that produced *no* nutrition because resolution couldn't complete
+ * (e.g. logged in a unit that doesn't reconcile with the item's serving) — flag it
+ * `unresolved` so it surfaces on the Overview instead of showing a silent blank.
+ */
+function failedToResolve(itemId: string | undefined, r: ComputedResolution): boolean {
+  return !!itemId && r.rows.length === 0 && !r.complete;
 }
 
 async function computeResolution(
@@ -212,6 +224,7 @@ async function computeResolution(
     const confidence: Confidence = complete ? baseConfidence : "low";
     return {
       rows: amounts.map((a) => ({ ...a, confidence, source: "item" })),
+      complete,
     };
   }
   if (input.resolved?.length) {
@@ -229,9 +242,9 @@ async function computeResolution(
         source: "manual",
       });
     }
-    return { rows };
+    return { rows, complete: true };
   }
-  return { rows: [] };
+  return { rows: [], complete: true };
 }
 
 export async function createIntakeEvent(db: Db, input: CreateIntakeEvent): Promise<string> {
@@ -247,7 +260,7 @@ export async function createIntakeEvent(db: Db, input: CreateIntakeEvent): Promi
     // Photo/voice are estimates → rough by default; everything else is precise.
     precision: input.precision ??
       (input.source === "photo" || input.source === "voice" ? "rough" : "precise"),
-    unresolved: input.unresolved ?? false,
+    unresolved: input.unresolved ?? failedToResolve(input.itemId, resolution),
   }).returning();
   if (resolution.rows.length) {
     await db.insert(resolvedAmount).values(resolution.rows.map((r) => ({ eventId: ev.id, ...r })));
@@ -281,8 +294,9 @@ export async function updateIntakeEvent(
     quantity: merged.quantity,
     unit: merged.unit,
     contextTags: patch.contextTags ?? current.contextTags,
-    // Resolving an occasional item clears the flag (R-CAP-31).
-    unresolved: patch.unresolved !== undefined ? patch.unresolved : current.unresolved,
+    // Resolving an occasional item clears the flag (R-CAP-31); otherwise re-derive it
+    // from the new resolution (e.g. fixing the unit so it resolves clears it).
+    unresolved: patch.unresolved ?? failedToResolve(merged.itemId, resolution),
     updatedAt: new Date(),
   }).where(eq(intakeEvent.id, id));
 
