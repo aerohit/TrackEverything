@@ -7,6 +7,7 @@ function summary(over: Partial<InputItemSummary>): InputItemSummary {
     id: "x",
     name: "X",
     kind: "product",
+    aliases: [],
     defaultDisplayQuantity: null,
     defaultDisplayUnit: null,
     defaultCanonicalQuantity: null,
@@ -52,6 +53,13 @@ describe("searchMembers", () => {
 
   it("returns nothing when nothing matches", () => {
     expect(searchMembers(products, "zzz")).toEqual([]);
+  });
+
+  it("matches an alias (other / Dutch name), not just the name", () => {
+    const items = [summary({ id: "p", name: "Potato", aliases: ["aardappel", "spud"] })];
+    expect(searchMembers(items, "aardappel").map((i) => i.id)).toEqual(["p"]);
+    expect(searchMembers(items, "SPU").map((i) => i.id)).toEqual(["p"]);
+    expect(searchMembers(items, "carrot")).toEqual([]);
   });
 });
 

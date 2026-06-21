@@ -99,6 +99,8 @@ export type SetQuickLog = z.infer<typeof setQuickLogSchema>;
 export const createItemSchema = z.object({
   name: z.string().min(1),
   kind: z.enum(INPUT_KINDS),
+  /** Other names / Dutch names the item can be searched by. */
+  aliases: z.array(z.string().min(1)).optional(),
   defaultServing: servingSchema.optional(),
   components: z.array(componentInputSchema).optional(),
 });
@@ -254,6 +256,7 @@ export interface InputItemSummary {
   id: string;
   name: string;
   kind: InputKind;
+  aliases: string[];
   defaultDisplayQuantity: number | null;
   defaultDisplayUnit: string | null;
   defaultCanonicalQuantity: number | null;

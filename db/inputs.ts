@@ -43,7 +43,7 @@ interface SubstanceMeta {
 
 /** name + each alias (lowercased) → {id, canonical unit}. */
 /** Normalize a substance name for matching: lowercase, spaces/hyphens → underscores. */
-function normalizeSubstance(s: string): string {
+export function normalizeSubstance(s: string): string {
   return s.trim().toLowerCase().replace(/[\s-]+/g, "_");
 }
 
@@ -61,7 +61,7 @@ function toSubstanceUnit(u: string): SubstanceUnit {
  * a substance either way; resolution then always uses the canonical substance (its
  * `name`), never the alias. Keep this name-or-alias matching for any newly added items.
  */
-async function substanceIndex(db: Db): Promise<Map<string, SubstanceMeta>> {
+export async function substanceIndex(db: Db): Promise<Map<string, SubstanceMeta>> {
   const rows = await db.select().from(substance);
   const m = new Map<string, SubstanceMeta>();
   for (const s of rows) {
@@ -73,7 +73,7 @@ async function substanceIndex(db: Db): Promise<Map<string, SubstanceMeta>> {
 }
 
 /** Find a substance by name, auto-creating it (type "other") if unknown — ADR-019. */
-async function resolveSubstanceId(
+export async function resolveSubstanceId(
   db: Db,
   index: Map<string, SubstanceMeta>,
   name: string,
@@ -121,6 +121,7 @@ export async function createItem(db: Db, input: CreateItem): Promise<string> {
   const [item] = await db.insert(inputItem).values({
     name: input.name,
     kind: input.kind,
+    aliases: input.aliases ?? [],
     defaultDisplayQuantity: input.defaultServing?.displayQuantity ?? null,
     defaultDisplayUnit: input.defaultServing?.displayUnit ?? null,
     defaultCanonicalQuantity: input.defaultServing?.canonicalQuantity ?? null,
@@ -460,6 +461,7 @@ function itemSummary(r: InputItemRow): InputItemSummary {
     id: r.id,
     name: r.name,
     kind: r.kind,
+    aliases: r.aliases,
     defaultDisplayQuantity: r.defaultDisplayQuantity,
     defaultDisplayUnit: r.defaultDisplayUnit,
     defaultCanonicalQuantity: r.defaultCanonicalQuantity,
@@ -482,10 +484,19 @@ export async function listItems(
     // order, and minor mishears (e.g. "pre workout" → "Dope-Max Pre-Workout");
     // an ILIKE substring catches the rest. Ranked best-match first.
     const sim = sql<number>`word_similarity(${search}, ${inputItem.name})`;
+    const like = "%" + search + "%";
     const rows = await db.select().from(inputItem)
       .where(and(
         isNull(inputItem.deletedAt),
-        sql`(${sim} > ${SEARCH_SIMILARITY} or ${inputItem.name} ilike ${"%" + search + "%"})`,
+        // Match the name (fuzzy or substring) OR any alias (other / Dutch names).
+        sql`(
+          ${sim} > ${SEARCH_SIMILARITY}
+          or ${inputItem.name} ilike ${like}
+          or exists (
+            select 1 from unnest(${inputItem.aliases}) a
+            where a ilike ${like} or word_similarity(${search}, a) > ${SEARCH_SIMILARITY}
+          )
+        )`,
       ))
       .orderBy(sql`${sim} desc`, asc(inputItem.name))
       .limit(limit);
@@ -646,6 +657,7 @@ export async function favoriteSuggestions(
     id: inputItem.id,
     name: inputItem.name,
     kind: inputItem.kind,
+    aliases: inputItem.aliases,
     defaultDisplayQuantity: inputItem.defaultDisplayQuantity,
     defaultDisplayUnit: inputItem.defaultDisplayUnit,
     defaultCanonicalQuantity: inputItem.defaultCanonicalQuantity,
@@ -669,6 +681,7 @@ export async function favoriteSuggestions(
     id: r.id,
     name: r.name,
     kind: r.kind,
+    aliases: r.aliases,
     defaultDisplayQuantity: r.defaultDisplayQuantity,
     defaultDisplayUnit: r.defaultDisplayUnit,
     defaultCanonicalQuantity: r.defaultCanonicalQuantity,

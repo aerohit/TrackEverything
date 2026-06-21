@@ -249,7 +249,9 @@
 
   async function load() {
     try {
-      [substances, items] = await Promise.all([listSubstances(), listItems()]);
+      // Load the whole catalog (incl. the seeded product catalog) so the recipe/stack
+      // member picker can search all of it client-side.
+      [substances, items] = await Promise.all([listSubstances(), listItems({ limit: 500 })]);
     } catch {
       flash("Couldn't load — check your token.", true);
     }

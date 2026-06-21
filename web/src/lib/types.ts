@@ -67,6 +67,7 @@ export interface InputItemSummary {
   id: string;
   name: string;
   kind: "product" | "recipe" | "stack";
+  aliases: string[];
   defaultDisplayQuantity: number | null;
   defaultDisplayUnit: string | null;
   defaultCanonicalQuantity: number | null;
@@ -160,6 +161,7 @@ export interface ComponentInput {
 export interface CreateItemBody {
   name: string;
   kind: "product" | "recipe" | "stack";
+  aliases?: string[];
   defaultServing?: {
     displayQuantity?: number;
     displayUnit?: string;

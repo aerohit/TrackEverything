@@ -18,6 +18,7 @@ function qi(over: Partial<QuickItem> = {}): QuickItem {
     id: "11111111-1111-1111-1111-111111111111",
     name: "Water",
     kind: "product",
+    aliases: [],
     defaultDisplayQuantity: 500,
     defaultDisplayUnit: "ml",
     defaultCanonicalQuantity: null,
