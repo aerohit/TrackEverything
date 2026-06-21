@@ -30,7 +30,12 @@ export function searchMembers(
   query: string,
 ): InputItemSummary[] {
   const q = query.trim().toLowerCase();
-  const pool = q ? items.filter((it) => it.name.toLowerCase().includes(q)) : items;
+  const pool = q
+    ? items.filter((it) =>
+      it.name.toLowerCase().includes(q) ||
+      it.aliases.some((a) => a.toLowerCase().includes(q))
+    )
+    : items;
   return pool.slice(0, 8);
 }
 

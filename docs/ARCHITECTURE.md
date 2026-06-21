@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-19 (ADR-041: recipes are composed of products + Create-recipe form)
+> **Last updated:** 2026-06-20 (ADR-042: item aliases + seeded grocery product catalog)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -166,7 +166,7 @@ rich analytical decomposition:
   whole foods *and* packaged products), **recipe** / **stack** = composites of other items; see
   [ADR-039](#adr-039) for the `simple`→`product` merge, and [ADR-034](#adr-034)/[ADR-035](#adr-035)
   for why `kind` is the only descriptive column we keep). Carries a default serving (display +
-  canonical). Mutable, soft-deletable.
+  canonical) and search **`aliases`** (other / Dutch names — [ADR-042](#adr-042)). Mutable, soft-deletable.
 - **`item_component`** — composition; each row is **exactly one of** a `substance` (actives /
   nutrients) **or** a `child_item` (recipe ingredients), with an amount + unit per serving.
 - **`intake_event`** — one thing consumed at one time. Optional `item_id` (freeform logs allowed),
@@ -494,6 +494,32 @@ so a blind delete+reseed would orphan logged data, and the new PROD DB is create
 **Consequences:** PROD comes up with the clean 265-row catalog and needs no script; QA keeps all logged
 data, repointed onto canonical substances. Substance names are now Title Case, so resolution returns
 e.g. `Caffeine` not `caffeine` (tests updated). 3 dropped-from-catalog substances collapse into `Other`.
+
+### ADR-042
+**Title:** Item search aliases + a seeded grocery product catalog.
+**Status:** Accepted (2026-06-20). Realizes R-CAP-33; builds on [ADR-041](#adr-041) (recipes from products)
+and the substance catalog ([ADR-038](#adr-038)). Migration `0015`.
+**Context:** Recipes are built from `product` items (ADR-041), but the catalog only held a handful of
+user-created products, and several had no nutrition — so a recipe like "Breakfast - Eggs" resolved to
+nothing. The owner wants a ready-made catalog of common groceries (with nutrition) to build recipes from,
+searchable by everyday and **Dutch** names. Only `substance` had aliases; `input_item` had none, so a
+product couldn't be found by an alternate name.
+**Decision:**
+- **Aliases on items:** add `input_item.aliases text[]` (mirrors `substance.aliases`). `createItem` accepts
+  `aliases`; item search matches **name + aliases** case-insensitively — server-side `listItems` (trigram +
+  ILIKE over the name and `unnest(aliases)`) and the client member typeahead (`searchMembers` substring over
+  name + aliases). The manage screen loads the full catalog (`limit` raised) so the picker can filter it.
+- **Catalog as data + script:** `db/product_catalog.csv` (~240 groceries across veg/fruit/meat/fish/dairy/
+  eggs/grains/legumes/nuts/pantry/beverages) — each with EN+NL aliases, a **per-100 g / 100 ml** serving, and
+  a `nutrients` list (`Name:amount;…`) holding macros for all plus only the micros the food is a meaningful
+  source of. The idempotent `db/scripts/seed_product_catalog.ts` upserts them as `product` items, mapping each
+  nutrient to an existing catalog substance (by name/alias, in that substance's canonical unit) and **aborting
+  on an unknown substance** rather than auto-creating one. Run manually on QA/PROD (dry-run, then `--apply`).
+**Consequences:** Recipes can be built from real, nutrition-bearing products found by name or Dutch alias, and
+they resolve macros/micros correctly (per-100 g/ml scales by logged weight/volume). Products are logged/added
+by weight/volume (no per-piece serving yet — a possible later refinement). Substance values are curated from
+standard references and are approximate. The CSV is the editable source of truth; re-running the seed updates
+existing products in place.
 
 ### ADR-041
 **Title:** Recipes are composed of products, with a dedicated Create-recipe form.

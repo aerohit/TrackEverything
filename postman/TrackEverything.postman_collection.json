@@ -331,7 +331,7 @@
                   "language": "json"
                 }
               },
-              "raw": "{\n  \"name\": \"My Pre-Workout\",\n  \"kind\": \"product\",\n  \"defaultServing\": {\n    \"displayQuantity\": 1,\n    \"displayUnit\": \"scoop\",\n    \"canonicalQuantity\": 12,\n    \"canonicalUnit\": \"g\"\n  },\n  \"components\": [\n    { \"substance\": \"caffeine\", \"amount\": 200, \"unit\": \"mg\" },\n    { \"substance\": \"creatine\", \"amount\": 5, \"unit\": \"g\" }\n  ]\n}"
+              "raw": "{\n  \"name\": \"My Pre-Workout\",\n  \"kind\": \"product\",\n  \"aliases\": [\"pre-workout\", \"pre workout\"],\n  \"defaultServing\": {\n    \"displayQuantity\": 1,\n    \"displayUnit\": \"scoop\",\n    \"canonicalQuantity\": 12,\n    \"canonicalUnit\": \"g\"\n  },\n  \"components\": [\n    { \"substance\": \"caffeine\", \"amount\": 200, \"unit\": \"mg\" },\n    { \"substance\": \"creatine\", \"amount\": 5, \"unit\": \"g\" }\n  ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/items",
@@ -343,7 +343,7 @@
                 "items"
               ]
             },
-            "description": "Create an item. `kind` ∈ product|recipe|stack. Each component is exactly one of `substance` (name; auto-created if unknown) or `childItemId` (uuid). A recipe's `childItemId` members must be existing product items (else 400). Returns 201 with the item + resolved components."
+            "description": "Create an item. `kind` ∈ product|recipe|stack. Optional `aliases` (other / Dutch names) make the item searchable by them (GET /items?search=). Each component is exactly one of `substance` (name; auto-created if unknown) or `childItemId` (uuid). A recipe's `childItemId` members must be existing product items (else 400). Returns 201 with the item + resolved components."
           }
         },
         {

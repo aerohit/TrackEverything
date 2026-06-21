@@ -89,9 +89,15 @@ export async function searchItems(search: string, ctx: ApiCtx = {}): Promise<Inp
   return (await res.json()).items as InputItemSummary[];
 }
 
-export async function listItems(ctx: ApiCtx = {}): Promise<InputItemSummary[]> {
+export async function listItems(
+  ctx: ApiCtx & { limit?: number; search?: string } = {},
+): Promise<InputItemSummary[]> {
   const { f, token } = resolve(ctx);
-  const res = await f("/api/items", { headers: headers(token) });
+  const q = new URLSearchParams();
+  if (ctx.limit) q.set("limit", String(ctx.limit));
+  if (ctx.search) q.set("search", ctx.search);
+  const qs = q.toString();
+  const res = await f(`/api/items${qs ? "?" + qs : ""}`, { headers: headers(token) });
   if (!res.ok) throw new ApiError(res.status, "Failed to load items");
   return (await res.json()).items as InputItemSummary[];
 }

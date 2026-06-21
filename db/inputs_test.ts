@@ -7,6 +7,7 @@ import {
   dailyTotals,
   getItemDetail,
   listIntakeEvents,
+  listItems,
   softDeleteIntakeEvent,
   updateIntakeEvent,
 } from "./inputs.ts";
@@ -327,6 +328,35 @@ Deno.test({
       // The rejected recipes left nothing half-created (only the 3 valid items remain).
       const [{ n }] = await sql<{ n: number }[]>`select count(*)::int n from input_item`;
       assertEquals(n, 3);
+    } finally {
+      await sql.end();
+    }
+  },
+});
+
+Deno.test({
+  // Items carry search aliases (other / Dutch names) and are findable by them.
+  name: "inputs: items are searchable by name and aliases",
+  ignore: !DATABASE_URL,
+  async fn() {
+    await migrate(DATABASE_URL!);
+    const { sql, db } = connect(DATABASE_URL!);
+    try {
+      await sql`truncate resolved_amount, intake_event, item_component, input_item cascade`;
+      const id = await createItem(db, {
+        name: "Potato",
+        kind: "product",
+        aliases: ["aardappel", "spud"],
+        components: [{ substance: "Potassium", amount: 425, unit: "mg" }],
+      });
+      const detail = await getItemDetail(db, id);
+      assert(detail);
+      assertEquals(detail.aliases, ["aardappel", "spud"]);
+
+      // found by its Dutch alias and by an English alias (not just the name)
+      assert((await listItems(db, { search: "aardappel" })).some((i) => i.id === id));
+      assert((await listItems(db, { search: "spud" })).some((i) => i.id === id));
+      assert((await listItems(db, { search: "Potato" })).some((i) => i.id === id));
     } finally {
       await sql.end();
     }

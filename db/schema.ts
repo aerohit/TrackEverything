@@ -69,6 +69,8 @@ export const inputItem = pgTable("input_item", {
   defaultDisplayUnit: text("default_display_unit"),
   defaultCanonicalQuantity: doublePrecision("default_canonical_quantity"),
   defaultCanonicalUnit: text("default_canonical_unit"),
+  // Other names / Dutch names the item can be searched by (mirrors substance.aliases).
+  aliases: text("aliases").array().notNull().default([]),
   // Quick Capture (v2-C1): pinned one-tap favorite + its position on the grid.
   quickLog: boolean("quick_log").notNull().default(false),
   quickOrder: integer("quick_order"),
