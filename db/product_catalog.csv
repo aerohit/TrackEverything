@@ -1,19 +1,19 @@
-name,category,aliases,display_qty,display_unit,canonical_qty,canonical_unit,nutrients
-Tomato,vegetable,tomatoes|tomaat|tomaten,100,g,100,g,Energy:18;Protein:0.9;Carbohydrate:3.9;Sugar:2.6;Dietary Fiber:1.2;Fat:0.2;Potassium:237;Vitamin C:14;Vitamin K:7.9;Folate:15;Vitamin A:42
+name,category,aliases,display_qty,display_unit,canonical_qty,canonical_unit,nutrients,piece_unit,piece_grams
+Tomato,vegetable,tomatoes|tomaat|tomaten,100,g,100,g,Energy:18;Protein:0.9;Carbohydrate:3.9;Sugar:2.6;Dietary Fiber:1.2;Fat:0.2;Potassium:237;Vitamin C:14;Vitamin K:7.9;Folate:15;Vitamin A:42,piece,120
 Cherry Tomato,vegetable,cherry tomatoes|kerstomaat|cherrytomaatjes,100,g,100,g,Energy:18;Protein:0.9;Carbohydrate:3.9;Sugar:2.6;Dietary Fiber:1.2;Fat:0.2;Potassium:237;Vitamin C:14;Vitamin A:42
 Cucumber,vegetable,komkommer,100,g,100,g,Energy:15;Protein:0.7;Carbohydrate:3.6;Sugar:1.7;Dietary Fiber:0.5;Fat:0.1;Potassium:147;Vitamin K:16
-Carrot,vegetable,carrots|wortel|peen|wortelen,100,g,100,g,Energy:41;Protein:0.9;Carbohydrate:9.6;Sugar:4.7;Dietary Fiber:2.8;Fat:0.2;Potassium:320;Vitamin A:835;Vitamin K:13;Vitamin C:5.9
+Carrot,vegetable,carrots|wortel|peen|wortelen,100,g,100,g,Energy:41;Protein:0.9;Carbohydrate:9.6;Sugar:4.7;Dietary Fiber:2.8;Fat:0.2;Potassium:320;Vitamin A:835;Vitamin K:13;Vitamin C:5.9,piece,60
 Broccoli,vegetable,broccoli,100,g,100,g,Energy:34;Protein:2.8;Carbohydrate:6.6;Sugar:1.7;Dietary Fiber:2.6;Fat:0.4;Vitamin C:89;Vitamin K:102;Folate:63;Potassium:316;Calcium:47
 Spinach,vegetable,spinazie,100,g,100,g,Energy:23;Protein:2.9;Carbohydrate:3.6;Sugar:0.4;Dietary Fiber:2.2;Fat:0.4;Vitamin K:483;Vitamin A:469;Folate:194;Iron:2.7;Vitamin C:28;Magnesium:79;Potassium:558;Calcium:99
 Lettuce,vegetable,sla|kropsla,100,g,100,g,Energy:15;Protein:1.4;Carbohydrate:2.9;Sugar:0.8;Dietary Fiber:1.3;Fat:0.2;Vitamin K:126;Vitamin A:370;Folate:38
 Iceberg Lettuce,vegetable,ijsbergsla,100,g,100,g,Energy:14;Protein:0.9;Carbohydrate:3;Sugar:2;Dietary Fiber:1.2;Fat:0.1;Vitamin K:24;Folate:29
-Red Bell Pepper,vegetable,red pepper|rode paprika,100,g,100,g,Energy:31;Protein:1;Carbohydrate:6;Sugar:4.2;Dietary Fiber:2.1;Fat:0.3;Vitamin C:128;Vitamin A:157;Vitamin B6:0.29;Folate:46;Potassium:211
-Green Bell Pepper,vegetable,green pepper|groene paprika,100,g,100,g,Energy:20;Protein:0.9;Carbohydrate:4.6;Sugar:2.4;Dietary Fiber:1.7;Fat:0.2;Vitamin C:80;Vitamin K:7.4
-Onion,vegetable,onions|ui|uien,100,g,100,g,Energy:40;Protein:1.1;Carbohydrate:9.3;Sugar:4.2;Dietary Fiber:1.7;Fat:0.1;Vitamin C:7.4;Potassium:146
-Red Onion,vegetable,rode ui,100,g,100,g,Energy:40;Protein:1.1;Carbohydrate:9.3;Sugar:4.2;Dietary Fiber:1.7;Fat:0.1;Vitamin C:7.4;Potassium:146
-Garlic,vegetable,knoflook,100,g,100,g,Energy:149;Protein:6.4;Carbohydrate:33;Sugar:1;Dietary Fiber:2.1;Fat:0.5;Manganese:1.67;Vitamin C:31;Vitamin B6:1.24;Selenium:14;Calcium:181;Phosphorus:153
-Potato,vegetable,potatoes|aardappel|aardappelen,100,g,100,g,Energy:77;Protein:2;Carbohydrate:17;Sugar:0.8;Dietary Fiber:2.2;Fat:0.1;Potassium:425;Vitamin C:19.7;Vitamin B6:0.3
-Sweet Potato,vegetable,zoete aardappel|bataat,100,g,100,g,Energy:86;Protein:1.6;Carbohydrate:20;Sugar:4.2;Dietary Fiber:3;Fat:0.1;Vitamin A:709;Potassium:337;Vitamin C:2.4;Manganese:0.26
+Red Bell Pepper,vegetable,red pepper|rode paprika,100,g,100,g,Energy:31;Protein:1;Carbohydrate:6;Sugar:4.2;Dietary Fiber:2.1;Fat:0.3;Vitamin C:128;Vitamin A:157;Vitamin B6:0.29;Folate:46;Potassium:211,piece,120
+Green Bell Pepper,vegetable,green pepper|groene paprika,100,g,100,g,Energy:20;Protein:0.9;Carbohydrate:4.6;Sugar:2.4;Dietary Fiber:1.7;Fat:0.2;Vitamin C:80;Vitamin K:7.4,piece,120
+Onion,vegetable,onions|ui|uien,100,g,100,g,Energy:40;Protein:1.1;Carbohydrate:9.3;Sugar:4.2;Dietary Fiber:1.7;Fat:0.1;Vitamin C:7.4;Potassium:146,piece,110
+Red Onion,vegetable,rode ui,100,g,100,g,Energy:40;Protein:1.1;Carbohydrate:9.3;Sugar:4.2;Dietary Fiber:1.7;Fat:0.1;Vitamin C:7.4;Potassium:146,piece,110
+Garlic,vegetable,knoflook,100,g,100,g,Energy:149;Protein:6.4;Carbohydrate:33;Sugar:1;Dietary Fiber:2.1;Fat:0.5;Manganese:1.67;Vitamin C:31;Vitamin B6:1.24;Selenium:14;Calcium:181;Phosphorus:153,clove,3
+Potato,vegetable,potatoes|aardappel|aardappelen,100,g,100,g,Energy:77;Protein:2;Carbohydrate:17;Sugar:0.8;Dietary Fiber:2.2;Fat:0.1;Potassium:425;Vitamin C:19.7;Vitamin B6:0.3,piece,150
+Sweet Potato,vegetable,zoete aardappel|bataat,100,g,100,g,Energy:86;Protein:1.6;Carbohydrate:20;Sugar:4.2;Dietary Fiber:3;Fat:0.1;Vitamin A:709;Potassium:337;Vitamin C:2.4;Manganese:0.26,piece,130
 Zucchini,vegetable,courgette,100,g,100,g,Energy:17;Protein:1.2;Carbohydrate:3.1;Sugar:2.5;Dietary Fiber:1;Fat:0.3;Vitamin C:17.9;Potassium:261;Vitamin B6:0.16
 Eggplant,vegetable,aubergine,100,g,100,g,Energy:25;Protein:1;Carbohydrate:5.9;Sugar:3.5;Dietary Fiber:3;Fat:0.2;Manganese:0.23;Potassium:229
 Cauliflower,vegetable,bloemkool,100,g,100,g,Energy:25;Protein:1.9;Carbohydrate:5;Sugar:1.9;Dietary Fiber:2;Fat:0.3;Vitamin C:48;Vitamin K:15.5;Folate:57
@@ -35,7 +35,7 @@ Butternut Squash,vegetable,flespompoen|butternut,100,g,100,g,Energy:45;Protein:1
 Fennel,vegetable,venkel,100,g,100,g,Energy:31;Protein:1.2;Carbohydrate:7.3;Sugar:3.9;Dietary Fiber:3.1;Fat:0.2;Vitamin C:12;Potassium:414
 Spring Onion,vegetable,scallion|lente-ui|bosui,100,g,100,g,Energy:32;Protein:1.8;Carbohydrate:7.3;Sugar:2.3;Dietary Fiber:2.6;Fat:0.2;Vitamin K:207;Vitamin C:18.8;Folate:64
 Chili Pepper,vegetable,chilli|rode peper|spaanse peper,100,g,100,g,Energy:40;Protein:1.9;Carbohydrate:9;Sugar:5.3;Dietary Fiber:1.5;Fat:0.4;Vitamin C:144;Vitamin A:48;Vitamin B6:0.51
-Avocado,vegetable,avocado,100,g,100,g,Energy:160;Protein:2;Carbohydrate:9;Sugar:0.7;Dietary Fiber:6.7;Fat:15;Saturated Fat:2.1;Potassium:485;Vitamin K:21;Folate:81;Vitamin E:2.1;Vitamin C:10
+Avocado,vegetable,avocado,100,g,100,g,Energy:160;Protein:2;Carbohydrate:9;Sugar:0.7;Dietary Fiber:6.7;Fat:15;Saturated Fat:2.1;Potassium:485;Vitamin K:21;Folate:81;Vitamin E:2.1;Vitamin C:10,piece,150
 Rocket,vegetable,arugula|rucola|raketsla,100,g,100,g,Energy:25;Protein:2.6;Carbohydrate:3.7;Sugar:2.1;Dietary Fiber:1.6;Fat:0.7;Vitamin K:109;Vitamin A:119;Folate:97;Calcium:160
 Parsnip,vegetable,pastinaak,100,g,100,g,Energy:75;Protein:1.2;Carbohydrate:18;Sugar:4.8;Dietary Fiber:4.9;Fat:0.3;Vitamin C:17;Folate:67;Potassium:375;Manganese:0.56
 Bok Choy,vegetable,pak choi|paksoi,100,g,100,g,Energy:13;Protein:1.5;Carbohydrate:2.2;Sugar:1.2;Dietary Fiber:1;Fat:0.2;Vitamin A:223;Vitamin C:45;Vitamin K:46;Folate:66
@@ -46,12 +46,12 @@ Green Olives,vegetable,olives|groene olijven|olijven,100,g,100,g,Energy:145;Prot
 Shallot,vegetable,sjalot,100,g,100,g,Energy:72;Protein:2.5;Carbohydrate:17;Sugar:7.9;Dietary Fiber:3.2;Fat:0.1;Potassium:334;Vitamin B6:0.35;Folate:34
 Watercress,vegetable,waterkers,100,g,100,g,Energy:11;Protein:2.3;Carbohydrate:1.3;Sugar:0.2;Dietary Fiber:0.5;Fat:0.1;Vitamin K:250;Vitamin C:43;Vitamin A:160;Calcium:120
 Turnip,vegetable,raap|knolraap,100,g,100,g,Energy:28;Protein:0.9;Carbohydrate:6.4;Sugar:3.8;Dietary Fiber:1.8;Fat:0.1;Vitamin C:21;Potassium:191
-Apple,fruit,apples|appel|appels,100,g,100,g,Energy:52;Protein:0.3;Carbohydrate:14;Sugar:10;Dietary Fiber:2.4;Fat:0.2;Vitamin C:4.6;Potassium:107
-Banana,fruit,bananas|banaan|bananen,100,g,100,g,Energy:89;Protein:1.1;Carbohydrate:23;Sugar:12;Dietary Fiber:2.6;Fat:0.3;Potassium:358;Vitamin C:8.7;Vitamin B6:0.37;Magnesium:27
-Orange,fruit,oranges|sinaasappel|sinaasappels,100,g,100,g,Energy:47;Protein:0.9;Carbohydrate:12;Sugar:9.4;Dietary Fiber:2.4;Fat:0.1;Vitamin C:53;Folate:30;Potassium:181;Calcium:40
-Mandarin,fruit,clementine|tangerine|mandarijn,100,g,100,g,Energy:53;Protein:0.8;Carbohydrate:13;Sugar:11;Dietary Fiber:1.8;Fat:0.3;Vitamin C:27;Vitamin A:34;Potassium:166
-Lemon,fruit,lemons|citroen|citroenen,100,g,100,g,Energy:29;Protein:1.1;Carbohydrate:9.3;Sugar:2.5;Dietary Fiber:2.8;Fat:0.3;Vitamin C:53;Potassium:138
-Lime,fruit,limes|limoen|limoenen,100,g,100,g,Energy:30;Protein:0.7;Carbohydrate:11;Sugar:1.7;Dietary Fiber:2.8;Fat:0.2;Vitamin C:29;Potassium:102
+Apple,fruit,apples|appel|appels,100,g,100,g,Energy:52;Protein:0.3;Carbohydrate:14;Sugar:10;Dietary Fiber:2.4;Fat:0.2;Vitamin C:4.6;Potassium:107,piece,180
+Banana,fruit,bananas|banaan|bananen,100,g,100,g,Energy:89;Protein:1.1;Carbohydrate:23;Sugar:12;Dietary Fiber:2.6;Fat:0.3;Potassium:358;Vitamin C:8.7;Vitamin B6:0.37;Magnesium:27,piece,120
+Orange,fruit,oranges|sinaasappel|sinaasappels,100,g,100,g,Energy:47;Protein:0.9;Carbohydrate:12;Sugar:9.4;Dietary Fiber:2.4;Fat:0.1;Vitamin C:53;Folate:30;Potassium:181;Calcium:40,piece,140
+Mandarin,fruit,clementine|tangerine|mandarijn,100,g,100,g,Energy:53;Protein:0.8;Carbohydrate:13;Sugar:11;Dietary Fiber:1.8;Fat:0.3;Vitamin C:27;Vitamin A:34;Potassium:166,piece,75
+Lemon,fruit,lemons|citroen|citroenen,100,g,100,g,Energy:29;Protein:1.1;Carbohydrate:9.3;Sugar:2.5;Dietary Fiber:2.8;Fat:0.3;Vitamin C:53;Potassium:138,piece,60
+Lime,fruit,limes|limoen|limoenen,100,g,100,g,Energy:30;Protein:0.7;Carbohydrate:11;Sugar:1.7;Dietary Fiber:2.8;Fat:0.2;Vitamin C:29;Potassium:102,piece,67
 Grapefruit,fruit,pompelmoes|grapefruit,100,g,100,g,Energy:42;Protein:0.8;Carbohydrate:11;Sugar:7;Dietary Fiber:1.6;Fat:0.1;Vitamin C:31;Vitamin A:58;Potassium:135
 Strawberry,fruit,strawberries|aardbei|aardbeien,100,g,100,g,Energy:32;Protein:0.7;Carbohydrate:7.7;Sugar:4.9;Dietary Fiber:2;Fat:0.3;Vitamin C:59;Manganese:0.39;Folate:24
 Blueberry,fruit,blueberries|blauwe bes|bosbessen,100,g,100,g,Energy:57;Protein:0.7;Carbohydrate:14;Sugar:10;Dietary Fiber:2.4;Fat:0.3;Vitamin C:9.7;Vitamin K:19;Manganese:0.34
@@ -62,14 +62,14 @@ Watermelon,fruit,watermeloen,100,g,100,g,Energy:30;Protein:0.6;Carbohydrate:7.6;
 Cantaloupe Melon,fruit,melon|meloen|cantaloupe,100,g,100,g,Energy:34;Protein:0.8;Carbohydrate:8.2;Sugar:7.9;Dietary Fiber:0.9;Fat:0.2;Vitamin C:37;Vitamin A:169;Potassium:267
 Pineapple,fruit,ananas,100,g,100,g,Energy:50;Protein:0.5;Carbohydrate:13;Sugar:9.9;Dietary Fiber:1.4;Fat:0.1;Vitamin C:48;Manganese:0.93
 Mango,fruit,mango|mango's,100,g,100,g,Energy:60;Protein:0.8;Carbohydrate:15;Sugar:14;Dietary Fiber:1.6;Fat:0.4;Vitamin C:36;Vitamin A:54;Folate:43;Vitamin E:0.9
-Kiwi,fruit,kiwifruit|kiwi's,100,g,100,g,Energy:61;Protein:1.1;Carbohydrate:15;Sugar:9;Dietary Fiber:3;Fat:0.5;Vitamin C:93;Vitamin K:40;Potassium:312;Vitamin E:1.5
-Peach,fruit,peaches|perzik|perziken,100,g,100,g,Energy:39;Protein:0.9;Carbohydrate:10;Sugar:8.4;Dietary Fiber:1.5;Fat:0.3;Vitamin C:6.6;Vitamin A:16;Potassium:190
-Pear,fruit,pears|peer|peren,100,g,100,g,Energy:57;Protein:0.4;Carbohydrate:15;Sugar:10;Dietary Fiber:3.1;Fat:0.1;Vitamin C:4.3;Vitamin K:4.4;Potassium:116
-Plum,fruit,plums|pruim|pruimen,100,g,100,g,Energy:46;Protein:0.7;Carbohydrate:11;Sugar:9.9;Dietary Fiber:1.4;Fat:0.3;Vitamin C:9.5;Vitamin K:6.4;Vitamin A:17
+Kiwi,fruit,kiwifruit|kiwi's,100,g,100,g,Energy:61;Protein:1.1;Carbohydrate:15;Sugar:9;Dietary Fiber:3;Fat:0.5;Vitamin C:93;Vitamin K:40;Potassium:312;Vitamin E:1.5,piece,75
+Peach,fruit,peaches|perzik|perziken,100,g,100,g,Energy:39;Protein:0.9;Carbohydrate:10;Sugar:8.4;Dietary Fiber:1.5;Fat:0.3;Vitamin C:6.6;Vitamin A:16;Potassium:190,piece,150
+Pear,fruit,pears|peer|peren,100,g,100,g,Energy:57;Protein:0.4;Carbohydrate:15;Sugar:10;Dietary Fiber:3.1;Fat:0.1;Vitamin C:4.3;Vitamin K:4.4;Potassium:116,piece,180
+Plum,fruit,plums|pruim|pruimen,100,g,100,g,Energy:46;Protein:0.7;Carbohydrate:11;Sugar:9.9;Dietary Fiber:1.4;Fat:0.3;Vitamin C:9.5;Vitamin K:6.4;Vitamin A:17,piece,66
 Cherry,fruit,cherries|kers|kersen,100,g,100,g,Energy:63;Protein:1.1;Carbohydrate:16;Sugar:13;Dietary Fiber:2.1;Fat:0.2;Vitamin C:7;Potassium:222
-Apricot,fruit,apricots|abrikoos|abrikozen,100,g,100,g,Energy:48;Protein:1.4;Carbohydrate:11;Sugar:9.2;Dietary Fiber:2;Fat:0.4;Vitamin A:96;Vitamin C:10;Potassium:259
+Apricot,fruit,apricots|abrikoos|abrikozen,100,g,100,g,Energy:48;Protein:1.4;Carbohydrate:11;Sugar:9.2;Dietary Fiber:2;Fat:0.4;Vitamin A:96;Vitamin C:10;Potassium:259,piece,35
 Pomegranate,fruit,granaatappel,100,g,100,g,Energy:83;Protein:1.7;Carbohydrate:19;Sugar:14;Dietary Fiber:4;Fat:1.2;Vitamin C:10;Vitamin K:16;Folate:38;Potassium:236
-Fig,fruit,figs|vijg|vijgen,100,g,100,g,Energy:74;Protein:0.8;Carbohydrate:19;Sugar:16;Dietary Fiber:2.9;Fat:0.3;Potassium:232;Calcium:35
+Fig,fruit,figs|vijg|vijgen,100,g,100,g,Energy:74;Protein:0.8;Carbohydrate:19;Sugar:16;Dietary Fiber:2.9;Fat:0.3;Potassium:232;Calcium:35,piece,50
 Coconut,fruit,kokosnoot|kokos,100,g,100,g,Energy:354;Protein:3.3;Carbohydrate:15;Sugar:6.2;Dietary Fiber:9;Fat:33;Saturated Fat:30;Manganese:1.5;Copper:0.44;Iron:2.4;Magnesium:32
 Papaya,fruit,papaja,100,g,100,g,Energy:43;Protein:0.5;Carbohydrate:11;Sugar:7.8;Dietary Fiber:1.7;Fat:0.3;Vitamin C:61;Vitamin A:47;Folate:37;Potassium:182
 Raisins,fruit,rozijnen|krenten,100,g,100,g,Energy:299;Protein:3.1;Carbohydrate:79;Sugar:59;Dietary Fiber:3.7;Fat:0.5;Potassium:749;Iron:1.9
@@ -117,7 +117,7 @@ Cottage Cheese,dairy,hüttenkäse|cottage cheese,100,g,100,g,Energy:98;Protein:1
 Cream Cheese,dairy,roomkaas|monchou,100,g,100,g,Energy:342;Protein:6;Carbohydrate:4.1;Sugar:3.2;Fat:34;Saturated Fat:19;Cholesterol:101;Sodium:321;Calcium:98;Vitamin A:308
 Brie,dairy,brie,100,g,100,g,Energy:334;Protein:21;Carbohydrate:0.5;Sugar:0.5;Fat:28;Saturated Fat:17;Cholesterol:100;Sodium:629;Calcium:184;Phosphorus:188;Vitamin B12:1.6;Riboflavin:0.52
 Butter,dairy,boter|roomboter,100,g,100,g,Energy:717;Protein:0.9;Carbohydrate:0.1;Sugar:0.1;Fat:81;Saturated Fat:51;Cholesterol:215;Sodium:11;Vitamin A:684;Vitamin E:2.3
-Whole Egg,dairy,eggs|egg|ei|eieren,100,g,100,g,Energy:143;Protein:13;Carbohydrate:0.7;Sugar:0.4;Fat:9.5;Saturated Fat:3.1;Cholesterol:372;Sodium:142;Vitamin B12:0.89;Vitamin D:2;Riboflavin:0.46;Selenium:31;Vitamin A:160;Folate:47;Phosphorus:198
+Whole Egg,dairy,eggs|egg|ei|eieren,100,g,100,g,Energy:143;Protein:13;Carbohydrate:0.7;Sugar:0.4;Fat:9.5;Saturated Fat:3.1;Cholesterol:372;Sodium:142;Vitamin B12:0.89;Vitamin D:2;Riboflavin:0.46;Selenium:31;Vitamin A:160;Folate:47;Phosphorus:198,piece,50
 Egg White,dairy,egg whites|eiwit|eiwitten,100,g,100,g,Energy:52;Protein:11;Carbohydrate:0.7;Sugar:0.7;Fat:0.2;Saturated Fat:0;Sodium:166;Riboflavin:0.44;Selenium:20;Potassium:163
 Egg Yolk,dairy,eidooier|eierdooier,100,g,100,g,Energy:322;Protein:16;Carbohydrate:3.6;Sugar:0.6;Fat:27;Saturated Fat:9.6;Cholesterol:1085;Sodium:48;Vitamin A:381;Vitamin D:5.4;Vitamin B12:2;Selenium:56;Folate:146;Phosphorus:390
 Sour Cream,dairy,zure room,100,g,100,g,Energy:198;Protein:2.4;Carbohydrate:4.6;Sugar:3.5;Fat:19;Saturated Fat:12;Cholesterol:52;Sodium:53;Calcium:101;Vitamin A:185
@@ -130,9 +130,9 @@ White Rice,grain,witte rijst,100,g,100,g,Energy:130;Protein:2.7;Carbohydrate:28;
 Brown Rice,grain,bruine rijst|zilvervliesrijst,100,g,100,g,Energy:123;Protein:2.7;Carbohydrate:26;Sugar:0.4;Dietary Fiber:1.6;Fat:1;Sodium:4;Magnesium:39;Manganese:1.1;Selenium:9.8;Phosphorus:103;Niacin:2.5
 Pasta,grain,spaghetti|cooked pasta|pasta,100,g,100,g,Energy:158;Protein:5.8;Carbohydrate:31;Sugar:0.6;Dietary Fiber:1.8;Fat:0.9;Sodium:1;Manganese:0.27;Selenium:26;Folate:18;Niacin:1.5
 Whole Wheat Pasta,grain,volkoren pasta,100,g,100,g,Energy:124;Protein:5.3;Carbohydrate:27;Sugar:0.8;Dietary Fiber:4.5;Fat:0.5;Sodium:3;Magnesium:42;Manganese:1.1;Selenium:24;Phosphorus:130
-White Bread,grain,wit brood|witbrood,100,g,100,g,Energy:265;Protein:9;Carbohydrate:49;Sugar:5;Dietary Fiber:2.7;Fat:3.2;Saturated Fat:0.7;Sodium:491;Calcium:151;Iron:3.6;Thiamine:0.5;Niacin:4.8;Folate:85
-Whole Wheat Bread,grain,brown bread|volkorenbrood,100,g,100,g,Energy:247;Protein:13;Carbohydrate:41;Sugar:6;Dietary Fiber:7;Fat:3.4;Saturated Fat:0.7;Sodium:455;Iron:2.5;Magnesium:82;Manganese:2.4;Selenium:28;Niacin:4.4
-Rye Bread,grain,roggebrood,100,g,100,g,Energy:259;Protein:8.5;Carbohydrate:48;Sugar:3.9;Dietary Fiber:5.8;Fat:3.3;Saturated Fat:0.6;Sodium:603;Manganese:1.7;Selenium:31;Magnesium:40;Iron:2.8
+White Bread,grain,wit brood|witbrood,100,g,100,g,Energy:265;Protein:9;Carbohydrate:49;Sugar:5;Dietary Fiber:2.7;Fat:3.2;Saturated Fat:0.7;Sodium:491;Calcium:151;Iron:3.6;Thiamine:0.5;Niacin:4.8;Folate:85,slice,36
+Whole Wheat Bread,grain,brown bread|volkorenbrood,100,g,100,g,Energy:247;Protein:13;Carbohydrate:41;Sugar:6;Dietary Fiber:7;Fat:3.4;Saturated Fat:0.7;Sodium:455;Iron:2.5;Magnesium:82;Manganese:2.4;Selenium:28;Niacin:4.4,slice,38
+Rye Bread,grain,roggebrood,100,g,100,g,Energy:259;Protein:8.5;Carbohydrate:48;Sugar:3.9;Dietary Fiber:5.8;Fat:3.3;Saturated Fat:0.6;Sodium:603;Manganese:1.7;Selenium:31;Magnesium:40;Iron:2.8,slice,32
 Rolled Oats,grain,oats|oatmeal|havermout,100,g,100,g,Energy:389;Protein:17;Carbohydrate:66;Sugar:1;Dietary Fiber:10;Fat:7;Saturated Fat:1.2;Sodium:2;Magnesium:177;Manganese:4.9;Phosphorus:523;Zinc:4;Iron:4.7;Thiamine:0.76
 Quinoa,grain,quinoa,100,g,100,g,Energy:120;Protein:4.4;Carbohydrate:21;Sugar:0.9;Dietary Fiber:2.8;Fat:1.9;Sodium:7;Magnesium:64;Manganese:0.63;Folate:42;Phosphorus:152;Iron:1.5
 Couscous,grain,couscous,100,g,100,g,Energy:112;Protein:3.8;Carbohydrate:23;Sugar:0.1;Dietary Fiber:1.4;Fat:0.2;Sodium:5;Selenium:28;Manganese:0.08;Niacin:1
@@ -141,8 +141,8 @@ Muesli,grain,muesli,100,g,100,g,Energy:363;Protein:10;Carbohydrate:66;Sugar:26;D
 Granola,grain,granola,100,g,100,g,Energy:471;Protein:10;Carbohydrate:64;Sugar:25;Dietary Fiber:7;Fat:20;Saturated Fat:3;Sodium:30;Magnesium:90;Iron:3;Manganese:2.5;Zinc:2.5
 Flour,grain,plain flour|all-purpose flour|bloem|tarwebloem,100,g,100,g,Energy:364;Protein:10;Carbohydrate:76;Sugar:0.3;Dietary Fiber:2.7;Fat:1;Sodium:2;Selenium:34;Manganese:0.68;Iron:1.2;Thiamine:0.12;Niacin:1.3
 Whole Wheat Flour,grain,volkorenmeel|tarwemeel,100,g,100,g,Energy:340;Protein:13;Carbohydrate:72;Sugar:0.4;Dietary Fiber:11;Fat:2.5;Sodium:2;Magnesium:138;Manganese:4;Phosphorus:346;Zinc:2.9;Iron:3.6;Selenium:61;Niacin:5
-Tortilla Wrap,grain,wrap|tortilla,100,g,100,g,Energy:310;Protein:8;Carbohydrate:52;Sugar:2.5;Dietary Fiber:3;Fat:7.5;Saturated Fat:2;Sodium:580;Iron:3;Calcium:120;Thiamine:0.4;Niacin:3.5
-Bagel,grain,bagel,100,g,100,g,Energy:257;Protein:10;Carbohydrate:50;Sugar:5;Dietary Fiber:2.2;Fat:1.5;Saturated Fat:0.3;Sodium:439;Iron:3.6;Thiamine:0.5;Folate:130;Niacin:4.4
+Tortilla Wrap,grain,wrap|tortilla,100,g,100,g,Energy:310;Protein:8;Carbohydrate:52;Sugar:2.5;Dietary Fiber:3;Fat:7.5;Saturated Fat:2;Sodium:580;Iron:3;Calcium:120;Thiamine:0.4;Niacin:3.5,piece,60
+Bagel,grain,bagel,100,g,100,g,Energy:257;Protein:10;Carbohydrate:50;Sugar:5;Dietary Fiber:2.2;Fat:1.5;Saturated Fat:0.3;Sodium:439;Iron:3.6;Thiamine:0.5;Folate:130;Niacin:4.4,piece,85
 Chickpeas,legume,garbanzo|kikkererwten,100,g,100,g,Energy:164;Protein:8.9;Carbohydrate:27;Sugar:4.8;Dietary Fiber:7.6;Fat:2.6;Sodium:7;Folate:172;Iron:2.9;Magnesium:48;Manganese:1;Zinc:1.5;Phosphorus:168;Copper:0.35
 Red Lentils,legume,linzen|rode linzen,100,g,100,g,Energy:116;Protein:9;Carbohydrate:20;Sugar:1.8;Dietary Fiber:8;Fat:0.4;Sodium:2;Folate:181;Iron:3.3;Manganese:0.5;Phosphorus:180;Zinc:1.3;Potassium:369
 Green Lentils,legume,groene linzen|puy linzen,100,g,100,g,Energy:116;Protein:9;Carbohydrate:20;Sugar:1.8;Dietary Fiber:8;Fat:0.4;Sodium:2;Folate:181;Iron:3.3;Manganese:0.5;Phosphorus:180;Zinc:1.3
@@ -196,18 +196,18 @@ Tempeh,legume,tempé|tempeh,100,g,100,g,Energy:192;Protein:20;Carbohydrate:8;Sug
 Cooked Pasta White,grain,macaroni|penne,100,g,100,g,Energy:158;Protein:5.8;Carbohydrate:31;Sugar:0.6;Dietary Fiber:1.8;Fat:0.9;Sodium:1;Selenium:26;Manganese:0.27;Folate:18
 Basmati Rice,grain,basmatirijst,100,g,100,g,Energy:121;Protein:3;Carbohydrate:25;Sugar:0;Dietary Fiber:0.5;Fat:0.4;Sodium:1;Manganese:0.4;Selenium:7;Niacin:1.5
 Crackers,grain,crackers|cream crackers,100,g,100,g,Energy:430;Protein:9;Carbohydrate:71;Sugar:3;Dietary Fiber:3;Fat:12;Saturated Fat:2;Sodium:760;Iron:3;Thiamine:0.4;Niacin:4
-Pita Bread,grain,pitabrood,100,g,100,g,Energy:275;Protein:9;Carbohydrate:55;Sugar:1.6;Dietary Fiber:2.2;Fat:1.2;Sodium:536;Iron:3.2;Selenium:28;Thiamine:0.5;Niacin:4.6
+Pita Bread,grain,pitabrood,100,g,100,g,Energy:275;Protein:9;Carbohydrate:55;Sugar:1.6;Dietary Fiber:2.2;Fat:1.2;Sodium:536;Iron:3.2;Selenium:28;Thiamine:0.5;Niacin:4.6,piece,60
 Crab,fish,krab,100,g,100,g,Energy:97;Protein:19;Carbohydrate:0;Sugar:0;Fat:1.5;Saturated Fat:0.2;Cholesterol:53;Sodium:836;Selenium:37;Vitamin B12:9;Zinc:4;Copper:0.7;Phosphorus:230
 Pollock,fish,koolvis,100,g,100,g,Energy:92;Protein:19;Carbohydrate:0;Sugar:0;Fat:1;Saturated Fat:0.1;Cholesterol:71;Sodium:86;Selenium:32;Vitamin B12:3.2;Phosphorus:221
 Plaice,fish,schol,100,g,100,g,Energy:79;Protein:17;Carbohydrate:0;Sugar:0;Fat:1.5;Saturated Fat:0.3;Cholesterol:50;Sodium:89;Selenium:33;Vitamin B12:1;Iodine:30
 Prune,fruit,prunes|gedroogde pruimen|pruimedanten,100,g,100,g,Energy:240;Protein:2.2;Carbohydrate:64;Sugar:38;Dietary Fiber:7.1;Fat:0.4;Potassium:732;Vitamin K:60;Vitamin A:39;Manganese:0.3
 Dried Apricot,fruit,gedroogde abrikozen,100,g,100,g,Energy:241;Protein:3.4;Carbohydrate:63;Sugar:53;Dietary Fiber:7.3;Fat:0.5;Potassium:1162;Iron:2.7;Vitamin A:180;Vitamin E:4.3
 Currants,fruit,zwarte bes|krenten,100,g,100,g,Energy:63;Protein:1.4;Carbohydrate:15;Sugar:8;Dietary Fiber:4.3;Fat:0.4;Vitamin C:181;Potassium:322;Manganese:0.26;Iron:1.5
-Nectarine,fruit,nectarine|nectarines,100,g,100,g,Energy:44;Protein:1.1;Carbohydrate:11;Sugar:7.9;Dietary Fiber:1.7;Fat:0.3;Vitamin C:5.4;Vitamin A:17;Potassium:201
+Nectarine,fruit,nectarine|nectarines,100,g,100,g,Energy:44;Protein:1.1;Carbohydrate:11;Sugar:7.9;Dietary Fiber:1.7;Fat:0.3;Vitamin C:5.4;Vitamin A:17;Potassium:201,piece,140
 Sweet Pepper Yellow,vegetable,gele paprika,100,g,100,g,Energy:27;Protein:1;Carbohydrate:6.3;Sugar:0;Dietary Fiber:0.9;Fat:0.2;Vitamin C:184;Folate:26;Potassium:212
 Endive,vegetable,andijvie|witlof,100,g,100,g,Energy:17;Protein:1.3;Carbohydrate:3.4;Sugar:0.3;Dietary Fiber:3.1;Fat:0.2;Vitamin K:231;Folate:142;Vitamin A:108;Potassium:314
 Cooked Chicken Whole,meat,kip|hele kip,100,g,100,g,Energy:215;Protein:24;Carbohydrate:0;Sugar:0;Fat:13;Saturated Fat:3.6;Cholesterol:88;Sodium:82;Niacin:8;Selenium:22;Phosphorus:180;Zinc:1.8
-Sausage,meat,worst|braadworst,100,g,100,g,Energy:301;Protein:13;Carbohydrate:2;Sugar:0.8;Fat:27;Saturated Fat:10;Cholesterol:71;Sodium:740;Thiamine:0.4;Zinc:1.9;Vitamin B12:1
+Sausage,meat,worst|braadworst,100,g,100,g,Energy:301;Protein:13;Carbohydrate:2;Sugar:0.8;Fat:27;Saturated Fat:10;Cholesterol:71;Sodium:740;Thiamine:0.4;Zinc:1.9;Vitamin B12:1,piece,75
 Ground Turkey,meat,kalkoengehakt,100,g,100,g,Energy:148;Protein:20;Carbohydrate:0;Sugar:0;Fat:7;Saturated Fat:1.9;Cholesterol:90;Sodium:80;Niacin:5;Selenium:25;Zinc:2.4;Phosphorus:200
 Anchovy,fish,ansjovis,100,g,100,g,Energy:131;Protein:20;Carbohydrate:0;Sugar:0;Fat:4.8;Saturated Fat:1.3;Cholesterol:60;Sodium:104;Calcium:147;Selenium:36;Niacin:14;Vitamin B12:0.6
 Edam,dairy,edammer kaas,100,g,100,g,Energy:357;Protein:25;Carbohydrate:1.4;Sugar:1.4;Fat:28;Saturated Fat:18;Cholesterol:89;Sodium:812;Calcium:731;Phosphorus:536;Vitamin B12:1.5;Zinc:3.8

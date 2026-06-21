@@ -515,11 +515,16 @@ product couldn't be found by an alternate name.
   source of. The idempotent `db/scripts/seed_product_catalog.ts` upserts them as `product` items, mapping each
   nutrient to an existing catalog substance (by name/alias, in that substance's canonical unit) and **aborting
   on an unknown substance** rather than auto-creating one. Run manually on QA/PROD (dry-run, then `--apply`).
+- **Per-piece logging:** foods naturally counted by unit (egg, banana, slice of bread, garlic clove…) set
+  `piece_unit` + `piece_grams` in the CSV. The seed stores them with a **"1 `piece_unit`" display serving**
+  whose canonical equivalent is the piece weight, and **scales their per-100 nutrients to per-piece**. Because
+  `servingMultiplier` tries the display unit then the canonical unit, these resolve whether logged "1 piece" or
+  by weight (e.g. a banana: 1 piece = 120 g; "1 piece" and "120 g" both give one banana's nutrients). The CSV
+  nutrient values stay per-100 (one reliable basis); the per-piece conversion is derived (`servingForRow`).
 **Consequences:** Recipes can be built from real, nutrition-bearing products found by name or Dutch alias, and
-they resolve macros/micros correctly (per-100 g/ml scales by logged weight/volume). Products are logged/added
-by weight/volume (no per-piece serving yet — a possible later refinement). Substance values are curated from
-standard references and are approximate. The CSV is the editable source of truth; re-running the seed updates
-existing products in place.
+they resolve macros/micros correctly. Whole-unit foods log by piece; everything else by weight/volume.
+Substance values are curated from standard references and are approximate. The CSV is the editable source of
+truth; re-running the seed updates existing products in place.
 
 ### ADR-041
 **Title:** Recipes are composed of products, with a dedicated Create-recipe form.
