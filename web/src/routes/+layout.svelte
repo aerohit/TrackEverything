@@ -33,6 +33,10 @@
   let tokenInput = $state("");
   let showToken = $state(false);
 
+  // ---- deployment environment (from /health) — show a banner outside prod ----
+  let appEnv = $state<string | null>(null);
+  const envBanner = $derived(appEnv === "test" || appEnv === "preprod");
+
   function saveToken() {
     token = tokenInput.trim();
     localStorage.setItem("te_token", token);
@@ -56,9 +60,17 @@
     const mq = matchMedia("(prefers-color-scheme: dark)");
     const onChange = () => pref === "system" && applyTheme();
     mq.addEventListener("change", onChange);
+    // Ask the server which environment this is (test/preprod/prod) for the banner.
+    fetch("/health").then((r) => r.json()).then((d) => (appEnv = d?.env ?? null)).catch(() => {});
     return () => mq.removeEventListener("change", onChange);
   });
 </script>
+
+{#if envBanner}
+  <div class="envbanner" data-env={appEnv} role="status">
+    {appEnv === "preprod" ? "pre-prod" : "test"} environment — not production
+  </div>
+{/if}
 
 <header class="appbar">
   <h1>TrackEverything</h1>
@@ -101,3 +113,22 @@
     {/each}
   </nav>
 {/if}
+
+<style>
+  .envbanner {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: 5px 12px;
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #3a2a00;
+    background: #ffd34d; /* test = amber */
+  }
+  .envbanner[data-env="preprod"] {
+    color: #07263a;
+    background: #7cc4ff; /* pre-prod = blue */
+  }
+</style>

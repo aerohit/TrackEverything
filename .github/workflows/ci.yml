@@ -5,6 +5,19 @@ on:
   pull_request:
 
 jobs:
+  # Guard: no secret/env files should ever be committed (the template is the exception).
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: No committed env / secret files
+        run: |
+          bad=$(git ls-files | grep -E '(^|/)\.env($|\.)|(^|/)secrets/' | grep -v '^\.env\.example$' || true)
+          if [ -n "$bad" ]; then
+            echo "::error::These look like secret files and must not be tracked:"; echo "$bad"; exit 1
+          fi
+          echo "OK — no committed env/secret files."
+
   # Hono API + Drizzle data layer + shared Zod schemas (server/, db/, shared/).
   server:
     runs-on: ubuntu-latest

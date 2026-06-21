@@ -1,0 +1,38 @@
+name: Migrate
+
+# Runs database migrations for an environment when its branch is pushed, just before
+# Deno Deploy serves the new code. Branch → environment: test→test, preprod→preprod,
+# main→prod. The DATABASE_URL comes from the matching GitHub Environment's secrets, so
+# nothing sensitive lives in the repo. Migrations are additive + idempotent, so this is
+# safe to re-run and order-independent vs the deploy.
+
+on:
+  push:
+    branches: [test, preprod, main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment to migrate (test | preprod | prod)
+        required: true
+        default: test
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    # main deploys to the "prod" environment; test/preprod map by name.
+    environment: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || (github.ref_name == 'main' && 'prod' || github.ref_name) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Apply migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::warning::No DATABASE_URL secret for this environment yet — skipping migrations."
+            echo "Add it under Settings → Environments before this becomes a real deploy."
+            exit 0
+          fi
+          deno task migrate
