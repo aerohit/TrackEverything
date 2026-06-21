@@ -40,6 +40,8 @@ const app = createApp(db, {
   lookup,
   recognizer,
   advisor,
+  // Set per Deno Deploy environment (test | preprod | prod); drives the PWA's non-prod banner.
+  env: Deno.env.get("APP_ENV") ?? "dev",
 });
 
 const WEB_ROOT = "./web/build";

@@ -34,6 +34,9 @@ export interface AppOptions {
   recognizer?: IntakeRecognizer;
   /** "Ask LLM" advisor (Claude). When absent, /api/ask returns 503. */
   advisor?: Advisor;
+  /** Deployment environment name (test | preprod | prod | dev), surfaced on /health
+   * so the PWA can show a non-prod banner. Defaults to "dev". */
+  env?: string;
 }
 
 export function createApp(db: Db, opts: AppOptions = {}): Hono {
@@ -49,7 +52,7 @@ export function createApp(db: Db, opts: AppOptions = {}): Hono {
         await db.execute(sql`select 1`);
       } catch { /* keep health green even if the DB is briefly unreachable */ }
     }
-    return c.json({ ok: true });
+    return c.json({ ok: true, env: opts.env ?? "dev" });
   };
   app.get("/health", health);
   api.get("/health", health);

@@ -1,6 +1,9 @@
-# Secrets / local env
+# Secrets / local env — never commit real values (the template .env.example is kept).
 .env
-.env.local
+.env.*
+!.env.example
+# Per-environment connection strings for laptop-run ops (make migrate ENV=…).
+secrets/
 
 # Logs
 *.log

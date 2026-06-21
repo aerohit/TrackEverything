@@ -1,7 +1,7 @@
 # TrackEverything — Architecture & Design Decisions
 
 > **Status:** Living document. See [Maintenance](#maintenance) for how this stays current.
-> **Last updated:** 2026-06-20 (ADR-042: item aliases + seeded grocery product catalog)
+> **Last updated:** 2026-06-21 (ADR-043: TEST/PRE-PROD/PROD promotion pipeline)
 > **Companion doc:** [REQUIREMENTS.md](REQUIREMENTS.md) · [ROADMAP.md](ROADMAP.md)
 
 This document records *how* we build TrackEverything and *why*. Requirement IDs
@@ -494,6 +494,32 @@ so a blind delete+reseed would orphan logged data, and the new PROD DB is create
 **Consequences:** PROD comes up with the clean 265-row catalog and needs no script; QA keeps all logged
 data, repointed onto canonical substances. Substance names are now Title Case, so resolution returns
 e.g. `Caffeine` not `caffeine` (tests updated). 3 dropped-from-catalog substances collapse into `Other`.
+
+### ADR-043
+**Title:** Three-environment promotion pipeline (TEST / PRE-PROD / PROD) via branch-per-env.
+**Status:** Accepted (2026-06-21). Extends [ADR-011](#adr-011)/[ADR-015](#adr-015) (single Deno Deploy
+service) and [ADR-003](#adr-003) (Supabase). Runbook: [DEPLOYMENT.md](DEPLOYMENT.md).
+**Context:** There was one deployed environment (the QA/pre-prod Supabase + one Deno Deploy app), so breaking
+experiments and "real" data shared infrastructure, and migrations were applied by hand. The owner wants a
+clean **TEST** (break things), **PRE-PROD** (mirror prod, only working ideas), and **PROD** separation, with
+deployment as automatic as possible and no secrets in git.
+**Decision:**
+- **GitOps, branch = environment:** permanent branches `test` → TEST, `preprod` → PRE-PROD, `main` → PROD.
+  Each is git-linked to its own Deno Deploy environment + Supabase project, so a push auto-deploys. Promotion
+  is a PR `test` → `preprod` → `main`; `preprod`/`main` are protected (PR + green CI). The app exposes
+  `APP_ENV` on `/health`, and the PWA shows a non-prod banner outside PROD.
+- **Secrets, never committed:** real values live in Deno Deploy env vars (runtime, per env), GitHub
+  Environment secrets (CI/migrations), and gitignored `.env.local` / `secrets/<env>.env` (local + laptop
+  ops). `.env.example` is the only committed env file; a CI `secrets` job fails if any `.env`/`secrets/` file
+  is tracked.
+- **Automated migrations:** `migrate.yml` runs `db/migrate.ts` against the pushed branch's environment
+  database (DATABASE_URL from its GitHub Environment secret) before the new code serves. Migrations stay
+  additive + idempotent, so deploy/migrate ordering is safe. A `Makefile` wraps the env-targeted ops
+  (`migrate`/`seed-products`/`db-shell`/`promote ENV=…`); `deno task`s stay the primitives.
+**Consequences:** Experiments are isolated to TEST; PRE-PROD genuinely mirrors PROD (same Supabase region/
+version + the same code that's about to ship); deploys + migrations are push-driven; secrets can't land in
+git. Cost: three Supabase projects (free tier is 2/org → a second org/Neon for TEST, or Pro) and three Deno
+Deploy environments. Branch protection adds a PR step between environments — the intended friction.
 
 ### ADR-042
 **Title:** Item search aliases + a seeded grocery product catalog.
