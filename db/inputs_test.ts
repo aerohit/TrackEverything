@@ -298,6 +298,10 @@ Deno.test({
       assert(detail);
       assertEquals(detail.kind, "recipe");
       assertEquals(detail.components.length, 1);
+      // Member components resolve the child item's name (not a bare "linked item").
+      assertEquals(detail.components[0].childItemId, banana);
+      assertEquals(detail.components[0].childName, "Banana");
+      assertEquals(detail.components[0].substance, null);
 
       // A non-product member (a stack) is rejected.
       await assertRejects(

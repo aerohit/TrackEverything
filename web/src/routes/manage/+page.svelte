@@ -143,8 +143,8 @@
     detail = null;
     confirmingDelete = false;
   }
-  function compLabel(c: { substance: string | null; childItemId: string | null }) {
-    return c.substance ?? "linked item";
+  function compLabel(c: { substance: string | null; childName: string | null }) {
+    return c.substance ?? c.childName ?? "linked item";
   }
 
   function fileToBase64(file: File): Promise<string> {
