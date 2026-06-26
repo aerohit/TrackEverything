@@ -34,8 +34,8 @@ export interface AppOptions {
   recognizer?: IntakeRecognizer;
   /** "Ask LLM" advisor (Claude). When absent, /api/ask returns 503. */
   advisor?: Advisor;
-  /** Deployment environment name (test | preprod | prod | dev), surfaced on /health
-   * so the PWA can show a non-prod banner. Defaults to "dev". */
+  /** Deployment environment name (test | prod | dev), surfaced on /health so the PWA
+   * can show a non-prod banner. Defaults to "dev". */
   env?: string;
 }
 

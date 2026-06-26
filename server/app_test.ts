@@ -125,8 +125,8 @@ Deno.test({
       assertEquals(warmBody.ok, true);
       assertEquals(warmBody.env, "dev"); // default when APP_ENV unset
       // The configured environment is surfaced for the PWA's non-prod banner.
-      const preprod = createApp(db, { token: TOKEN, env: "preprod" });
-      assertEquals((await (await preprod.request("/health")).json()).env, "preprod");
+      const prod = createApp(db, { token: TOKEN, env: "prod" });
+      assertEquals((await (await prod.request("/health")).json()).env, "prod");
 
       // Auth is enforced on writes.
       const noAuth = await app.request("/api/checkins", {
