@@ -2,7 +2,7 @@
  * One-off substance reconciliation (ADR-038). After migration 0014 seeds the catalog,
  * this repoints item_component + resolved_amount from the legacy substances onto the
  * catalog (matching by name then alias, case-insensitive), then deletes the legacy rows.
- * Run only where legacy logged data exists (the QA / pre-prod DB) — a no-op on a fresh DB.
+ * Run only where legacy logged data exists (a populated DB) — a no-op on a fresh DB.
  *
  *   deno run --env-file=.env --allow-env --allow-net --allow-read db/scripts/reconcile_substances.ts
  *   deno run --env-file=.env --allow-env --allow-net --allow-read db/scripts/reconcile_substances.ts --apply

@@ -35,7 +35,7 @@
 
   // ---- deployment environment (from /health) — show a banner outside prod ----
   let appEnv = $state<string | null>(null);
-  const envBanner = $derived(appEnv === "test" || appEnv === "preprod");
+  const envBanner = $derived(appEnv === "test");
 
   function saveToken() {
     token = tokenInput.trim();
@@ -60,15 +60,15 @@
     const mq = matchMedia("(prefers-color-scheme: dark)");
     const onChange = () => pref === "system" && applyTheme();
     mq.addEventListener("change", onChange);
-    // Ask the server which environment this is (test/preprod/prod) for the banner.
+    // Ask the server which environment this is (test/prod) for the banner.
     fetch("/health").then((r) => r.json()).then((d) => (appEnv = d?.env ?? null)).catch(() => {});
     return () => mq.removeEventListener("change", onChange);
   });
 </script>
 
 {#if envBanner}
-  <div class="envbanner" data-env={appEnv} role="status">
-    {appEnv === "preprod" ? "pre-prod" : "test"} environment — not production
+  <div class="envbanner" role="status">
+    test environment — not production
   </div>
 {/if}
 
@@ -126,9 +126,5 @@
     letter-spacing: 0.02em;
     color: #3a2a00;
     background: #ffd34d; /* test = amber */
-  }
-  .envbanner[data-env="preprod"] {
-    color: #07263a;
-    background: #7cc4ff; /* pre-prod = blue */
   }
 </style>
