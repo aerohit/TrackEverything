@@ -86,6 +86,15 @@ export function draftFromBody(d: CreateItemBody): ItemDraft {
   };
 }
 
+/**
+ * True if any member row has a typed name that didn't resolve to a catalog item.
+ * draftToBody silently drops these, so the editor uses this to block save — otherwise
+ * a mis-typed (or un-picked) ingredient/member vanishes with no warning.
+ */
+export function hasUnresolvedMembers(d: ItemDraft): boolean {
+  return d.members.some((m) => m.name.trim() !== "" && !m.itemId);
+}
+
 /** Build the API body from the edited draft, dropping blank/zero ingredient rows. */
 export function draftToBody(d: ItemDraft): CreateItemBody {
   const substanceComps = d.comps

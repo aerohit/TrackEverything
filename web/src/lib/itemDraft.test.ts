@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { draftFromBody, draftToBody, eligibleMembers, emptyDraft, searchMembers } from "./itemDraft";
+import {
+  draftFromBody,
+  draftToBody,
+  eligibleMembers,
+  emptyDraft,
+  hasUnresolvedMembers,
+  searchMembers,
+} from "./itemDraft";
 import type { InputItemSummary } from "$lib/types";
 
 function summary(over: Partial<InputItemSummary>): InputItemSummary {
@@ -190,5 +197,39 @@ describe("itemDraft converters", () => {
     expect(body.name).toBe("Water");
     expect(body.components).toEqual([]);
     expect(body.defaultServing).toEqual({ displayQuantity: 1, displayUnit: "serving" });
+  });
+
+  describe("hasUnresolvedMembers", () => {
+    it("is false when there are no members or all are resolved", () => {
+      expect(hasUnresolvedMembers(emptyDraft())).toBe(false);
+      expect(
+        hasUnresolvedMembers({
+          ...emptyDraft(),
+          members: [{ itemId: "a-id", name: "Apple", quantity: 1, unit: "piece" }],
+        }),
+      ).toBe(false);
+    });
+
+    it("is false for an empty (untouched) member row", () => {
+      expect(
+        hasUnresolvedMembers({
+          ...emptyDraft(),
+          members: [{ itemId: "", name: "", quantity: 1, unit: "serving" }],
+        }),
+      ).toBe(false);
+    });
+
+    it("is true when a member has a typed name but no resolved item", () => {
+      // The exact case that silently dropped an ingredient: typed "brood", never picked.
+      expect(
+        hasUnresolvedMembers({
+          ...emptyDraft(),
+          members: [
+            { itemId: "g-id", name: "Gouda", quantity: 1, unit: "slice" },
+            { itemId: "", name: "brood", quantity: 2, unit: "slice" },
+          ],
+        }),
+      ).toBe(true);
+    });
   });
 });
