@@ -18,7 +18,13 @@
     Substance,
   } from "$lib/types";
   import ItemDraftForm from "$lib/ItemDraftForm.svelte";
-  import { draftFromBody, draftToBody, emptyDraft, type ItemDraft } from "$lib/itemDraft";
+  import {
+    draftFromBody,
+    draftToBody,
+    emptyDraft,
+    hasUnresolvedMembers,
+    type ItemDraft,
+  } from "$lib/itemDraft";
   import { preparePresets, presetLabel } from "$lib/quickcapture";
   import { unitOptions } from "$lib/units";
 
@@ -44,6 +50,9 @@
   const regularItems = $derived(items.filter((i) => i.kind === "product"));
   const recipes = $derived(items.filter((i) => i.kind === "recipe"));
   const stacks = $derived(items.filter((i) => i.kind === "stack"));
+  // A member row the user typed into but didn't resolve to a catalog item. draftToBody
+  // drops these, so block save (rather than silently losing the ingredient/member).
+  const hasUnresolvedMember = $derived(hasUnresolvedMembers(draft));
   let saving = $state(false);
   let toast = $state<{ msg: string; err: boolean } | null>(null);
 
@@ -361,7 +370,7 @@
     {#if hasDraft && formMode === "recipe"}
       <div class="fieldlabel" style="margin-top:4px">New recipe</div>
       <ItemDraftForm bind:draft {substances} {items} mode="recipe" />
-      <button class="primary" disabled={!draft.name.trim() || saving} onclick={save}>
+      <button class="primary" disabled={!draft.name.trim() || hasUnresolvedMember || saving} onclick={save}>
         {saving ? "Saving…" : "Save recipe"}
       </button>
       <button class="linklike" onclick={reset}>Cancel</button>
@@ -394,7 +403,7 @@
     {#if hasDraft && formMode === "stack"}
       <div class="fieldlabel" style="margin-top:4px">New stack</div>
       <ItemDraftForm bind:draft {substances} {items} mode="stack" />
-      <button class="primary" disabled={!draft.name.trim() || saving} onclick={save}>
+      <button class="primary" disabled={!draft.name.trim() || hasUnresolvedMember || saving} onclick={save}>
         {saving ? "Saving…" : "Save stack"}
       </button>
       <button class="linklike" onclick={reset}>Cancel</button>
