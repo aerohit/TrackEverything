@@ -332,8 +332,8 @@
     {/if}
   </section>
 
-  <section class="card">
-    <h2>Your Regular Items</h2>
+  <details class="card collapse">
+    <summary>Your Regular Items ({regularItems.length})</summary>
     {#if regularItems.length}
       {#each regularItems as it}
         <button
@@ -350,7 +350,7 @@
     {:else}
       <p class="mut">No items yet. Scan a label or create one above.</p>
     {/if}
-  </section>
+  </details>
 
   <section class="card">
     <h2>Your Recipes</h2>
