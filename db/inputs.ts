@@ -544,15 +544,18 @@ export async function getItemDetail(db: Db, id: string): Promise<InputItemDetail
     and(eq(inputItem.id, id), isNull(inputItem.deletedAt)),
   );
   if (!it) return null;
+  const childItem = alias(inputItem, "child_item");
   const comps = await db.select({
     substance: substance.name,
     childItemId: itemComponent.childItemId,
+    childName: childItem.name,
     amount: itemComponent.amount,
     unit: itemComponent.unit,
     position: itemComponent.position,
   })
     .from(itemComponent)
     .leftJoin(substance, eq(itemComponent.substanceId, substance.id))
+    .leftJoin(childItem, eq(itemComponent.childItemId, childItem.id))
     .where(eq(itemComponent.parentItemId, id))
     .orderBy(asc(itemComponent.position));
   const presets = await listPresets(db, [id]);

@@ -266,6 +266,8 @@ export interface InputItemSummary {
 export interface ItemComponentDTO {
   substance: string | null;
   childItemId: string | null;
+  /** Name of the child item (recipe/stack member), resolved at query time; null for substances. */
+  childName: string | null;
   amount: number;
   unit: string;
   position: number;
