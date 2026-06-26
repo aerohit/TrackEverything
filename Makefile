@@ -9,8 +9,8 @@
 # see .env.example for the keys). Usage:
 #   make dev
 #   make migrate ENV=test
-#   make seed-products ENV=preprod
-#   make promote FROM=test TO=preprod
+#   make seed-products ENV=prod
+#   make promote FROM=test TO=main
 #   make db-shell ENV=prod
 
 ENV ?= test
@@ -53,9 +53,9 @@ db-shell: ## Open a psql shell on ENV's database
 	$(guard-env)
 	set -a; . ./$(ENVFILE); set +a; psql "$$DATABASE_URL"
 
-# --- promotion (test → preprod → main); opens a PR you review + merge ---
-promote: ## Open a promotion PR: make promote FROM=test TO=preprod
-	@test -n "$(FROM)" && test -n "$(TO)" || { echo "Usage: make promote FROM=test TO=preprod"; exit 1; }
+# --- promotion (test → main); opens a PR you review + merge ---
+promote: ## Open a promotion PR: make promote FROM=test TO=main
+	@test -n "$(FROM)" && test -n "$(TO)" || { echo "Usage: make promote FROM=test TO=main"; exit 1; }
 	gh pr create --base $(TO) --head $(FROM) \
 	  --title "promote $(FROM) → $(TO)" \
 	  --body "Promoting $(FROM) into $(TO)."
