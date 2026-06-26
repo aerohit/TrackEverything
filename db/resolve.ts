@@ -13,8 +13,28 @@
  */
 import type { SubstanceUnit } from "../shared/inputs.ts";
 
-const MASS: Record<string, number> = { g: 1, mg: 1e-3, mcg: 1e-6, ug: 1e-6, "µg": 1e-6 };
-const VOLUME: Record<string, number> = { ml: 1, cl: 10, dl: 100, l: 1000 };
+const MASS: Record<string, number> = {
+  g: 1,
+  mg: 1e-3,
+  mcg: 1e-6,
+  ug: 1e-6,
+  "µg": 1e-6,
+  kg: 1000,
+  oz: 28.349523125,
+};
+// Cooking measures use the US FDA "legal" equivalents (tbsp 15 / tsp 5 / cup 240 /
+// fl oz 30 ml) — internally consistent (1 cup = 16 tbsp = 8 fl oz) and matching the
+// product catalog (which already serves e.g. milk as "1 cup = 240 ml").
+const VOLUME: Record<string, number> = {
+  ml: 1,
+  cl: 10,
+  dl: 100,
+  l: 1000,
+  tsp: 5,
+  tbsp: 15,
+  "fl oz": 30,
+  cup: 240,
+};
 const ENERGY: Record<string, number> = { kcal: 1 };
 
 /** Strip a simple trailing-"s" plural so "scoops" and "scoop" reconcile. */

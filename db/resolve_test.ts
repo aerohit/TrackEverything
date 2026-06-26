@@ -21,6 +21,22 @@ Deno.test("convert: normalizes within a dimension, rejects across", () => {
   assertEquals(convert(1, " tablet ", "tablets"), 1);
 });
 
+Deno.test("convert: cooking + imperial units reconcile with metric", () => {
+  // Volume cooking measures (US FDA legal: tbsp 15 / tsp 5 / fl oz 30 / cup 240 ml).
+  assertEquals(convert(1, "tbsp", "ml"), 15);
+  assertEquals(convert(1, "tsp", "ml"), 5);
+  assertEquals(convert(1, "fl oz", "ml"), 30);
+  assertEquals(convert(1, "cup", "ml"), 240);
+  assertEquals(convert(240, "ml", "cup"), 1);
+  assertEquals(convert(1, "cup", "tbsp"), 16); // internally consistent
+  // Mass: kilograms and (avoirdupois) ounces.
+  assertEquals(convert(1, "kg", "g"), 1000);
+  assertEquals(convert(2, "oz", "g"), 56.69904625);
+  // Still no cross-dimension conversion.
+  assertEquals(convert(1, "tbsp", "g"), null);
+  assertEquals(convert(1, "oz", "ml"), null);
+});
+
 Deno.test("convertForSubstance: substance-specific IU → canonical, else generic", () => {
   // Generic dimensional conversion still works (delegates to `convert`).
   assertEquals(convertForSubstance(5, "mg", "mcg", "Anything"), 5000);
