@@ -620,6 +620,14 @@ textarea:focus {
   font-size: 13px;
   color: var(--mut);
 }
+/* Per-entry actions (Update / Remove), revealed when the entry row is expanded. */
+.tline .res .entryactions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin-top: 8px;
+}
 .tlicon {
   margin-right: 6px;
   font-size: 15px;
