@@ -3,6 +3,7 @@
   import Chart from "$lib/Chart.svelte";
   import {
     createItem,
+    deleteIntake,
     intakeTotals,
     listCheckins,
     listIntake,
@@ -12,7 +13,7 @@
   } from "$lib/api";
   import { iconForInput } from "$lib/icons";
   import { type Contribution, displaySubstance, groupTotals, substanceContributions } from "$lib/totals";
-  import { substanceUnitOptions } from "$lib/units";
+  import { substanceUnitOptions, unitOptions } from "$lib/units";
   import ItemDraftForm from "$lib/ItemDraftForm.svelte";
   import { draftToBody, emptyDraft, type ItemDraft } from "$lib/itemDraft";
   import type { Checkin, DailyTotal, InputItemSummary, IntakeEvent, Substance } from "$lib/types";
@@ -189,6 +190,76 @@
     nutrients = nutrients.filter((_, idx) => idx !== i);
   }
 
+  // Edit / remove a logged entry (revealed when its row is expanded).
+  let editing = $state<IntakeEvent | null>(null);
+  let editName = $state("");
+  let editQty = $state(1);
+  let editUnit = $state("serving");
+  let editWhen = $state(""); // datetime-local value
+  let editSaving = $state(false);
+  let confirmDeleteId = $state<string | null>(null); // entry awaiting delete confirmation
+  let deletingId = $state<string | null>(null);
+
+  function pad(n: number): string {
+    return String(n).padStart(2, "0");
+  }
+  function toLocalInput(d: Date): string {
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${
+      pad(d.getMinutes())
+    }`;
+  }
+
+  function openEdit(e: IntakeEvent) {
+    editing = e;
+    editName = e.displayName;
+    editQty = e.quantity;
+    editUnit = e.unit;
+    editWhen = toLocalInput(new Date(e.occurredAt));
+  }
+  function closeEdit() {
+    editing = null;
+  }
+  // Patch the entry (re-resolves on the server) — amount/unit/time/name.
+  async function saveEdit() {
+    if (!editing || !editName.trim() || !(editQty > 0) || !editWhen) return;
+    editSaving = true;
+    try {
+      await updateIntake(editing.id, {
+        displayName: editName.trim(),
+        quantity: editQty,
+        unit: editUnit.trim() || "serving",
+        occurredAt: new Date(editWhen).toISOString(),
+      });
+      flash("Updated ✓");
+      closeEdit();
+      await load();
+    } catch (err) {
+      flash((err as Error).message || "Couldn't update.", true);
+    } finally {
+      editSaving = false;
+    }
+  }
+
+  function askDelete(id: string) {
+    confirmDeleteId = id;
+  }
+  function cancelDelete() {
+    confirmDeleteId = null;
+  }
+  async function doDelete(e: IntakeEvent) {
+    deletingId = e.id;
+    try {
+      await deleteIntake(e.id);
+      flash("Removed ✓");
+      confirmDeleteId = null;
+      await load();
+    } catch (err) {
+      flash((err as Error).message || "Couldn't remove.", true);
+    } finally {
+      deletingId = null;
+    }
+  }
+
   function go(delta: number) {
     const next = addDays(day, delta);
     if (next.getTime() > startOfToday().getTime()) return; // no future days
@@ -249,6 +320,18 @@
               {:else}
                 {e.resolved.length ? resolvedText(e) : "no breakdown"}
               {/if}
+              <div class="entryactions">
+                <button class="linklike" onclick={() => openEdit(e)}>Update</button>
+                {#if confirmDeleteId === e.id}
+                  <span class="mut">Remove this entry?</span>
+                  <button class="linklike danger" disabled={deletingId === e.id} onclick={() => doDelete(e)}>
+                    {deletingId === e.id ? "Removing…" : "Yes, remove"}
+                  </button>
+                  <button class="linklike" onclick={cancelDelete}>Cancel</button>
+                {:else}
+                  <button class="linklike danger" onclick={() => askDelete(e.id)}>Remove</button>
+                {/if}
+              </div>
             </div>
           </details>
         {/each}
@@ -348,8 +431,52 @@
   </div>
 {/if}
 
+{#if editing}
+  <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+  <div class="modal-backdrop" onclick={closeEdit}>
+    <div class="modal" role="dialog" tabindex="-1" aria-modal="true" aria-label="Edit entry" onclick={(e) => e.stopPropagation()}>
+      <div class="modal-head">
+        <div>
+          <div class="modal-title">Edit entry</div>
+          <div class="meta">Change the amount, time, or name — it re-resolves on save.</div>
+        </div>
+        <button class="iconbtn" aria-label="Close" onclick={closeEdit}>✕</button>
+      </div>
+
+      <div class="fieldlabel">Name</div>
+      <input class="field" placeholder="Name" bind:value={editName} />
+
+      <div class="fieldlabel">Amount</div>
+      <div class="row">
+        <input class="field" type="number" min="0" step="any" bind:value={editQty} />
+        <select class="field" aria-label="Unit" bind:value={editUnit}>
+          {#each unitOptions(editUnit) as u}<option value={u}>{u}</option>{/each}
+        </select>
+      </div>
+
+      <div class="fieldlabel">When</div>
+      <input class="field" type="datetime-local" bind:value={editWhen} max={toLocalInput(new Date())} />
+
+      <div class="row" style="margin-top:14px">
+        <button class="ghostbtn" onclick={closeEdit}>Cancel</button>
+        <button
+          class="primary"
+          style="flex:1"
+          disabled={!editName.trim() || !(editQty > 0) || !editWhen || editSaving}
+          onclick={saveEdit}
+        >
+          {editSaving ? "Saving…" : "Save changes"}
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
+
 {#if toast}
   <div class="toast" class:err={toast.err}>{toast.msg}</div>
 {/if}
 
-<svelte:window onkeydown={(e) => e.key === "Escape" && (resolving ? closeResolve() : closeBreakdown())} />
+<svelte:window
+  onkeydown={(e) =>
+    e.key === "Escape" && (editing ? closeEdit() : resolving ? closeResolve() : closeBreakdown())}
+/>
