@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { displaySubstance, groupTotals, substanceContributions } from "./totals";
+import { displaySubstance, groupTotals, macroTrend, substanceContributions } from "./totals";
 import type { DailyTotal, IntakeEvent } from "$lib/types";
 
 function t(substance: string, substanceType: string): DailyTotal {
@@ -82,5 +82,54 @@ describe("substanceContributions", () => {
     ]);
     expect(substanceContributions(events, "fat")).toEqual([{ name: "Steak", amount: 15, unit: "g" }]);
     expect(substanceContributions(events, "vitamin_d")).toEqual([]);
+  });
+});
+
+describe("macroTrend", () => {
+  function ev(occurredAt: string, resolved: { substance: string; amount: number; unit: string }[]): IntakeEvent {
+    return {
+      id: "x",
+      occurredAt,
+      displayName: "x",
+      quantity: 1,
+      unit: "serving",
+      contextTags: [],
+      source: "manual",
+      precision: "precise",
+      unresolved: false,
+      stackItems: [],
+      resolved: resolved.map((r) => ({ ...r, confidence: "medium", source: "item" })),
+    } as unknown as IntakeEvent;
+  }
+
+  it("buckets macros into day windows, ignoring non-macros and out-of-window events", () => {
+    const d16 = Date.parse("2026-06-16T00:00:00.000Z");
+    const d17 = Date.parse("2026-06-17T00:00:00.000Z");
+    const d18 = Date.parse("2026-06-18T00:00:00.000Z");
+    const windows = [{ start: d16, end: d17 }, { start: d17, end: d18 }];
+    const events = [
+      ev("2026-06-16T09:00:00.000Z", [
+        { substance: "Energy", amount: 500, unit: "kcal" },
+        { substance: "Protein", amount: 30, unit: "g" },
+      ]),
+      ev("2026-06-16T20:00:00.000Z", [
+        { substance: "Energy", amount: 300, unit: "kcal" },
+        { substance: "Iron", amount: 5, unit: "mg" }, // not a macro → ignored
+      ]),
+      ev("2026-06-17T12:00:00.000Z", [
+        { substance: "Fat", amount: 20, unit: "g" },
+        { substance: "Carbohydrate", amount: 60, unit: "g" },
+      ]),
+      ev("2026-06-20T12:00:00.000Z", [{ substance: "Energy", amount: 999, unit: "kcal" }]), // out of window
+    ];
+    const trend = macroTrend(events, windows);
+    expect(trend[0]).toEqual({ Energy: 800, Protein: 30, Carbohydrate: 0, Fat: 0 });
+    expect(trend[1]).toEqual({ Energy: 0, Protein: 0, Carbohydrate: 60, Fat: 20 });
+  });
+
+  it("returns a zeroed total for an empty window", () => {
+    expect(macroTrend([], [{ start: 0, end: 1 }])).toEqual([
+      { Energy: 0, Protein: 0, Carbohydrate: 0, Fat: 0 },
+    ]);
   });
 });
