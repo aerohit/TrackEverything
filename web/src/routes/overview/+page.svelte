@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import Chart from "$lib/Chart.svelte";
+  import MacroTrend from "$lib/MacroTrend.svelte";
   import {
     createItem,
     deleteIntake,
@@ -12,7 +13,14 @@
     updateIntake,
   } from "$lib/api";
   import { iconForInput } from "$lib/icons";
-  import { type Contribution, displaySubstance, groupTotals, substanceContributions } from "$lib/totals";
+  import {
+    type Contribution,
+    displaySubstance,
+    groupTotals,
+    macroTrend,
+    type MacroTotals,
+    substanceContributions,
+  } from "$lib/totals";
   import { substanceUnitOptions, unitOptions } from "$lib/units";
   import ItemDraftForm from "$lib/ItemDraftForm.svelte";
   import { draftToBody, emptyDraft, type ItemDraft } from "$lib/itemDraft";
@@ -22,6 +30,7 @@
   let checkins = $state<Checkin[]>([]);
   let events = $state<IntakeEvent[]>([]);
   let totals = $state<DailyTotal[]>([]);
+  let weekEvents = $state<IntakeEvent[]>([]); // last 7 days, for the macro trend
   let substances = $state<Substance[]>([]);
   let toast = $state<{ msg: string; err: boolean } | null>(null);
   // Per-substance contribution breakdown popup (which inputs made up a total).
@@ -39,6 +48,36 @@
 
   // Inputs shown in chronological (earliest-first) order; ISO strings sort lexically.
   const ordered = $derived(events.slice().sort((a, b) => a.occurredAt.localeCompare(b.occurredAt)));
+
+  // Macro trend — the 7 days ending on the viewed day. Each macro is a mini bar-chart
+  // scaled to its own max (kcal and grams aren't comparable on one axis).
+  const MACRO_META: { key: keyof MacroTotals; label: string; unit: string; color: string }[] = [
+    { key: "Energy", label: "Calories", unit: "kcal", color: "#f5a524" },
+    { key: "Protein", label: "Protein", unit: "g", color: "#5b8def" },
+    { key: "Carbohydrate", label: "Carbs", unit: "g", color: "#2fb888" },
+    { key: "Fat", label: "Fat", unit: "g", color: "#ef7d57" },
+  ];
+  const weekDays = $derived.by(() => {
+    const out: { start: number; end: number; label: string }[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const s = addDays(day, -i);
+      out.push({
+        start: s.getTime(),
+        end: addDays(s, 1).getTime(),
+        label: s.toLocaleDateString([], { weekday: "short" }),
+      });
+    }
+    return out;
+  });
+  const weekTrend = $derived(macroTrend(weekEvents, weekDays));
+  const macroSeries = $derived(
+    MACRO_META.map((m) => ({
+      label: m.label,
+      unit: m.unit,
+      color: m.color,
+      values: weekTrend.map((t) => t[m.key]),
+    })),
+  );
 
   function startOfToday(): Date {
     const d = new Date();
@@ -89,11 +128,12 @@
     const from = day;
     const to = addDays(day, 1);
     try {
-      [checkins, events, totals, substances] = await Promise.all([
+      [checkins, events, totals, substances, weekEvents] = await Promise.all([
         listCheckins({ from, to }),
         listIntake({ from, to }),
         intakeTotals(from, to),
         substances.length ? Promise.resolve(substances) : listSubstances(),
+        listIntake({ from: addDays(day, -6), to, limit: 1000 }),
       ]);
     } catch {
       flash("Couldn't load — check your token.", true);
@@ -280,6 +320,11 @@
   <section class="card">
     <h2>Mood · energy · focus</h2>
     <Chart {checkins} />
+  </section>
+
+  <section class="card">
+    <h2>Macros · last 7 days</h2>
+    <MacroTrend series={macroSeries} dayLabels={weekDays.map((d) => d.label)} />
   </section>
 
   <div style="display:flex; flex-direction:column; gap:16px">

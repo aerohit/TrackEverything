@@ -43,6 +43,36 @@ export function substanceContributions(events: IntakeEvent[], substance: string)
 // The four headline macros, by canonical substance name (Energy = the kcal total).
 const MACRO_ORDER = ["Energy", "Protein", "Carbohydrate", "Fat"];
 
+/** Daily macro totals (Energy in kcal, the rest in grams). */
+export interface MacroTotals {
+  Energy: number;
+  Protein: number;
+  Carbohydrate: number;
+  Fat: number;
+}
+
+/**
+ * Sum each event's resolved macros into the given day windows, for the last-7-days
+ * trend on the Overview. `windows[i]` is a half-open [start, end) epoch-ms range (one
+ * local day); an event counts toward the window its `occurredAt` falls in. Pure.
+ */
+export function macroTrend(
+  events: IntakeEvent[],
+  windows: { start: number; end: number }[],
+): MacroTotals[] {
+  return windows.map((w) => {
+    const t: MacroTotals = { Energy: 0, Protein: 0, Carbohydrate: 0, Fat: 0 };
+    for (const e of events) {
+      const at = Date.parse(e.occurredAt);
+      if (Number.isNaN(at) || at < w.start || at >= w.end) continue;
+      for (const r of e.resolved) {
+        if (r.substance in t) t[r.substance as keyof MacroTotals] += r.amount;
+      }
+    }
+    return t;
+  });
+}
+
 /** Display label for a substance — shows the kcal "Energy" total as "Calories". */
 export function displaySubstance(substance: string): string {
   return substance === "Energy" ? "Calories" : substance;
