@@ -8,6 +8,7 @@ import {
   getItemDetail,
   listIntakeEvents,
   listItems,
+  resolveItemNutrition,
   softDeleteIntakeEvent,
   updateIntakeEvent,
 } from "./inputs.ts";
@@ -67,6 +68,15 @@ Deno.test({
         defaultServing: { displayQuantity: 1, displayUnit: "glass" },
         components: [{ childItemId: whey, amount: 30, unit: "g" }],
       });
+
+      // The recipe's combined breakdown resolves its members (whey 30 g → 24 g protein).
+      const smNutrition = await resolveItemNutrition(db, smoothie);
+      assert(smNutrition);
+      assertEquals(smNutrition.complete, true);
+      assertEquals(
+        new Map(smNutrition.nutrition.map((n) => [n.substance, n.amount])).get("Protein"),
+        24,
+      );
 
       // Log 1 scoop pre-workout at 16:00.
       const preEvent = await createIntakeEvent(db, {
