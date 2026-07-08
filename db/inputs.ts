@@ -568,6 +568,40 @@ export async function getItemDetail(db: Db, id: string): Promise<InputItemDetail
   };
 }
 
+/**
+ * Full macro + micro breakdown for one default serving of an item, combining every
+ * member recursively through the resolve engine (products → their substances; recipes
+ * → the sum of their product members; stacks → the sum of their members). Powers the
+ * Regular Items detail view. `complete` is false if some part couldn't be reconciled.
+ */
+export async function resolveItemNutrition(
+  db: Db,
+  id: string,
+): Promise<{ nutrition: DailyTotal[]; complete: boolean } | null> {
+  const [it] = await db.select().from(inputItem).where(
+    and(eq(inputItem.id, id), isNull(inputItem.deletedAt)),
+  );
+  if (!it) return null;
+  const graph = await loadGraph(db, id);
+  const { amounts, complete } = resolveItem(
+    id,
+    it.defaultDisplayQuantity ?? 1,
+    it.defaultDisplayUnit ?? "serving",
+    graph,
+  );
+  const meta = new Map<string, { name: string; type: DailyTotal["substanceType"] }>();
+  for (const s of await db.select().from(substance)) {
+    meta.set(s.id, { name: s.name, type: s.substanceType });
+  }
+  const nutrition: DailyTotal[] = amounts.map((a) => ({
+    substance: meta.get(a.substanceId)?.name ?? "?",
+    substanceType: meta.get(a.substanceId)?.type ?? "other",
+    amount: a.amount,
+    unit: a.unit,
+  }));
+  return { nutrition, complete };
+}
+
 /** Amount presets keyed by item id, position-ordered. */
 async function listPresets(
   db: Db,

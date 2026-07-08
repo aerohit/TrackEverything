@@ -275,6 +275,33 @@
           }
         },
         {
+          "name": "Get item nutrition (combined macros & micros)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/items/:id/nutrition",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "items",
+                ":id",
+                "nutrition"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "Item UUID"
+                }
+              ]
+            },
+            "description": "Full macro + micro breakdown for one serving of an item, combining every member recursively (recipe/stack). Returns { nutrition: DailyTotal[], complete }. 404 if unknown."
+          }
+        },
+        {
           "name": "Set item Quick Capture (pin/unpin + presets)",
           "request": {
             "method": "PATCH",

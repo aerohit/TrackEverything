@@ -42,6 +42,7 @@ import {
   listQuickItems,
   listSubstances,
   recentItems,
+  resolveItemNutrition,
   setItemQuickLog,
   softDeleteIntakeEvent,
   softDeleteItem,
@@ -142,6 +143,13 @@ export function registerInputRoutes(api: Hono, db: Db, deps: InputDeps = {}) {
     if (!uuid.safeParse(c.req.param("id")).success) return c.json({ error: "not found" }, 404);
     const item = await getItemDetail(db, c.req.param("id"));
     return item ? c.json(item) : c.json({ error: "not found" }, 404);
+  });
+
+  // Full macro + micro breakdown for one serving of an item (recipe/stack members combined).
+  api.get("/items/:id/nutrition", async (c) => {
+    if (!uuid.safeParse(c.req.param("id")).success) return c.json({ error: "not found" }, 404);
+    const res = await resolveItemNutrition(db, c.req.param("id"));
+    return res ? c.json(res) : c.json({ error: "not found" }, 404);
   });
 
   api.post("/items", async (c) => {

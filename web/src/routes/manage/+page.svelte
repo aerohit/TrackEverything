@@ -4,6 +4,7 @@
     createItem,
     deleteItem,
     getItem,
+    itemNutrition,
     listItems,
     listSubstances,
     lookupBarcode,
@@ -12,11 +13,13 @@
   } from "$lib/api";
   import type {
     CreateItemBody,
+    DailyTotal,
     InputItemDetail,
     InputItemSummary,
     QuickPreset,
     Substance,
   } from "$lib/types";
+  import { displaySubstance, groupTotals } from "$lib/totals";
   import ItemDraftForm from "$lib/ItemDraftForm.svelte";
   import {
     draftFromBody,
@@ -59,6 +62,10 @@
   // item-detail popup
   let detail = $state<InputItemDetail | null>(null);
   let detailLoading = $state<string | null>(null); // id being loaded
+  // Combined macro/micro breakdown for recipes/stacks (members resolved + summed).
+  let detailNutrition = $state<DailyTotal[] | null>(null);
+  let nutritionComplete = $state(true);
+  let nutritionLoading = $state(false);
 
   function flash(msg: string, err = false) {
     toast = { msg, err };
@@ -74,6 +81,8 @@
 
   async function openDetail(it: InputItemSummary) {
     detailLoading = it.id;
+    detailNutrition = null;
+    nutritionLoading = false;
     try {
       detail = await getItem(it.id);
       qPinned = detail.quickLog;
@@ -84,6 +93,18 @@
         unit: p.unit,
       }));
       confirmingDelete = false;
+      // Recipes/stacks: load the combined macro/micro breakdown (members resolved) in the
+      // background so the popup opens immediately, then the breakdown fills in.
+      if (it.kind === "recipe" || it.kind === "stack") {
+        nutritionLoading = true;
+        itemNutrition(it.id)
+          .then((n) => {
+            detailNutrition = n.nutrition;
+            nutritionComplete = n.complete;
+          })
+          .catch(() => (detailNutrition = []))
+          .finally(() => (nutritionLoading = false));
+      }
     } catch {
       flash("Couldn't load that item.", true);
     } finally {
@@ -142,6 +163,8 @@
   function closeDetail() {
     detail = null;
     confirmingDelete = false;
+    detailNutrition = null;
+    nutritionLoading = false;
   }
   function compLabel(c: { substance: string | null; childName: string | null }) {
     return c.substance ?? c.childName ?? "linked item";
@@ -466,6 +489,34 @@
         {/each}
       {:else}
         <p class="mut">No ingredients recorded for this item.</p>
+      {/if}
+
+      {#if detail.kind === "recipe" || detail.kind === "stack"}
+        <div class="fieldlabel" style="margin-top:14px">
+          {#if detail.kind === "stack"}
+            Combined macros &amp; micros
+          {:else}
+            Macros &amp; micros · per {detail.defaultDisplayQuantity ?? 1}
+            {detail.defaultDisplayUnit ?? "serving"}
+          {/if}
+        </div>
+        {#if detailNutrition === null && nutritionLoading}
+          <p class="mut">Combining ingredients…</p>
+        {:else if detailNutrition && detailNutrition.length}
+          {#each groupTotals(detailNutrition) as g}
+            <div class="totgroup">{g.label}</div>
+            {#each g.items as t}
+              <div class="totrow"><span>{displaySubstance(t.substance)}</span><b>{t.amount} {t.unit}</b></div>
+            {/each}
+          {/each}
+          {#if !nutritionComplete}
+            <p class="mut" style="margin-top:6px">
+              Some ingredients couldn't be fully resolved — totals may be partial.
+            </p>
+          {/if}
+        {:else}
+          <p class="mut">No macros or micros could be resolved from the ingredients.</p>
+        {/if}
       {/if}
 
       <div class="fieldlabel" style="margin-top:14px">Quick Capture</div>

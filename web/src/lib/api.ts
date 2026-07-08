@@ -110,6 +110,19 @@ export async function getItem(id: string, ctx: ApiCtx = {}): Promise<InputItemDe
   return await res.json() as InputItemDetail;
 }
 
+/** An item's full nutrition for one serving, combining members (GET /api/items/:id/nutrition). */
+export async function itemNutrition(
+  id: string,
+  ctx: ApiCtx = {},
+): Promise<{ nutrition: DailyTotal[]; complete: boolean }> {
+  const { f, token } = resolve(ctx);
+  const res = await f("/api/items/" + encodeURIComponent(id) + "/nutrition", {
+    headers: headers(token),
+  });
+  if (!res.ok) throw new ApiError(res.status, "Failed to load nutrition");
+  return await res.json() as { nutrition: DailyTotal[]; complete: boolean };
+}
+
 /** Soft-delete a reusable item (DELETE /api/items/:id). Past logs that referenced it still display. */
 export async function deleteItem(id: string, ctx: ApiCtx = {}): Promise<void> {
   const { f, token } = resolve(ctx);
