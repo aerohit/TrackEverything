@@ -406,28 +406,6 @@
       <input class="field" placeholder="Name" bind:value={confirm.name} />
     {/if}
 
-    {#if confirm.source === "photo" || confirm.source === "voice"}
-      <div class="fieldlabel">Portion (rough estimate)</div>
-      <div class="chips">
-        {#each PORTIONS as p}
-          <button class="chip" type="button" onclick={() => setPortion(p.factor)}>{p.label}</button>
-        {/each}
-      </div>
-    {/if}
-
-    <div class="row" style="margin-top:8px">
-      <div style="flex:1">
-        <div class="fieldlabel">Amount</div>
-        <input class="field" type="number" min="0" step="any" bind:value={confirm.quantity} />
-      </div>
-      <div style="flex:1">
-        <div class="fieldlabel">Unit</div>
-        <select class="field" bind:value={confirm.unit}>
-          {#each unitChoices as u}<option value={u}>{u}</option>{/each}
-        </select>
-      </div>
-    </div>
-
     <div class="fieldlabel">When {#if confirm.fuzzyTime}<span class="mut">· approx</span>{/if}</div>
     <div class="chips" style="margin-bottom:6px">
       {#each FUZZY_TIMES as b}
@@ -476,6 +454,35 @@
         />
         <span>Just log the name (no breakdown)</span>
       </label>
+    </div>
+
+    {#if confirm.source === "photo" || confirm.source === "voice"}
+      <div class="fieldlabel" style="margin-top:12px">Portion (rough estimate)</div>
+      <div class="chips">
+        {#each PORTIONS as p}
+          <button class="chip" type="button" onclick={() => setPortion(p.factor)}>{p.label}</button>
+        {/each}
+      </div>
+    {/if}
+
+    <div class="fieldlabel" style="margin-top:12px">How much</div>
+    <div class="row">
+      <div style="flex:1">
+        <input
+          class="field"
+          type="number"
+          min="0"
+          step="any"
+          placeholder="amount"
+          aria-label="Amount"
+          bind:value={confirm.quantity}
+        />
+      </div>
+      <div style="flex:1">
+        <select class="field" aria-label="Unit" bind:value={confirm.unit}>
+          {#each unitChoices as u}<option value={u}>{u}</option>{/each}
+        </select>
+      </div>
     </div>
 
     {#if confirm.sel === "new"}
